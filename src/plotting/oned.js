@@ -1,27 +1,836 @@
-// SpinPlot 1D display layer
-// Raw signal arrays are never modified here. This module only creates display data.
+import {
+  axisEps,
+  niceTicks,
+  ticksWithStep,
+  minorTicks,
+  configuredGTicks,
+} from "../processing/axis.js";
+import {
+  clamp,
+  median,
+  ptp,
+  finiteNum,
+  parseNumberList,
+  parseRegions,
+} from "../core/numeric.js";
+import { axisKind, gFromB, BFromG } from "../processing/axis.js";
+import { tickFormatter } from "../twod/ticks.js";
+import * as TwoD from "../twod/ui.js";
 
-export function createDisplayCurves(curves, options = {}) {
-  const mode = options.mode || 'overlay';
-  const scale = Number.isFinite(options.scale) ? options.scale : 1;
-  const offsets = options.offsets || [];
-  const spacing = Number.isFinite(options.spacing) ? options.spacing : 1;
+export function createDisplayCurves(curves, sp) {
+  let offsets = new Array(curves.length).fill(0);
+  if (sp.mode === "stack") {
+    if (sp.offsetMode === "manual") {
+      const vals = parseNumberList(sp.manualOffsets);
+      offsets = curves.map((_, i) => vals[i] ?? 0);
+    } else {
+      const step =
+        Math.max(0, ...curves.map((c) => ptp(c.y) || 0)) *
+        (Number.isFinite(Number(sp.offsetScale))
+          ? Number(sp.offsetScale)
+          : 1.2);
+      offsets = curves.map((_, i) => i * step);
+    }
+    if (Number(sp.offsetDirection) < 0) offsets = offsets.map((v) => -v);
+  }
+  return curves.map((c, i) => ({
+    ...c,
+    offset: offsets[i],
+    yd: c.y.map((v) => v + offsets[i]),
+  }));
+}
 
-  return curves.map((curve, index) => {
-    const offset = mode === 'stack'
-      ? (Number.isFinite(offsets[index]) ? offsets[index] : index * spacing)
-      : 0;
-
-    return {
-      ...curve,
-      yDisplay: curve.y.map(v => v * scale + offset),
-      offset
-    };
-  });
+export const applyStackOffsets = createDisplayCurves;
+export function autoRangeX(curves) {
+  let lo = Infinity,
+    hi = -Infinity;
+  for (const c of curves)
+    for (const v of c.B)
+      if (Number.isFinite(v)) {
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+  return Number.isFinite(lo) ? [lo, hi] : [0, 1];
+}
+export function rangeY(curves, xmin, xmax) {
+  let lo = Infinity,
+    hi = -Infinity;
+  for (const c of curves)
+    for (let i = 0; i < c.B.length; i++)
+      if (c.B[i] >= xmin && c.B[i] <= xmax && Number.isFinite(c.yd[i])) {
+        const v = c.yd[i];
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+  if (!Number.isFinite(lo)) return [-1, 1];
+  let s = hi - lo;
+  if (!(s > 0)) s = Math.max(Math.abs(lo), 1);
+  return [lo - 0.1 * s, hi + 0.1 * s];
 }
 
 export function displayRange(curves) {
-  const values = curves.flatMap(c => c.yDisplay || c.y || []);
-  if (!values.length) return { min: 0, max: 1 };
-  return { min: Math.min(...values), max: Math.max(...values) };
+  return rangeY(curves, -Infinity, Infinity);
+}
+
+export function renderFigure(
+  canvas,
+  logicalW,
+  logicalH,
+  pixelScale,
+  isExport,
+  { model: preparedModel, cells: preparedCells, controls, view: state, style },
+) {
+  const $ = (id) => controls[id];
+  const { theme, font } = style;
+  const plotTheme = () => theme,
+    getFont = () => font;
+  const subplotGConfig = (sp) => preparedModel.find((m) => m.sp === sp).gConfig;
+  const displayFrequency = (sp) =>
+    preparedModel.find((m) => m.sp === sp).frequency;
+  const curveColor = (i, n, sp) =>
+    preparedModel.find((m) => m.sp === sp).colors[i];
+  const subplotIndex = (sp) => preparedModel.findIndex((m) => m.sp === sp);
+  function drawAxisLine(ctx, x1, y1, x2, y2, color, width = 1.2) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  function legendBoxSize(ctx, curves, size, font) {
+    ctx.font = `${size}px ${font}`;
+    const maxText = Math.max(
+        0,
+        ...curves.map((c) => ctx.measureText(c.name).width),
+      ),
+      rowH = Math.max(8, size * 1.35),
+      lineLen = Math.max(14, size * 1.85),
+      gap = Math.max(4, size * 0.5),
+      pad = Math.max(4, size * 0.45);
+    return {
+      w: lineLen + gap + maxText + 2 * pad,
+      h: rowH * curves.length + 2 * pad,
+      rowH,
+      lineLen,
+      gap,
+      pad,
+    };
+  }
+  function legendXY(pos, x0, y0, pw, ph, bw, bh) {
+    const m = 7;
+    switch (pos) {
+      case "upper_left":
+        return [x0 + m, y0 + m];
+      case "upper_center":
+        return [x0 + (pw - bw) / 2, y0 + m];
+      case "center_left":
+        return [x0 + m, y0 + (ph - bh) / 2];
+      case "center":
+        return [x0 + (pw - bw) / 2, y0 + (ph - bh) / 2];
+      case "center_right":
+        return [x0 + pw - bw - m, y0 + (ph - bh) / 2];
+      case "lower_left":
+        return [x0 + m, y0 + ph - bh - m];
+      case "lower_center":
+        return [x0 + (pw - bw) / 2, y0 + ph - bh - m];
+      case "lower_right":
+        return [x0 + pw - bw - m, y0 + ph - bh - m];
+      case "outside_right":
+        return [x0 + pw + 8, y0];
+      case "outside_top":
+        return [x0 + (pw - bw) / 2, y0 - bh - 8];
+      default:
+        return [x0 + pw - bw - m, y0 + m];
+    }
+  }
+  function drawLegend(ctx, curves, geom, font, theme, sp) {
+    if (!curves.length) return;
+    const size = Number($("legendSize").value) || 11,
+      b = legendBoxSize(ctx, curves, size, font),
+      [bx, by] = legendXY(
+        sp.legendPosition || "upper_right",
+        geom.x0,
+        geom.y0,
+        geom.pw,
+        geom.ph,
+        b.w,
+        b.h,
+      ),
+      opacity = clamp(Number($("legendOpacity").value) || 0, 0, 1);
+    ctx.save();
+    if (opacity > 0) {
+      ctx.fillStyle =
+        theme.bg === "#11181b"
+          ? `rgba(17,24,27,${opacity})`
+          : `rgba(255,255,255,${opacity})`;
+      ctx.fillRect(bx, by, b.w, b.h);
+    }
+    if ($("legendBorder").checked) {
+      ctx.strokeStyle = theme.axis;
+      ctx.strokeRect(bx, by, b.w, b.h);
+    }
+    ctx.font = `${size}px ${font}`;
+    curves.forEach((c, i) => {
+      const yy = by + b.pad + b.rowH * (i + 0.5),
+        col = curveColor(i, curves.length, sp);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.setLineDash(theme.dashes[i % theme.dashes.length] || []);
+      ctx.beginPath();
+      ctx.moveTo(bx + b.pad, yy);
+      ctx.lineTo(bx + b.pad + b.lineLen, yy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = theme.text;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(c.name, bx + b.pad + b.lineLen + b.gap, yy);
+    });
+    ctx.restore();
+  }
+  function directLabelYs(curves, Y, sp, size) {
+    const shift = sp.mode === "stack" ? Number(sp.directLabelYShift) || 0 : 0;
+    const height = Math.abs(Y(0) - Y(1));
+    return curves.map(
+      (c) => Y(median(c.yd)) - shift * (state.labelRange || 1) * height,
+    );
+  }
+  function subplotTickFormat(sp, axis) {
+    const notation = sp[axis + "TickNotation"];
+    return {
+      digits:
+        sp[axis + "TickDigits"] !== "" && sp[axis + "TickDigits"] !== undefined
+          ? sp[axis + "TickDigits"]
+          : $(axis + "TickDigits").value,
+      notation:
+        notation && notation !== "inherit"
+          ? notation
+          : $(axis + "TickNotation").value,
+    };
+  }
+  function oneDInsets(ctx, m, cellH, cellW, font, axisSize, titleSize) {
+    const sp = m.sp,
+      g = subplotGConfig(sp),
+      nu = displayFrequency(sp, m.curves),
+      compact = cellH < 180,
+      showY = sp.showYTicks && !$("hideYTicks").checked,
+      showTitle =
+        !$("hideYTitle").checked &&
+        String(sp.yAxisLabel || $("yLabel").value || "").trim(),
+      xd = clamp(finiteNum($("xTitleDistance").value) || 20, 0, 120),
+      yd = clamp(finiteNum($("yTitleDistance").value) || 35, 0, 120);
+    const q = {
+      left: Math.max(showY ? 56 : 26, showTitle ? yd + axisSize / 2 + 8 : 0),
+      right: 16,
+      top:
+        (g.show && Number.isFinite(nu)
+          ? Math.max(compact ? 26 : 34, g.titleDistance + axisSize + 6)
+          : compact
+            ? 7
+            : 10) +
+        (sp.title.trim() ? (compact ? titleSize + 5 : titleSize + 10) : 0),
+      bottom: Math.max(compact ? 30 : 34, xd + axisSize / 2 + 8),
+    };
+    if (
+      sp.labelMode !== "direct" &&
+      sp.labelMode !== "none" &&
+      m.curves.length
+    ) {
+      const b = legendBoxSize(
+        ctx,
+        m.curves,
+        Number($("legendSize").value) || 11,
+        font,
+      );
+      if (sp.legendPosition === "outside_right")
+        q.right = Math.min(cellW * 0.48, b.w + 18);
+      if (sp.legendPosition === "outside_top")
+        q.top += Math.min(cellH * 0.35, b.h + 10);
+    }
+    return q;
+  }
+  function drawAnnotations(ctx, sp, nu, X, r, font, theme) {
+    if (!sp.annotationsEnabled) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(r.x0, r.y0, r.pw, r.ph);
+    ctx.clip();
+    for (const a of sp.annotations || []) {
+      const B = a.displayCoordinate,
+        px = X(B);
+      if (!Number.isFinite(px) || px < r.x0 || px > r.x0 + r.pw) continue;
+      drawAxisLine(ctx, px, r.y0, px, r.y0 + r.ph, theme.majorGrid, 0.8);
+      ctx.save();
+      ctx.translate(
+        px - 3,
+        r.y0 + r.ph * (1 - clamp(Number(a.y ?? 0.2), 0, 1)),
+      );
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = "#808080";
+      ctx.font = `italic ${Math.max(1, Number($("annotationSize").value) || 8)}px ${font}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(a.label || "", 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  function drawMeasurements(ctx, sp, X, r, font) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(r.x0, r.y0, r.pw, r.ph);
+    ctx.clip();
+    ctx.font = "10px " + font;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "#666";
+    const all = [
+        ...(sp.measurements || []),
+        ...(state.drag?.type === "measure" &&
+        state.drag.subplot === subplotIndex(sp)
+          ? [{ a: state.drag.a, b: state.drag.b }]
+          : []),
+      ],
+      capacity = Math.max(1, Math.floor((r.ph - 22) / 22)),
+      hidden = Math.max(0, all.length - capacity);
+    if (hidden) {
+      ctx.textAlign = "left";
+      ctx.fillText(`+${hidden} earlier measurements`, r.x0 + 4, r.y0 + 12);
+      ctx.textAlign = "center";
+    }
+    all.slice(-capacity).forEach((m, i) => {
+      const a = X(m.a),
+        b = X(m.b),
+        y = r.y0 + r.ph - 14 - i * 22;
+      drawAxisLine(ctx, a, y, b, y, "#777", 0.8);
+      drawAxisLine(ctx, a, y - 4, a, y + 4, "#777", 0.8);
+      drawAxisLine(ctx, b, y - 4, b, y + 4, "#777", 0.8);
+      ctx.fillText(
+        "ΔB = " + Math.abs(m.b - m.a).toFixed(2) + " G",
+        (a + b) / 2,
+        y - 2,
+      );
+    });
+    ctx.restore();
+  }
+  function renderPlot(
+    canvas,
+    logicalW,
+    logicalH,
+    pixelScale = 1,
+    isExport = false,
+  ) {
+    const ctx = canvas.getContext("2d"),
+      theme = plotTheme(),
+      font = getFont("plotFont", "customPlotFont", "Arial"),
+      model = preparedModel,
+      cells = preparedCells,
+      figTitle = $("figureTitle").value.trim(),
+      figSize = Number($("figureTitleSize").value) || 18,
+      subTitleSize = Number($("subplotTitleSize").value) || 15,
+      tickSize = Number($("tickSize").value) || 11,
+      axisTitleSize = Number($("axisTitleSize").value) || 14,
+      lineW = Number($("lineWidth").value) || 1.4,
+      tickLen = 6,
+      frame = $("frameMode").value;
+    let titleCenter = logicalW / 2;
+    canvas.width = Math.max(1, Math.round(logicalW * pixelScale));
+    canvas.height = Math.max(1, Math.round(logicalH * pixelScale));
+    ctx.setTransform(pixelScale, 0, 0, pixelScale, 0, 0);
+    ctx.clearRect(0, 0, logicalW, logicalH);
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, logicalW, logicalH);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (!isExport) state.plotRegions.length = 0;
+    const figTop = figTitle ? Math.max(28, figSize + 12) : 8;
+    const rows = Math.max(1, state.layout.rows),
+      cols = Math.max(1, state.layout.cols),
+      gx = state.layout.gapX,
+      gy = state.layout.gapY,
+      padX = 10,
+      padBottom = 10,
+      unitW = (logicalW - 2 * padX - gx * (cols - 1)) / cols,
+      unitH = (logicalH - figTop - padBottom - gy * (rows - 1)) / rows;
+    if (!(unitW > 80 && unitH > 80))
+      throw new Error("Canvas too small for current subplot layout");
+    const frameEntries = model.map((m, index) => {
+      const cell = cells[index],
+        box = {
+          cellW: unitW * cell.colSpan + gx * (cell.colSpan - 1),
+          cellH: unitH * cell.rowSpan + gy * (cell.rowSpan - 1),
+        },
+        options = {
+          axisSize: axisTitleSize,
+          xTitleDistance: Number($("xTitleDistance").value),
+          yTitleDistance: Number($("yTitleDistance").value),
+          g: subplotGConfig(m.sp),
+          frequency: displayFrequency(m.sp, m.curves),
+        };
+      return {
+        index,
+        col: cell.col,
+        twoD: !!m.sp.twoD,
+        box,
+        insets: m.sp.twoD
+          ? TwoD.plotInsets(
+              m.matrix,
+              m.sp.twoD.settings,
+              box,
+              m.sp.title,
+              options,
+            )
+          : oneDInsets(
+              ctx,
+              m,
+              box.cellH,
+              box.cellW,
+              font,
+              axisTitleSize,
+              subTitleSize,
+            ),
+      };
+    });
+    const packed = cells.every((c) => c.colSpan === 1 && c.rowSpan === 1)
+      ? TwoD.fitMainColumns(
+          frameEntries,
+          cols,
+          logicalW - 2 * padX - gx * (cols - 1),
+        )
+      : null;
+    const mixedInsets = packed
+      ? new Map(frameEntries.map((e) => [e.index, packed.insets[e.col - 1]]))
+      : TwoD.sharedMainInsets(frameEntries);
+    model.forEach((m, si) => {
+      const sp = m.sp,
+        cell = cells[si],
+        curves = m.curves,
+        gcfg = subplotGConfig(sp),
+        nu = displayFrequency(sp, curves),
+        cellX =
+          padX +
+          (packed
+            ? packed.widths
+                .slice(0, cell.col - 1)
+                .reduce((a, w) => a + w + gx, 0)
+            : (cell.col - 1) * (unitW + gx)),
+        cellY = figTop + (cell.row - 1) * (unitH + gy),
+        cellW = packed
+          ? packed.widths[cell.col - 1]
+          : unitW * cell.colSpan + gx * (cell.colSpan - 1),
+        cellH = unitH * cell.rowSpan + gy * (cell.rowSpan - 1);
+      if (sp.twoD) {
+        const r = TwoD.render(
+          ctx,
+          m.matrix,
+          sp.twoD.settings,
+          { cellX, cellY, cellW, cellH },
+          font,
+          theme,
+          sp.title,
+          {
+            mainInsets: mixedInsets.get(si),
+            xTickFormat: subplotTickFormat(sp, "x"),
+            yTickFormat: subplotTickFormat(sp, "y"),
+            z: {
+              min: $("globalZMin").value,
+              max: $("globalZMax").value,
+              step: finiteNum($("globalZStep").value),
+              label: $("zLabel").value,
+              hideTitle: $("hideZTitle").checked,
+              hideTicks: $("hideZTicks").checked,
+              titleDistance: Number($("zTitleDistance").value),
+            },
+            scheme:
+              sp.colorSchemeOverride && sp.colorSchemeOverride !== "inherit"
+                ? sp.colorSchemeOverride
+                : $("colorScheme").value,
+            tickSize,
+            axisSize: axisTitleSize,
+            titleSize: subTitleSize,
+            lineWidth: lineW,
+            frame,
+            showYTicks: sp.showYTicks && !$("hideYTicks").checked,
+            showYTitle: !$("hideYTitle").checked,
+            xTitleDistance: Number($("xTitleDistance").value),
+            yTitleDistance: Number($("yTitleDistance").value),
+            grid: $("showGrid").checked,
+            labels: sp.labelMode,
+            g: gcfg,
+            frequency: nu,
+            gTicks: configuredGTicks,
+            xTicks: ticksWithStep,
+            yTicks: ticksWithStep,
+          },
+        );
+        if (model.length === 1) titleCenter = r.titleCenter;
+        r.subplot = si;
+        drawAnnotations(
+          ctx,
+          sp,
+          null,
+          (v) => r.x0 + ((v - r.xmin) / (r.xmax - r.xmin)) * r.pw,
+          r,
+          font,
+          theme,
+        );
+        if (!isExport) {
+          state.plotRegions.push(r);
+          for (const pr of r.projectionRegions)
+            state.plotRegions.push({
+              ...pr,
+              subplot: si,
+              twoD: true,
+              cellX,
+              cellY,
+              cellW,
+              cellH,
+            });
+        }
+        return;
+      }
+      const showYTicks = sp.showYTicks && !$("hideYTicks").checked,
+        showYTitle =
+          !$("hideYTitle").checked &&
+          String(sp.yAxisLabel || $("yLabel").value || "").trim();
+      const compactY = cellH < 180,
+        gTitleDistance = Number.isFinite(gcfg.titleDistance)
+          ? gcfg.titleDistance
+          : 22,
+        xTitleDistance = clamp(
+          finiteNum($("xTitleDistance").value) || 20,
+          0,
+          120,
+        ),
+        yTitleDistance = clamp(
+          finiteNum($("yTitleDistance").value) || 35,
+          0,
+          120,
+        );
+      let insetL = Math.max(
+          showYTicks ? 56 : 26,
+          showYTitle ? yTitleDistance + axisTitleSize / 2 + 8 : 0,
+        ),
+        insetR = 16,
+        insetT =
+          (gcfg.show && Number.isFinite(nu)
+            ? Math.max(compactY ? 26 : 34, gTitleDistance + axisTitleSize + 6)
+            : compactY
+              ? 7
+              : 10) +
+          (sp.title.trim()
+            ? compactY
+              ? subTitleSize + 5
+              : subTitleSize + 10
+            : 0),
+        insetB = Math.max(
+          compactY ? 30 : 34,
+          xTitleDistance + axisTitleSize / 2 + 8,
+        );
+      const legendPreview =
+        sp.labelMode !== "direct" && sp.labelMode !== "none" && curves.length
+          ? legendBoxSize(
+              ctx,
+              curves,
+              Number($("legendSize").value) || 11,
+              font,
+            )
+          : null;
+      if (legendPreview && sp.legendPosition === "outside_right")
+        insetR = Math.min(cellW * 0.48, legendPreview.w + 18);
+      if (legendPreview && sp.legendPosition === "outside_top")
+        insetT += Math.min(cellH * 0.35, legendPreview.h + 10);
+      const shared = mixedInsets.get(si);
+      if (shared) {
+        insetL = shared.left;
+        insetR = shared.right;
+        insetT = shared.top;
+        insetB = shared.bottom;
+      }
+      const x0 = cellX + insetL,
+        y0 = cellY + insetT,
+        pw = cellW - insetL - insetR,
+        ph = cellH - insetT - insetB;
+      if (!(pw > 40 && ph > 28))
+        throw new Error(`Subplot ${si + 1}: plot area too small`);
+      const X = (v) => x0 + ((v - m.xmin) / (m.xmax - m.xmin)) * pw,
+        Y = (v) => y0 + ph - ((v - m.ymin) / (m.ymax - m.ymin)) * ph;
+      if (!isExport)
+        state.plotRegions.push({
+          subplot: si,
+          x0,
+          y0,
+          pw,
+          ph,
+          xmin: m.xmin,
+          xmax: m.xmax,
+          ymin: m.ymin,
+          ymax: m.ymax,
+          xAxis: curves[0]?.xAxis,
+          cellX,
+          cellY,
+          cellW,
+          cellH,
+        });
+      if (sp.title.trim()) {
+        ctx.fillStyle = theme.text;
+        ctx.font = `${subTitleSize}px ${font}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(sp.title.trim(), x0 + pw / 2, cellY + 2);
+      }
+      const active = sp.showNoiseRegions ? parseRegions(sp.noiseRegions) : null;
+      if (active)
+        for (const [a, b] of active) {
+          const lo = Math.max(m.xmin, Math.min(a, b)),
+            hi = Math.min(m.xmax, Math.max(a, b));
+          if (hi > lo) {
+            ctx.fillStyle =
+              $("plotStylePreset").value === "dark_monitor"
+                ? "rgba(114,199,211,.10)"
+                : "rgba(47,111,159,.08)";
+            ctx.fillRect(X(lo), y0, X(hi) - X(lo), ph);
+          }
+        }
+      if (!isExport && state.noiseDraft?.subplot === si)
+        for (const [a, b] of state.noiseDraft.regions) {
+          const lo = Math.max(m.xmin, Math.min(a, b)),
+            hi = Math.min(m.xmax, Math.max(a, b));
+          if (hi > lo) {
+            ctx.fillStyle = "rgba(198,154,67,.16)";
+            ctx.fillRect(X(lo), y0, X(hi) - X(lo), ph);
+          }
+        }
+      const xt = ticksWithStep(m.xmin, m.xmax, m.xStep, 6),
+        yt = ticksWithStep(m.ymin, m.ymax, m.yStep, 5),
+        xminor = minorTicks(m.xmin, m.xmax, xt),
+        yminor = minorTicks(m.ymin, m.ymax, yt);
+      if ($("showMinorGrid").checked) {
+        for (const t of xminor)
+          drawAxisLine(ctx, X(t), y0, X(t), y0 + ph, theme.minorGrid, 0.55);
+        for (const t of yminor)
+          drawAxisLine(ctx, x0, Y(t), x0 + pw, Y(t), theme.minorGrid, 0.55);
+      }
+      if ($("showGrid").checked) {
+        for (const t of xt)
+          drawAxisLine(ctx, X(t), y0, X(t), y0 + ph, theme.majorGrid, 0.8);
+        for (const t of yt)
+          drawAxisLine(ctx, x0, Y(t), x0 + pw, Y(t), theme.majorGrid, 0.8);
+      }
+      const aw = theme.axisWidth || 1;
+      if (frame === "box") {
+        ctx.strokeStyle = theme.axis;
+        ctx.lineWidth = aw;
+        ctx.strokeRect(x0, y0, pw, ph);
+      } else if (frame === "lb") {
+        drawAxisLine(ctx, x0, y0, x0, y0 + ph, theme.axis, aw);
+        drawAxisLine(ctx, x0, y0 + ph, x0 + pw, y0 + ph, theme.axis, aw);
+      } else if (frame === "tb") {
+        drawAxisLine(ctx, x0, y0, x0 + pw, y0, theme.axis, aw);
+        drawAxisLine(ctx, x0, y0 + ph, x0 + pw, y0 + ph, theme.axis, aw);
+      } else if (frame === "bottom")
+        drawAxisLine(ctx, x0, y0 + ph, x0 + pw, y0 + ph, theme.axis, aw);
+      const inward = theme.tickDir === "in",
+        xf = tickFormatter(xt, subplotTickFormat(sp, "x")),
+        yf = tickFormatter(yt, subplotTickFormat(sp, "y"));
+      ctx.fillStyle = theme.text;
+      ctx.font = `${tickSize}px ${font}`;
+      ctx.textBaseline = "top";
+      for (const t of xt) {
+        const px = X(t),
+          label = xf.format(t),
+          tw = ctx.measureText(label).width;
+        ctx.textAlign =
+          px - tw / 2 < x0
+            ? "left"
+            : px + tw / 2 > x0 + pw
+              ? "right"
+              : "center";
+        drawAxisLine(
+          ctx,
+          px,
+          y0 + ph,
+          px,
+          y0 + ph + (inward ? -tickLen : tickLen),
+          theme.axis,
+          1,
+        );
+        ctx.fillText(label, px, y0 + ph + (inward ? 4 : tickLen + 3));
+      }
+      if (showYTicks) {
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for (const t of yt) {
+          const py = Y(t);
+          if (py < y0 - 0.5 || py > y0 + ph + 0.5) continue;
+          drawAxisLine(
+            ctx,
+            x0,
+            py,
+            x0 + (inward ? tickLen : -tickLen),
+            py,
+            theme.axis,
+            1,
+          );
+          ctx.fillText(yf.format(t), x0 - (inward ? 4 : tickLen + 4), py);
+        }
+        if (yf.exponent) {
+          ctx.font = `${Math.max(9, tickSize - 1)}px ${font}`;
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(yf.multiplier, x0 - 2, y0 - 4);
+        }
+      }
+      if (xf.exponent) {
+        ctx.font = `${Math.max(9, tickSize - 1)}px ${font}`;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        ctx.fillText(xf.multiplier, x0 + pw, y0 + ph + tickSize + 10);
+      }
+      ctx.font = `${axisTitleSize}px ${font}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(
+        sp.xAxisLabel ||
+          (curves[0]?.xAxis && axisKind(curves[0].xAxis) !== "field"
+            ? curves[0].xAxis.name +
+              (curves[0].xAxis.unit ? " (" + curves[0].xAxis.unit + ")" : "")
+            : $("xLabel").value || "Magnetic Field (G)"),
+        x0 + pw / 2,
+        y0 + ph + xTitleDistance,
+      );
+      if (showYTitle) {
+        const yTitleOffset = yTitleDistance;
+        ctx.save();
+        ctx.translate(x0 - yTitleOffset, y0 + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(sp.yAxisLabel || $("yLabel").value || "Intensity", 0, 0);
+        ctx.restore();
+      }
+      if (gcfg.show && Number.isFinite(nu) && m.xmin > 0) {
+        let gt = [],
+          lo = Math.min(gFromB(m.xmin, nu), gFromB(m.xmax, nu)),
+          hi = Math.max(gFromB(m.xmin, nu), gFromB(m.xmax, nu));
+        if (gcfg.mode === "manual_custom")
+          gt = parseNumberList(gcfg.ticks).filter((g) => g >= lo && g <= hi);
+        else if (gcfg.mode === "manual_uniform") {
+          if (gcfg.step > 0) {
+            const geps = axisEps(gcfg.min, gcfg.max, gcfg.step);
+            for (
+              let g = gcfg.min, k = 0;
+              g <= gcfg.max + geps && k < 10000;
+              g += gcfg.step, k++
+            )
+              if (g >= lo - geps && g <= hi + geps) gt.push(g);
+          }
+        } else gt = niceTicks(lo, hi, 5);
+        ctx.font = `${tickSize}px ${font}`;
+        ctx.textBaseline = "bottom";
+        for (const g of gt) {
+          const b = BFromG(g, nu);
+          if (
+            b >= m.xmin - axisEps(m.xmin, m.xmax) &&
+            b <= m.xmax + axisEps(m.xmin, m.xmax)
+          ) {
+            const px = X(b),
+              label = g.toFixed(gcfg.decimals),
+              tw = ctx.measureText(label).width;
+            ctx.textAlign =
+              px - tw / 2 < x0
+                ? "left"
+                : px + tw / 2 > x0 + pw
+                  ? "right"
+                  : "center";
+            drawAxisLine(
+              ctx,
+              px,
+              y0,
+              px,
+              y0 + (inward ? tickLen : -tickLen),
+              theme.axis,
+              1,
+            );
+            ctx.fillText(label, px, y0 - (inward ? 3 : tickLen + 3));
+          }
+        }
+        ctx.font = `${axisTitleSize}px ${font}`;
+        ctx.fillText(
+          gcfg.label || "g factor",
+          x0 + pw / 2,
+          y0 - gTitleDistance,
+        );
+      }
+      drawAnnotations(ctx, sp, nu, X, { x0, y0, pw, ph }, font, theme);
+      curves.forEach((c, ci) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x0, y0, pw, ph);
+        ctx.clip();
+        ctx.beginPath();
+        ctx.strokeStyle = curveColor(ci, curves.length, sp);
+        ctx.lineWidth = lineW;
+        ctx.setLineDash(theme.dashes[ci % theme.dashes.length] || []);
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < Math.min(c.B.length, c.yd.length); i++) {
+          const xx = Number(c.B[i]),
+            yy = Number(c.yd[i]);
+          if (
+            !Number.isFinite(xx) ||
+            !Number.isFinite(yy) ||
+            xx < m.xmin ||
+            xx > m.xmax
+          ) {
+            started = false;
+            continue;
+          }
+          const px = X(xx),
+            py = Y(yy);
+          if (!Number.isFinite(px) || !Number.isFinite(py)) {
+            started = false;
+            continue;
+          }
+          if (!started) {
+            ctx.moveTo(px, py);
+            started = true;
+          } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        ctx.restore();
+      });
+      drawMeasurements(ctx, sp, X, { x0, y0, pw, ph }, font);
+      state.labelRange = m.ymax - m.ymin;
+      const geom = { x0, y0, pw, ph };
+      if (sp.labelMode === "legend" || sp.labelMode === "both")
+        drawLegend(ctx, curves, geom, font, theme, sp);
+      if (sp.labelMode === "direct" || sp.labelMode === "both") {
+        const size = Number($("legendSize").value) || 11,
+          ys = directLabelYs(curves, Y, sp, size);
+        ctx.font = `${size}px ${font}`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        curves.forEach((c, ci) => {
+          ctx.fillStyle = curveColor(ci, curves.length, sp);
+          ctx.fillText(
+            c.name,
+            x0 + clamp(Number(sp.directLabelX) || 0.02, 0, 1) * pw,
+            ys[ci],
+          );
+        });
+      }
+    });
+    if (figTitle) {
+      ctx.fillStyle = theme.text;
+      ctx.font = `${figSize}px ${font}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(figTitle, titleCenter, 5);
+    }
+    return model;
+  }
+
+  return renderPlot(canvas, logicalW, logicalH, pixelScale, isExport);
 }

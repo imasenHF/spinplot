@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
 
-const url = 'https://plastocyanin.org/previews/spinplot-modularization/';
+const url = process.env.SPINPLOT_TEST_URL || 'https://plastocyanin.org/previews/spinplot-modularization/';
 fs.mkdirSync('browser-preview', {recursive: true});
 const browser = await chromium.launch({headless:true});
 const errors=[];
@@ -77,6 +77,57 @@ try {
   const stackCSV=await exportDisplay('browser-preview/stack-display.csv');
   assert.ok(Math.abs(valueFor(stackCSV,0,3300)+0.5)<1e-10,'Stack does not affect first trace');
   assert.ok(Math.abs(valueFor(stackCSV,1,3300)-2)<1e-10,'Manual stack offset is display-only and applied to second trace');
+  // Complete A/B regression: Overlay, manual/automatic Stack in both directions.
+  const originalRaw=JSON.stringify(project.rawCurves);
+  const load=async (payload,name)=>{
+    await page.locator('#projectFile').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
+    await page.waitForFunction(name=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),name);
+    await page.waitForTimeout(150);
+    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')),await page.locator('#status').textContent());
+  };
+  const save=async path=>{const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#saveProjectBtn').click()]);await d.saveAs(path);return JSON.parse(fs.readFileSync(path));};
+  for(const mode of ['overlay','manual-positive','manual-negative','auto-positive','auto-negative']){
+    const manual=mode.startsWith('manual'),direction=mode.endsWith('negative')?-1:1,offset=mode==='overlay'?0:direction*(manual?3:4);
+    const fixture={...project,config:{...project.config,subplots:project.config.subplots.map(sp=>({...sp,mode:mode==='overlay'?'overlay':'stack',offsetMode:manual?'manual':'auto',offsetScale:1,manualOffsets:'0,3',offsetDirection:direction,annotationsEnabled:true,annotations:[{source:'x',x:3320,label:'Marker',y:.2}],labelMode:'legend'}))}};
+    await load(fixture,mode+'.spinplot.json');
+    const data=await exportDisplay('browser-preview/'+mode+'.csv');
+    assert.equal(valueFor(data,0,3300),-.5);assert.equal(valueFor(data,1,3300),-1+offset);
+    const saved=await save('browser-preview/'+mode+'.json');assert.equal(JSON.stringify(saved.rawCurves),originalRaw,'Display settings never change raw data');
+    await load(saved,mode+'-reload.spinplot.json');
+    const restored=await exportDisplay('browser-preview/'+mode+'-reload.csv');assert.deepEqual(restored,data,'Project reload preserves display values');
+  }
+  // Vector and raster files use the same prepared model as the canvas preview.
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  await page.locator('button.tab-btn[data-tab="subplots"]').click();
+  await page.locator('#canvasPreset').selectOption('square');
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  await page.locator('#exportDpi').selectOption('96');
+  for(const format of ['svg','png']){
+    await page.locator('#imageFormat').selectOption(format);
+    const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    const path='browser-preview/figure.'+format;await d.saveAs(path);const bytes=fs.readFileSync(path);
+    if(format==='svg'){
+      const result=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return {error:!!doc.querySelector('parsererror'),paths:doc.querySelectorAll('path').length,text:doc.documentElement.textContent,width:doc.documentElement.getAttribute('width')};},bytes.toString());
+      assert.equal(result.error,false);assert.ok(result.paths>10);assert.match(result.text,/Trace A/);assert.match(result.text,/Magnetic Field/);assert.match(result.text,/Marker/);assert.equal(result.width,'500');
+    }else{
+      assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(bytes.readUInt32BE(16),500);assert.equal(bytes.readUInt32BE(20),500);assert.ok(bytes.includes(Buffer.from('pHYs')));
+      const decoded=await page.evaluate(async b64=>{const img=new Image();img.src='data:image/png;base64,'+b64;await img.decode();return [img.naturalWidth,img.naturalHeight];},bytes.toString('base64'));assert.deepEqual(decoded,[500,500]);
+    }
+  }
+  // A legacy single-trace CSV can still be opened after a multi-curve project.
+  await page.locator('#clearDataBtn').click();
+  await page.locator('#dataFiles').setInputFiles({name:'legacy.csv',mimeType:'text/csv',buffer:Buffer.from('B,Legacy\r\n3350,1\r\n3340,2\r\n3330,3\r\n')});
+  await page.waitForFunction(()=>document.querySelector('#dataCount').textContent.trim()==='1');
+  const legacy=await save('browser-preview/legacy.json');assert.deepEqual(legacy.rawCurves[0].B,[3350,3340,3330]);assert.deepEqual(legacy.rawCurves[0].y,[1,2,3]);
+  // Restore test data for responsive layout and screenshots.
+  await load(project,'responsive.spinplot.json');
+  for(const width of [1440,1100,760,420]){
+    await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
+    assert.equal(await page.locator('.tab-btn').count(),6);
+    const bounds=await page.locator('#plotCanvas').boundingBox();assert.ok(bounds.width>0&&bounds.height>0);
+    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')));
+    await page.screenshot({path:'browser-preview/window-'+width+'.png',fullPage:true});
+  }
   assert.equal(errors.length,0,'Browser script error: '+errors.join(' | '));
   await page.close();
   const narrow = await browser.newPage({viewport:{width:650,height:850}});
@@ -86,6 +137,7 @@ try {
   assert.equal(await narrow.locator('.tab-btn').count(),6);
   await narrow.screenshot({path:'browser-preview/spinplot-narrow.png',fullPage:true});
   assert.equal(errors.length,0,'Browser script error: '+errors.join(' | '));
+  fs.writeFileSync('browser-preview/result.json',JSON.stringify({url,errors,passed:true,viewports:[1440,1100,760,650,420]},null,2));
   console.log('BROWSER PASS: CSV import/export, region baseline and stack display values, project v9/10/11, config v10, wide/narrow');
 } finally {
   await browser.close();

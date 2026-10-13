@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -35,8 +37,32 @@ jobs:
           node src/twod/large.test.js
           node src/twod/integration.test.js
           node src/twod/ticks.test.js
+      - name: Display, axis and export regression
+        run: node --test src/plotting/oned.test.js src/processing/axis.test.js src/export/export.test.js
       - name: Production-equivalent build
         run: npm run build
+      - name: Install browser regression runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Build pre-migration reference
+        run: |
+          git worktree add --detach ../spinplot-baseline 911a6a8c2bfbc2079e1832923f3abf0619cfd8ac
+          cd ../spinplot-baseline
+          npm ci
+          npm run build
+      - name: Browser regression and reference comparison
+        run: node scripts/preview-regression.mjs
+      - name: Upload browser acceptance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spinplot-modularization-acceptance
+          path: |
+            browser-preview/
+            browser-baseline/
+          retention-days: 14
+          if-no-files-found: warn
       - name: Upload isolated preview build (not deployed)
         uses: actions/upload-artifact@v4
         with:

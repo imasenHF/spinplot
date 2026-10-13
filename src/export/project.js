@@ -1,6 +1,7 @@
-// Project serialization boundary.
-// Existing project version handling remains in project/project.js until migration.
-
+import { createProject } from "../project/project.js";
 export function exportProjectPayload(payload) {
-  return JSON.stringify(payload, null, 2);
+  return JSON.stringify(createProject(payload));
+}
+export function exportConfigPayload(config) {
+  return JSON.stringify(config, null, 2);
 }
