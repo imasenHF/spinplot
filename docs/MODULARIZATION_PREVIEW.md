@@ -94,4 +94,4 @@ npm run build
 
 新增 Actions 验收使用本地构建页面，同时构建 `911a6a8` 作为迁移前对照。浏览器覆盖旧单曲线和新多曲线 CSV、区域基线、Overlay、Stack 自动/手动正负方向、项目 9/10/11、配置 10、SVG 轴/图例/标注、PNG 尺寸/DPI/解码以及 1440/1100/760/650/420 px 窗口；逐文件比较导出的 CSV、JSON（排除创建时间）、SVG 和 PNG。截图与导出样本在 `spinplot-modularization-acceptance` artifact 中。
 
-当前提交时浏览器 CI 与主站快照同步尚待执行；以随后验收记录和运行结果为准，不将旧预览页面视为新版本。
+[浏览器对照、模块测试与构建（38369179810）](https://github.com/imasenHF/spinplot/actions/runs/38369179810) 全部通过；[公开预览浏览器测试（38369179836）](https://github.com/imasenHF/spinplot/actions/runs/38369179836) 通过；[主站 Pages 发布（38368916198）](https://github.com/imasenHF/imasenhf.github.io/actions/runs/38368916198) 成功。公开预览已加载本轮构建 `index-CdHZZgtg.js`，正式 `/spinplot/` 未改变。首次 CI 的项目重载等待超时已通过测试脚本修订排除，迁移源码保持不变。
