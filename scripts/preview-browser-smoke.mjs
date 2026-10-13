@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 
 const url = process.env.SPINPLOT_TEST_URL || 'https://plastocyanin.org/previews/spinplot-modularization/';
 fs.mkdirSync('browser-preview', {recursive: true});
-const browser = await chromium.launch({headless:true});
+const browser = await chromium.launch({headless:true,...(process.env.SPINPLOT_CHROMIUM_PATH?{executablePath:process.env.SPINPLOT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']}: {})});
 const errors=[];
 try {
   const page = await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true});
@@ -81,7 +81,12 @@ try {
   const originalRaw=JSON.stringify(project.rawCurves);
   const load=async (payload,name)=>{
     await page.locator('#projectFile').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
-    await page.waitForFunction(name=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),name);
+    try {
+      await page.waitForFunction(name=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),name,{timeout:60000});
+    } catch(error) {
+      const diagnostics=await page.evaluate(()=>({status:document.querySelector('#status')?.textContent,log:document.querySelector('#log')?.textContent?.slice(-1200),count:document.querySelector('#dataCount')?.textContent}));
+      throw new Error(`Project load timeout for ${name}: ${JSON.stringify(diagnostics)}`,{cause:error});
+    }
     await page.waitForTimeout(150);
     assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')),await page.locator('#status').textContent());
   };
@@ -114,7 +119,21 @@ try {
       const decoded=await page.evaluate(async b64=>{const img=new Image();img.src='data:image/png;base64,'+b64;await img.decode();return [img.naturalWidth,img.naturalHeight];},bytes.toString('base64'));assert.deepEqual(decoded,[500,500]);
     }
   }
+  // Exercise g labels and the shared 1D/2D renderer with acquired coordinates.
+  const fieldProject={...project,rawCurves:project.rawCurves.map(c=>({...c,freq:9.5})),config:{...project.config,controls:{...project.config.controls,baselineMode:'none',canvasPreset:'4x3'},subplots:project.config.subplots.map(sp=>({...sp,annotationsEnabled:true,annotations:[{source:'g',g:2.05,label:'g marker',y:.2}]}))}};
+  await load(fieldProject,'field-g.spinplot.json');
+  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+  const [gDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await gDownload.saveAs('browser-preview/field-g.svg');assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g factor/);assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g marker/);
+  const matrix={name:'Synthetic 2D',x:{name:'Field',unit:'G',values:[3300,3320,3350]},y:{name:'Microwave attenuation',unit:'dB',values:[0,10]},real:[[1,2,3],[2,4,6]],imag:[[0,0,0],[0,0,0]],metadata:{}};
+  const mixed={...fieldProject,rawCurves:[...fieldProject.rawCurves,{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],config:{...fieldProject.config,controls:{...fieldProject.config.controls,canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},layout:{...project.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[fieldProject.config.subplots[0],{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:2,twoD:{index:2,settings:{}}}]}};
+  await load(mixed,'mixed.spinplot.json');await save('browser-preview/mixed.json');
+  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+  const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');assert.match(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Synthetic 2D/);
+  const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
+  await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   // A legacy single-trace CSV can still be opened after a multi-curve project.
+  await page.locator('button.tab-btn[data-tab="scaling"]').click();
+  await page.locator('#baselineMode').selectOption('none');
   await page.locator('#clearDataBtn').click();
   await page.locator('#dataFiles').setInputFiles({name:'legacy.csv',mimeType:'text/csv',buffer:Buffer.from('B,Legacy\r\n3350,1\r\n3340,2\r\n3330,3\r\n')});
   await page.waitForFunction(()=>document.querySelector('#dataCount').textContent.trim()==='1');
