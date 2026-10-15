@@ -1,6 +1,6 @@
 # SpinPlot — ARCHITECTURE
 
-更新日期：2026-10-08（Asia/Shanghai）
+更新日期：2026-10-13（Asia/Shanghai）
 维护范围：代码架构、数据表示、模块职责、科学处理约束、兼容性与验证方式。已完成状态与待办概览见 [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)；界面规则见 [STYLE_GUIDE.md](STYLE_GUIDE.md)。
 
 ## 1. 当前部署与代码结构
@@ -52,7 +52,28 @@ public/legacy/           旧路径跳转
 
 新增或重命名字段时先确定旧文件读取行为与迁移结果；不能自动恢复的属性必须提示丢失/不支持。配置恢复不应覆盖已导入的原始数据；项目文件加载需校验数组、二维矩阵、版本和引用下标。
 
-## 5. 模块化目标（尚未全部实施）
+## 5. 隔离预览分支模块化（未合并 main）
+
+`preview/modularization-phase1-20261009` 已完成本轮一维绘图、坐标与导出接入。正式 `main` 仍保留原实现。
+
+| 模块 | 实际职责 |
+| --- | --- |
+| `src/main.js` | UI 控件、应用状态、缓存、事件、布局模型组装、导出下载与批量调度；其他文件读取和二维模型协调仍在入口中 |
+| `src/processing/oned.js` | 一维频率对齐、基线、幅度处理的纯函数流水线 |
+| `src/processing/axis.js` | 轴类型和单位、频率对齐、Field/g 换算、刻度生成；二维模块复用同一实现 |
+| `src/plotting/oned.js` | Overlay/Stack 显示数组和显示范围；Canvas 绘图、图例、标注和测距，接收已处理模型、控件快照和交互快照 |
+| `src/export/csv.js` | 全局修正、显示数据、频率元数据 CSV，保留原字段和插值 |
+| `src/export/scene.js`, `svg.js`, `pdf.js`, `image.js` | 共用绘图场景记录、SVG/PDF 序列化、栅格编码及 DPI 元数据 |
+| `src/export/project.js` | 项目/配置导出入口；版本及兼容校验仍由 `src/project/project.js` 负责 |
+| `src/data/twod.js` | 已有二维 `x/y/real/imag/metadata` 数据结构校验与构造；不新增另一套矩阵格式 |
+
+绘图模块不读取 DOM，不执行一维基线或幅度处理，也不读取原始一维谱。`y` 表示处理后的强度；`yd` 表示叠加显示偏移后的强度；保存项目仅使用原始数组。`signal.js` 的旧 `applyStackOffsets` 接口以及二维 core 的旧坐标接口保留为兼容 re-export，无重复计算实现。
+
+SVG、PDF 和屏幕绘图复用同一个 renderer。二维渲染仍由 `twod/ui.js` 实施；本轮不加入新的二维视图或拟合功能。该分支尚未完成所有 UI/解析函数拆分，不能描述为整个应用入口只剩事件绑定。
+
+部署与最新验收状态见 [MODULARIZATION_PREVIEW.md](MODULARIZATION_PREVIEW.md)。
+
+## 6. 后续模块化目标（尚未全部实施）
 
 | 拟议模块 | 后续职责 |
 | --- | --- |
@@ -67,7 +88,7 @@ public/legacy/           旧路径跳转
 
 迁移过程先建立行为回归测试，再按边界提取模块；禁止以迁移名义改变数据语义或已有项目格式。优先从已分离的 `src/twod/` 测试基础出发，逐步移除根页面的重复解析和渲染职责。
 
-## 6. 检查与验收
+## 7. 检查与验收
 
 ```bash
 npm ci
@@ -88,4 +109,4 @@ node src/twod/ticks.test.js
 3. **浏览器与绘图检查**：1D/2D/混排图、交互、控件焦点、中文标签、PNG/SVG/PDF、保存重载；
 4. **发布检查**：Actions 构建/部署状态、线上 URL、资源路径与实际页面交互。
 
-本次修改只修正文档，未重新执行上述测试或部署；以前的局部验证不代表全部组合均已验证。
+预览分支的本轮测试和发布状态单独记录；正式分支和真实仪器样本不能使用预览分支的合成数据结果替代。

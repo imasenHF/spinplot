@@ -1,0 +1,33 @@
+name: SpinPlot live preview browser smoke
+on:
+  push:
+    branches:
+      - 'preview/modularization-*'
+    paths:
+      - '.github/workflows/preview-browser-check.yml'
+      - 'scripts/preview-browser-smoke.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Test published temporary webpage
+        run: node scripts/preview-browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spinplot-browser-preview-screenshots
+          path: browser-preview/
+          retention-days: 14
+          if-no-files-found: warn

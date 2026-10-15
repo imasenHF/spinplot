@@ -64,7 +64,7 @@ node src/twod/ticks.test.js
 
 ## 源码、部署和维护
 
-目前主要应用逻辑和 CSS 仍在根目录 `index.html`；`src/interface.js` 管理子图控件重组，`src/twod/` 包含二维解析、显示、调色板、刻度及测试。Vite 用于构建，React/TypeScript 依赖尚未对应完整的前端模块迁移。现行代码结构与规划详见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+正式 main 的主要应用逻辑和 CSS 仍在根目录 `index.html`；`src/interface.js` 管理子图控件重组，`src/twod/` 包含二维解析、显示、调色板、刻度及测试。Vite 用于构建，React/TypeScript 依赖尚未对应完整的前端模块迁移。预览分支已将实际一维绘图、坐标、导出和处理流水线接入独立模块，详见 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 与 [预览验收记录](docs/MODULARIZATION_PREVIEW.md)。
 
 提交至 `main` 通过 GitHub Actions 构建和发布 GitHub Pages，Vite 的基础路径为 `/spinplot/`。正式入口是 [plastocyanin.org/spinplot/](https://plastocyanin.org/spinplot/)；旧 `/spinplot/legacy/` 用于兼容跳转，主站另维护旧大写路径的跳转。
 
