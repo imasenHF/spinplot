@@ -131,6 +131,53 @@ try {
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');assert.match(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Synthetic 2D/);
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
+  // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
+  // then verify that a heatmap-body double-click still restores X/Y ranges.
+  if (process.env.SPINPLOT_TEST_COLORBAR_DBLCLICK === '1') {
+    const colorbarProject={...fieldProject,
+      rawCurves:[{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],
+      config:{...fieldProject.config,
+        controls:{...fieldProject.config.controls,baselineMode:'none',canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},
+        layout:{...fieldProject.config.layout,rows:1,cols:1,spans:'1'},
+        subplots:[{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:1,
+          xUseGlobal:false,xMin:3305,xMax:3345,yUseGlobal:false,yMin:-2,yMax:12,
+          twoD:{index:0,settings:{mode:'heatmap',showColorbar:true,showProjections:false,
+            xMin:3305,xMax:3345,yMin:-2,yMax:12,zMin:'',zMax:'',zUseGlobal:false}}}]
+      }
+    };
+    await load(colorbarProject,'colorbar-dblclick.spinplot.json');
+    const canvas=page.locator('#plotCanvas'),bounds=await canvas.boundingBox();
+    assert.ok(bounds&&bounds.width>0&&bounds.height>0,'2D canvas must be visible');
+    const barX=bounds.x+bounds.width*0.93,barY=bounds.y+bounds.height*0.5;
+    await page.mouse.move(barX,barY);
+    await page.mouse.wheel(0,120);
+    await page.waitForTimeout(150);
+    const zoomed=await save('browser-preview/colorbar-zoomed.json');
+    const zoomedSettings=zoomed.config.subplots[0].twoD.settings;
+    assert.notEqual(zoomedSettings.zMin,'','Colorbar wheel must set a local Z minimum');
+    assert.notEqual(zoomedSettings.zMax,'','Colorbar wheel must set a local Z maximum');
+    assert.equal(zoomedSettings.zUseGlobal,false,'Colorbar wheel must use local Z range');
+    await page.mouse.dblclick(barX,barY);
+    await page.waitForTimeout(150);
+    const zReset=await save('browser-preview/colorbar-auto-z.json');
+    const zSettings=zReset.config.subplots[0].twoD.settings;
+    assert.equal(zSettings.zMin,'','Colorbar double-click must clear the local Z minimum');
+    assert.equal(zSettings.zMax,'','Colorbar double-click must clear the local Z maximum');
+    assert.equal(zSettings.zUseGlobal,false,'Auto Z must retain the existing Auto Z semantics');
+    assert.equal(zSettings.xMin,3305,'Colorbar double-click must not reset X');
+    assert.equal(zSettings.xMax,3345,'Colorbar double-click must not reset X');
+    assert.equal(zSettings.yMin,-2,'Colorbar double-click must not reset Y');
+    assert.equal(zSettings.yMax,12,'Colorbar double-click must not reset Y');
+    await page.mouse.dblclick(bounds.x+bounds.width*0.45,bounds.y+bounds.height*0.6);
+    await page.waitForTimeout(150);
+    const xyReset=await save('browser-preview/heatmap-axis-reset.json');
+    const xySettings=xyReset.config.subplots[0].twoD.settings;
+    assert.equal(xySettings.xMin,3300,'Heatmap double-click must still reset X minimum');
+    assert.equal(xySettings.xMax,3350,'Heatmap double-click must still reset X maximum');
+    assert.equal(xySettings.yMin,0,'Heatmap double-click must still reset Y minimum');
+    assert.equal(xySettings.yMax,10,'Heatmap double-click must still reset Y maximum');
+    assert.equal(xySettings.zMin,'','Heatmap axis reset must not reapply a local Z range');
+  }
   // A legacy single-trace CSV can still be opened after a multi-curve project.
   await page.locator('button.tab-btn[data-tab="scaling"]').click();
   await page.locator('#baselineMode').selectOption('none');
