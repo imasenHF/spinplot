@@ -39,7 +39,7 @@
 - 代码实现提交：[`a47f9cc`](https://github.com/imasenHF/spinplot/commit/a47f9ccbfcda2dff1b054ff38687b8cdf55c80b4)，只修改 `src/main.js` 的 colorbar 双击交互。
 - 浏览器回归扩展：`scripts/preview-browser-smoke.mjs` 检查色标滚轮缩放、色标双击 Auto Z 复原，以及热图主体双击恢复 X/Y；`scripts/preview-regression.mjs` 仅对当前版本启用新增交互测试，避免要求迁移前基线具备新功能。
 - 代码回归与构建：[`39684319918`](https://github.com/imasenHF/spinplot/actions/runs/39684319918) 成功，包含现有数值/CSV/项目兼容/二维测试、TypeScript 检查、Vite 生产构建、Chromium 交互测试及与迁移前导出结果对照。
-- 预览分支最新维护提交：[`1b3e328`](https://github.com/imasenHF/spinplot/commit/1b3e328af054c9ef79818193e902ca78c1a3fe41)，为公开预览浏览器检查启用 colorbar 双击测试；模块化预览工作流 `39684871649` 成功。分支当前 HEAD 应在下一次任务开始时重新查询。
+- 公开预览浏览器检查配置提交：[`1b3e328`](https://github.com/imasenHF/spinplot/commit/1b3e328af054c9ef79818193e902ca78c1a3fe41)，为已发布临时快照启用 colorbar 双击测试；模块化预览工作流 `39684871649` 成功。该 SHA 仅用于追溯配置变更，不代表当前 HEAD；每次任务开始时重新查询最新分支状态。
 - 主站临时快照已更新：主站仓库提交 [`0f238ea`](https://github.com/imasenHF/imasenhf.github.io/commit/0f238ea62a1be5a8bcb4fd30c4665cb8a087e465)，新应用脚本为 `assets/index-DAzGls40.js`。主站 Pages 发布 [`39684696016`](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39684696016) 成功；更新后的公开 HTTP 检查 [`39684871606`](https://github.com/imasenHF/spinplot/actions/runs/39684871606) 和公开 Chromium 浏览器测试 [`39684871564`](https://github.com/imasenHF/spinplot/actions/runs/39684871564) 均成功。
 - 正式 `main` 分支与 `/spinplot/` 未修改；新行为只存在于隔离预览分支及 `/previews/spinplot-modularization/` 快照。
 
