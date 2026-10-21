@@ -24,10 +24,15 @@ try {
   const [download] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#exportCsvBtn').click()]);
   assert.match(download.suggestedFilename(),/\.csv$/i);
   await download.saveAs('browser-preview/synthetic-global.csv');
-  // Verify the new pure baseline module through the real UI and exported display data.
+  // Frequency alignment regression: preserve Local mean by default, apply global Manual target when selected,
+  // and allow a per-subplot Manual target. CSV source frequency is entered in the dataset inventory.
+  await page.locator('button.tab-btn[data-tab="data"]').click();
+  assert.equal(await page.locator('.subplot').first().locator('[data-field="freqMode"]').inputValue(),'local','New subplots default to local alignment');
+  assert.equal(await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').inputValue(),'mean','New subplots default to Local mean');
+  await page.locator('#freqTable [data-source-frequency="0"]').fill('9.5');
+  await page.locator('#freqTable [data-source-frequency="1"]').fill('9.7');
   await page.locator('button.tab-btn[data-tab="scaling"]').click();
-  await page.locator('#baselineMode').selectOption('region');
-  await page.locator('#baselineRegions').fill('3300-3310');
+  await page.locator('#baselineMode').selectOption('none');
   const exportDisplay=async (path)=>{
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [d] = await Promise.all([
@@ -38,6 +43,45 @@ try {
     const [header,...rows]=fs.readFileSync(path,'utf8').trim().split(/\r?\n/).map(line=>line.split(','));
     return {header,rows};
   };
+  const coordinateFor=(data,curve)=>{
+    const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate');
+    assert.ok(i>=0&&j>=0,'Display CSV must contain curve index and coordinate');
+    const row=data.rows.find(r=>Number(r[i])===curve);
+    assert.ok(row,'Expected synthetic curve in display CSV');
+    return Number(row[j]);
+  };
+  const localMeanCSV=await exportDisplay('browser-preview/frequency-local-mean.csv');
+  assert.ok(Math.abs(coordinateFor(localMeanCSV,0)-3300*9.6/9.5)<1e-7,'Default Local mean must align both curves to 9.6 GHz');
+  assert.ok(Math.abs(coordinateFor(localMeanCSV,1)-3300*9.6/9.7)<1e-7,'Default Local mean must use each source frequency');
+
+  await page.locator('button.tab-btn[data-tab="data"]').click();
+  await page.locator('#globalFreqMode').selectOption('mean');
+  await page.locator('#globalFreqMode').selectOption('manual');
+  await page.locator('#targetFreq').fill('10');
+  const globalTargetCSV=await exportDisplay('browser-preview/frequency-global-target.csv');
+  assert.ok(Math.abs(coordinateFor(globalTargetCSV,0)-3300*10/9.5)<1e-7,'Global Manual target must affect untouched subplots');
+  assert.ok(Math.abs(coordinateFor(globalTargetCSV,1)-3300*10/9.7)<1e-7,'Global Manual target must scale every curve from its own source frequency');
+
+  await page.locator('button.tab-btn[data-tab="subplots"]').click();
+  await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+  await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('manual');
+  await page.locator('.subplot').first().locator('[data-field="localFreqTarget"]').fill('9.8');
+  const localTargetCSV=await exportDisplay('browser-preview/frequency-local-target.csv');
+  assert.ok(Math.abs(coordinateFor(localTargetCSV,0)-3300*9.8/9.5)<1e-7,'Local Manual target must override the global target');
+  assert.ok(Math.abs(coordinateFor(localTargetCSV,1)-3300*9.8/9.7)<1e-7,'Local Manual target must apply to every curve in the subplot');
+
+  // Restore the baseline fixture with missing source frequency metadata for the existing regression.
+  await page.locator('button.tab-btn[data-tab="data"]').click();
+  await page.locator('#targetFreq').fill('9.85');
+  await page.locator('#clearDataBtn').click();
+  await page.locator('#dataFiles').setInputFiles({name:'synthetic-cw.csv',mimeType:'text/csv',buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n3340,1,2\n3350,0,0\n')});
+  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim()==='2',null,{timeout:20000});
+  await page.locator('button.tab-btn[data-tab="subplots"]').click();
+  await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+  await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('mean');
+  await page.locator('button.tab-btn[data-tab="scaling"]').click();
+  await page.locator('#baselineMode').selectOption('region');
+  await page.locator('#baselineRegions').fill('3300-3310');
   const baselineCSV=await exportDisplay('browser-preview/region-baseline.csv');
   const valueFor=(data,curve,field)=>{
     const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate'),k=data.header.indexOf('Y_display');

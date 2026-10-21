@@ -2,6 +2,10 @@
 
 ## Unreleased (preview branch)
 
+- Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.
+- Make the source microwave frequency editable for 1D magnetic-field datasets, including CSV files without frequency metadata; show no scale until a valid source frequency is supplied.
+- Add Chromium coverage for default Local mean, global Manual target, local Manual target, and CSV source-frequency entry.
+
 - Restore automatic Z limits when double-clicking the 2D colorbar after wheel zoom; preserve the existing heatmap-body double-click behavior for X/Y axes.
 - Add Chromium regression coverage for colorbar wheel zoom, colorbar double-click reset, and heatmap X/Y reset on both the local preview build and published temporary preview.
 

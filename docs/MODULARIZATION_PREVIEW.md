@@ -95,3 +95,12 @@ npm run build
 新增 Actions 验收使用本地构建页面，同时构建 `911a6a8` 作为迁移前对照。浏览器覆盖旧单曲线和新多曲线 CSV、区域基线、Overlay、Stack 自动/手动正负方向、项目 9/10/11、配置 10、SVG 轴/图例/标注、PNG 尺寸/DPI/解码以及 1440/1100/760/650/420 px 窗口；逐文件比较导出的 CSV、JSON（排除创建时间）、SVG 和 PNG。截图与导出样本在 `spinplot-modularization-acceptance` artifact 中。
 
 [浏览器对照、模块测试与构建（38369179810）](https://github.com/imasenHF/spinplot/actions/runs/38369179810) 全部通过；[公开预览浏览器测试（38369179836）](https://github.com/imasenHF/spinplot/actions/runs/38369179836) 通过；[主站 Pages 发布（38368916198）](https://github.com/imasenHF/imasenhf.github.io/actions/runs/38368916198) 成功。公开预览已加载本轮构建 `index-CdHZZgtg.js`，正式 `/spinplot/` 未改变。首次 CI 的项目重载等待超时已通过测试脚本修订排除，迁移源码保持不变。
+
+
+## 频率校正 Target 模式修复
+
+- 新建子图继续默认使用 `freqMode: local`、`localFreqMode: mean`。
+- 用户切换全局频率模式或修改全局目标频率时，未显式编辑过局部频率设置的 1D 子图切换为继承全局设置；已显式选择 Local/None 或修改 Local target 的子图保留局部覆盖。
+- 修改子图的 Local target mode、Local target / GHz 或本地频率确认项，会自动启用 Local alignment，避免目标值已编辑但模式仍处于 Inherit global 的情况。
+- 频率表中的 `ν raw / GHz` 对一维磁场曲线开放编辑。CSV 等缺少源频率元数据的数据，必须先填写源微波频率；缺少源频率时缩放栏显示 `—`，不会伪装成已完成校正。
+- 新增浏览器端数值回归，分别检查默认 Local mean、全局 Manual target、局部 Manual target 及 CSV 源频率填写。构建、CI 与预览发布结果以对应提交后的 Actions 为准。

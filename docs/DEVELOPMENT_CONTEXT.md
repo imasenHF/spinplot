@@ -43,6 +43,15 @@
 - 主站临时快照已更新：主站仓库提交 [`0f238ea`](https://github.com/imasenHF/imasenhf.github.io/commit/0f238ea62a1be5a8bcb4fd30c4665cb8a087e465)，新应用脚本为 `assets/index-DAzGls40.js`。主站 Pages 发布 [`39684696016`](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39684696016) 成功；更新后的公开 HTTP 检查 [`39684871606`](https://github.com/imasenHF/spinplot/actions/runs/39684871606) 和公开 Chromium 浏览器测试 [`39684871564`](https://github.com/imasenHF/spinplot/actions/runs/39684871564) 均成功。
 - 正式 `main` 分支与 `/spinplot/` 未修改；新行为只存在于隔离预览分支及 `/previews/spinplot-modularization/` 快照。
 
+
+## 频率校正 Target 模式修复
+
+- 新建子图继续默认使用 `freqMode: local`、`localFreqMode: mean`。
+- 用户切换全局频率模式或修改全局目标频率时，未显式编辑过局部频率设置的 1D 子图切换为继承全局设置；已显式选择 Local/None 或修改 Local target 的子图保留局部覆盖。
+- 修改子图的 Local target mode、Local target / GHz 或本地频率确认项，会自动启用 Local alignment，避免目标值已编辑但模式仍处于 Inherit global 的情况。
+- 频率表中的 `ν raw / GHz` 对一维磁场曲线开放编辑。CSV 等缺少源频率元数据的数据，必须先填写源微波频率；缺少源频率时缩放栏显示 `—`，不会伪装成已完成校正。
+- 新增浏览器端数值回归，分别检查默认 Local mean、全局 Manual target、局部 Manual target 及 CSV 源频率填写。构建、CI 与预览发布结果以对应提交后的 Actions 为准。
+
 ## 当前任务 A：colorbar 双击恢复自动 Z 范围（已完成）
 
 状态：已实现、提交、构建、自动回归及公开预览浏览器验收均通过。正式 `main` 未合并。
