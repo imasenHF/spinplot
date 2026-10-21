@@ -56,8 +56,10 @@ try {
     assert.equal(await page.locator('.subplot').first().locator('[data-field="freqMode"]').inputValue(),'local','New subplots default to local alignment');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').inputValue(),'mean','New subplots default to Local mean');
     await page.locator('#freqTable [data-source-frequency="0"]').fill('9.5');
+    await page.locator('#freqTable [data-source-frequency="0"]').press('Tab');
     assert.equal(Number(await page.locator('#freqTable [data-source-frequency="0"]').inputValue()),9.5,'Source frequency entry for first CSV curve must persist');
     await page.locator('#freqTable [data-source-frequency="1"]').fill('9.7');
+    await page.locator('#freqTable [data-source-frequency="1"]').press('Tab');
     assert.equal(Number(await page.locator('#freqTable [data-source-frequency="1"]').inputValue()),9.7,'Source frequency entry for second CSV curve must persist');
     await page.locator('button.tab-btn[data-tab="scaling"]').click();
     await page.locator('#baselineMode').selectOption('none');
