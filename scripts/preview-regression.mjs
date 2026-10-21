@@ -11,7 +11,7 @@ try{
  fs.rmSync('browser-preview',{recursive:true,force:true});fs.rmSync('browser-baseline',{recursive:true,force:true});
  await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4174/spinplot/'}});
  fs.renameSync('browser-preview','browser-baseline');
- await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4173/spinplot/'}});
+ await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4173/spinplot/',SPINPLOT_TEST_COLORBAR_DBLCLICK:'1'}});
  const compared=[];
  for(const name of fs.readdirSync('browser-baseline').filter(n=>/\.(csv|json|svg)$/.test(n)&&n!=='result.json')){
   let old=fs.readFileSync('browser-baseline/'+name,'utf8'),current=fs.readFileSync('browser-preview/'+name,'utf8');
