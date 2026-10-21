@@ -103,4 +103,4 @@ npm run build
 - 用户切换全局频率模式或修改全局目标频率时，未显式编辑过局部频率设置的 1D 子图切换为继承全局设置；已显式选择 Local/None 或修改 Local target 的子图保留局部覆盖。
 - 修改子图的 Local target mode、Local target / GHz 或本地频率确认项，会自动启用 Local alignment，避免目标值已编辑但模式仍处于 Inherit global 的情况。
 - 频率表中的 `ν raw / GHz` 对一维磁场曲线开放编辑。CSV 等缺少源频率元数据的数据，必须先填写源微波频率；缺少源频率时缩放栏显示 `—`，不会伪装成已完成校正。
-- 新增浏览器端数值回归，分别检查默认 Local mean、全局 Manual target、局部 Manual target 及 CSV 源频率填写。构建、CI 与预览发布结果以对应提交后的 Actions 为准。
+- 验收通过：预览分支数值/二维测试、Vite 构建、Chromium 频率校正与迁移前输出对照（[运行 39689863349](https://github.com/imasenHF/spinplot/actions/runs/39689863349)）；主站 Pages 发布（[运行 39690277099](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39690277099)）；公开资源检查（[运行 39690395700](https://github.com/imasenHF/spinplot/actions/runs/39690395700)）和公开 Chromium 频率/二维交互测试（[运行 39690395696](https://github.com/imasenHF/spinplot/actions/runs/39690395696)）均通过。公开临时页面已同步；正式 `/spinplot/` 未修改。
