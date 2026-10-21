@@ -75,9 +75,18 @@ try {
     assert.ok(Math.abs(coordinateFor(globalTargetCSV,0)-3300*10/9.5)<1e-7,'Global Manual target must affect untouched subplots');
     assert.ok(Math.abs(coordinateFor(globalTargetCSV,1)-3300*10/9.7)<1e-7,'Global Manual target must scale every curve from its own source frequency');
 
+    const openFrequencySettings=async()=>{
+      const card=page.locator('.subplot').first();
+      if(await card.evaluate(el=>el.classList.contains('collapsed')))await card.locator('[data-action="collapse"]').click();
+      const details=card.locator('details.advanced-layout').filter({hasText:'Frequency alignment override'});
+      if(!await details.evaluate(el=>el.open))await details.locator('summary').click();
+    };
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+    await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('manual');
+    await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="localFreqTarget"]').fill('9.8');
     const localTargetCSV=await exportDisplay('browser-preview/frequency-local-target.csv');
     assert.ok(Math.abs(coordinateFor(localTargetCSV,0)-3300*9.8/9.5)<1e-7,'Local Manual target must override the global target');
@@ -90,7 +99,9 @@ try {
     await page.locator('#dataFiles').setInputFiles({name:'synthetic-cw.csv',mimeType:'text/csv',buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n3340,1,2\n3350,0,0\n')});
     await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim()==='2',null,{timeout:20000});
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+    await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('mean');
   }
   await page.locator('button.tab-btn[data-tab="scaling"]').click();
