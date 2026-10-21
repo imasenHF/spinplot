@@ -1,7 +1,7 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-10-13（Asia/Shanghai）
-状态来源：`main` 分支的 `package.json`、`index.html`、`src/interface.js`、`src/twod/`、`README.md`、`CHANGELOG.md` 及现有二维文档。本文描述已确认实现与待验证范围，后续以最新代码为准。
+更新日期：2026-10-22（Asia/Shanghai）
+状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
 
@@ -62,7 +62,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10；正式 main 尚未合并。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。后续新功能开发可基于该模块边界，正式发布需先核对浏览器验收和最新部署。
+预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10；正式 main 尚未合并。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。
@@ -70,4 +70,4 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 3. **完成界面与导出检查**：桌面/窄屏、键盘焦点、控件显隐、子图联动、热图/投影、中文 SVG/PDF，以及保存后重载的视觉一致性。
 4. **逐步整理源码**：避免在未建立等价测试前大规模搬移内联逻辑。具体分层目标及迁移约束参见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
-本文件只记录当前功能边界、已确认决定、限制和待办；逐版本变动保存在 [CHANGELOG.md](CHANGELOG.md)，不追加失效的开发日记。
+本文件记录功能边界、已确认决定、限制和待办；持续开发交接要求见 [DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，逐版本变动保存在 [CHANGELOG.md](CHANGELOG.md)，不追加失效的开发日记。
