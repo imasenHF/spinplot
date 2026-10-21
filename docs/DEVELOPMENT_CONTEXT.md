@@ -34,16 +34,18 @@
 
 ## 最近一次已核查的基线
 
-以下是 2026-10-22 本轮重新检查时的状态，之后的文档提交会改变 HEAD，因此下一次任务仍须重新查询：
+以下状态已在 2026-10-22 重新核对：
 
-- 分支当时的 HEAD：`494df53b144a72608b533b67cdc394e017c3ad42`，提交说明为 `style(spinplot): format two-dimensional UI source`。
-- 该提交已将 `src/twod/ui.js` 从压缩式单行源码格式整理为可维护的多行源码；后续功能修改不应重新压缩该文件。
-- 当时 `src/main.js` 的 blob SHA 为 `59b00e89531d345471c36ee515fdeb2651359f8d`，正文约 117,691 字符。该 SHA 只标识本轮读取的版本，不是永久固定版本。
-- 当时 PR #1 为 open、Draft、未合并。
-- HEAD `494df53` 对应的 `SpinPlot modularization preview` 和 `SpinPlot temporary preview HTTP check` 两项 Actions 均成功（运行 ID 分别为 [38789133853](https://github.com/imasenHF/spinplot/actions/runs/38789133853) 和 [38789133852](https://github.com/imasenHF/spinplot/actions/runs/38789133852)）。这些结果只覆盖该提交，不代表后续修改已通过。
-- 本文建立前，colorbar 双击复原及功率饱和分析尚未实施；没有针对这两项需求的代码提交、构建或浏览器验收。
+- 代码实现提交：[`a47f9cc`](https://github.com/imasenHF/spinplot/commit/a47f9ccbfcda2dff1b054ff38687b8cdf55c80b4)，只修改 `src/main.js` 的 colorbar 双击交互。
+- 浏览器回归扩展：`scripts/preview-browser-smoke.mjs` 检查色标滚轮缩放、色标双击 Auto Z 复原，以及热图主体双击恢复 X/Y；`scripts/preview-regression.mjs` 仅对当前版本启用新增交互测试，避免要求迁移前基线具备新功能。
+- 代码回归与构建：[`39684319918`](https://github.com/imasenHF/spinplot/actions/runs/39684319918) 成功，包含现有数值/CSV/项目兼容/二维测试、TypeScript 检查、Vite 生产构建、Chromium 交互测试及与迁移前导出结果对照。
+- 预览分支最新维护提交：[`1b3e328`](https://github.com/imasenHF/spinplot/commit/1b3e328af054c9ef79818193e902ca78c1a3fe41)，为公开预览浏览器检查启用 colorbar 双击测试；模块化预览工作流 `39684871649` 成功。分支当前 HEAD 应在下一次任务开始时重新查询。
+- 主站临时快照已更新：主站仓库提交 [`0f238ea`](https://github.com/imasenHF/imasenhf.github.io/commit/0f238ea62a1be5a8bcb4fd30c4665cb8a087e465)，新应用脚本为 `assets/index-DAzGls40.js`。主站 Pages 发布 [`39684696016`](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39684696016) 成功；更新后的公开 HTTP 检查 [`39684871606`](https://github.com/imasenHF/spinplot/actions/runs/39684871606) 和公开 Chromium 浏览器测试 [`39684871564`](https://github.com/imasenHF/spinplot/actions/runs/39684871564) 均成功。
+- 正式 `main` 分支与 `/spinplot/` 未修改；新行为只存在于隔离预览分支及 `/previews/spinplot-modularization/` 快照。
 
-## 当前任务 A：colorbar 双击恢复自动 Z 范围
+## 当前任务 A：colorbar 双击恢复自动 Z 范围（已完成）
+
+状态：已实现、提交、构建、自动回归及公开预览浏览器验收均通过。正式 `main` 未合并。
 
 ### 已核实的源码位置
 
@@ -68,9 +70,11 @@
 - 双击热图主体仍按原行为复原 X/Y 轴。
 - 滚轮缩放行为不变。
 - 检查 `git diff -- src/main.js` 或等价的精确文件差异；运行构建与相关二维回归测试；随后检查远程 Actions。
-- 在代码和测试实际完成前，不得把该功能标记为已实现。
+- 已完成验收：`npm ci`、全部现有数值/二维回归、`npm run build`、当前分支 Chromium 交互回归和迁移前输出对照均通过，见 [Actions 39684319918](https://github.com/imasenHF/spinplot/actions/runs/39684319918)。
+- 已在公开临时预览执行同一交互回归，见 [Actions 39684871564](https://github.com/imasenHF/spinplot/actions/runs/39684871564)；静态资源 HTTP 检查通过，见 [Actions 39684871606](https://github.com/imasenHF/spinplot/actions/runs/39684871606)。
+- 新行为仅部署在临时预览；正式 `main` 和 `/spinplot/` 保持不变。
 
-建议提交说明：`2D: restore z range on colorbar double click`。
+代码提交说明：`2D: restore Z range on colorbar double click`。
 
 ## 当前任务 B：二维扫描变量分析与 CW EPR 功率饱和拟合
 

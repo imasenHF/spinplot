@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (preview branch)
+
+- Restore automatic Z limits when double-clicking the 2D colorbar after wheel zoom; preserve the existing heatmap-body double-click behavior for X/Y axes.
+- Add Chromium regression coverage for colorbar wheel zoom, colorbar double-click reset, and heatmap X/Y reset on both the local preview build and published temporary preview.
+
 ## 0.9.2
 
 - Give button rows vertical clearance and place Auto Z in its own action row.
