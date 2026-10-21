@@ -56,7 +56,9 @@ try {
     assert.equal(await page.locator('.subplot').first().locator('[data-field="freqMode"]').inputValue(),'local','New subplots default to local alignment');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').inputValue(),'mean','New subplots default to Local mean');
     await page.locator('#freqTable [data-source-frequency="0"]').fill('9.5');
+    assert.equal(await page.locator('#freqTable [data-source-frequency="0"]').inputValue(),'9.500000','Source frequency entry for first CSV curve must persist');
     await page.locator('#freqTable [data-source-frequency="1"]').fill('9.7');
+    assert.equal(await page.locator('#freqTable [data-source-frequency="1"]').inputValue(),'9.700000','Source frequency entry for second CSV curve must persist');
     await page.locator('button.tab-btn[data-tab="scaling"]').click();
     await page.locator('#baselineMode').selectOption('none');
     const localMeanCSV=await exportDisplay('browser-preview/frequency-local-mean.csv');
