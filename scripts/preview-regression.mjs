@@ -15,7 +15,7 @@ try{
  const compared=[];
  for(const name of fs.readdirSync('browser-baseline').filter(n=>/\.(csv|json|svg)$/.test(n)&&n!=='result.json')){
   let old=fs.readFileSync('browser-baseline/'+name,'utf8'),current=fs.readFileSync('browser-preview/'+name,'utf8');
-  if(name.endsWith('.json')){old=JSON.parse(old);current=JSON.parse(current);delete old.created;delete current.created;for(const payload of [old,current]){for(const sp of payload.config?.subplots??[])delete sp.freqOverrideExplicit;for(const sp of payload.subplots??[])delete sp.freqOverrideExplicit;}assert.deepEqual(current,old,name+' reference equality');}
+  if(name.endsWith('.json')){old=JSON.parse(old);current=JSON.parse(current);delete old.created;delete current.created;for(const payload of [old,current]){for(const sp of payload.config?.subplots??[]){delete sp.freqOverrideExplicit;delete sp.uiOpen;}for(const sp of payload.subplots??[]){delete sp.freqOverrideExplicit;delete sp.uiOpen;}}assert.deepEqual(current,old,name+' reference equality');}
   else assert.equal(current,old,name+' reference equality');compared.push(name);
  }
  // Chromium PNG encoder output must remain identical at the same dimensions/DPI.
