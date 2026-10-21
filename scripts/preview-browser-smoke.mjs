@@ -78,7 +78,9 @@ try {
     const openFrequencySettings=async()=>{
       const card=page.locator('.subplot').first();
       if(await card.evaluate(el=>el.classList.contains('collapsed')))await card.locator('[data-action="collapse"]').click();
-      const details=card.locator('details.advanced-layout').filter({hasText:'Frequency alignment override'});
+      const processing=card.locator('details[data-section="processing"]');
+      if(!await processing.evaluate(el=>el.open))await processing.locator('summary').click();
+      const details=processing.locator('details.advanced-layout').filter({hasText:'Frequency alignment / g frequency'});
       if(!await details.evaluate(el=>el.open))await details.locator('summary').click();
     };
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
