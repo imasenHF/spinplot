@@ -148,7 +148,25 @@ try {
     await load(colorbarProject,'colorbar-dblclick.spinplot.json');
     const canvas=page.locator('#plotCanvas'),bounds=await canvas.boundingBox();
     assert.ok(bounds&&bounds.width>0&&bounds.height>0,'2D canvas must be visible');
-    const barX=bounds.x+bounds.width*0.93,barY=bounds.y+bounds.height*0.5;
+    // Locate the vertical color gradient in canvas pixels rather than assuming a fixed layout fraction.
+    const barPoint=await canvas.evaluate(el=>{
+      const ctx=el.getContext('2d'),w=el.width,h=el.height,p=ctx.getImageData(0,0,w,h).data;
+      const xStart=Math.floor(w*0.65),xEnd=Math.floor(w*0.99),yStart=Math.floor(h*0.1),yEnd=Math.floor(h*0.95);
+      const counts=new Array(w).fill(0);let bestX=-1,bestCount=0;
+      for(let x=xStart;x<xEnd;x++){
+        const colors=new Set();
+        for(let y=yStart;y<yEnd;y++){const i=(y*w+x)*4;if(p[i+3])colors.add((p[i]<<16)|(p[i+1]<<8)|p[i+2]);}
+        counts[x]=colors.size;if(colors.size>bestCount){bestCount=colors.size;bestX=x;}
+      }
+      if(bestX<0)return {colors:0};
+      const threshold=Math.max(20,Math.floor(bestCount*0.8));let left=bestX,right=bestX;
+      while(left>xStart&&counts[left-1]>=threshold)left--;
+      while(right<xEnd-1&&counts[right+1]>=threshold)right++;
+      const rect=el.getBoundingClientRect();
+      return {x:rect.left+((left+right+1)/2)*(rect.width/w),y:rect.top+rect.height*0.5,colors:bestCount,width:right-left+1};
+    });
+    assert.ok(barPoint.colors>20,'A vertical colorbar gradient must be present in the 2D canvas');
+    const barX=barPoint.x,barY=barPoint.y;
     await page.mouse.move(barX,barY);
     await page.mouse.wheel(0,120);
     await page.waitForTimeout(150);
