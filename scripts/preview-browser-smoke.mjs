@@ -212,16 +212,13 @@ try {
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
-    await load(mixed,'2d-view-modes.spinplot.json');
+    const source2D=mixed.config.subplots.find(sp=>sp.twoD);
+    const extraView=(title,row)=>({...JSON.parse(JSON.stringify(source2D)),title,mode:'overlay',gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}});
+    const viewMixed={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:4,cols:1,spans:'1 / 1 / 1 / 1'},subplots:[...mixed.config.subplots,extraView('Variable scan',3),extraView('Overlap',4)]}};
+    await load(viewMixed,'2d-view-modes.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    await page.locator('.subplot').nth(1).locator('[data-action="dup"]').click();
-    await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
-    await page.locator('[data-field="title"]').nth(2).fill('Variable scan');
     await page.locator('[data-field="mode"]').nth(2).selectOption('scan');
-    await page.locator('.subplot').nth(1).locator('[data-action="dup"]').click();
-    await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
-    await page.locator('[data-field="title"]').nth(2).fill('Overlap');
-    await page.locator('[data-field="mode"]').nth(2).selectOption('overlap');
+    await page.locator('[data-field="mode"]').nth(3).selectOption('overlap');
     await page.waitForTimeout(250);
     assert.equal(errors.length,0,'2D scan/overlap render error: '+errors.join(' | '));
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
