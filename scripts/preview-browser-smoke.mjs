@@ -204,12 +204,21 @@ try {
   await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
   const [gDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await gDownload.saveAs('browser-preview/field-g.svg');assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g factor/);assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g marker/);
   const matrix={name:'Synthetic 2D',x:{name:'Field',unit:'G',values:[3300,3320,3350]},y:{name:'Microwave attenuation',unit:'dB',values:[0,10]},real:[[1,2,3],[2,4,6]],imag:[[0,0,0],[0,0,0]],metadata:{}};
-  const mixed={...fieldProject,rawCurves:[...fieldProject.rawCurves,{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],config:{...fieldProject.config,controls:{...fieldProject.config.controls,canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},layout:{...project.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[fieldProject.config.subplots[0],{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:2,twoD:{index:2,settings:{}}}]}};
+  const mixed={...fieldProject,rawCurves:[...fieldProject.rawCurves,{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],config:{...fieldProject.config,controls:{...fieldProject.config.controls,canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},layout:{...project.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[fieldProject.config.subplots[0],{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:2,twoD:{index:2,settings:{showScanCorrelation:false}}}]}};
   await load(mixed,'mixed.spinplot.json');await save('browser-preview/mixed.json');
   await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');assert.match(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Synthetic 2D/);
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
+  // Current-branch-only test: the right-side scan-correlation panel is rendered in vector export.
+  const correlationMixed={...mixed,config:{...mixed.config,subplots:mixed.config.subplots.map(sp=>sp.twoD?{...sp,twoD:{...sp.twoD,settings:{...sp.twoD.settings,showScanCorrelation:true}}}:sp)}};
+  await load(correlationMixed,'scan-correlation.spinplot.json');
+  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+  const [correlationDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+  await correlationDownload.saveAs('browser-preview/scan-correlation.svg');
+  const correlationSvg=fs.readFileSync('browser-preview/scan-correlation.svg','utf8');
+  assert.match(correlationSvg,/Y projection vs scan/);
+  assert.match(correlationSvg,/Microwave attenuation/);
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.
   if (process.env.SPINPLOT_TEST_COLORBAR_DBLCLICK === '1') {
