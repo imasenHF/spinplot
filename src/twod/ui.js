@@ -29,7 +29,7 @@ export function defaults(d) {
     showProjectionRanges: true,
     showXProjection: true,
     showYProjection: true,
-    showScanCorrelation: true,
+    showScanCorrelation: false,
     scanAxisMode: 'native',
     scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
     scanPowerReferenceAttenuationDB: Number.isFinite(referenceAttenuation) ? referenceAttenuation : '',
@@ -163,7 +163,8 @@ export function controls(card, sp, d, onChange) {
   const s = migrate(d, sp.twoD.settings),
     root = card.querySelector('.subplot-body');
   if (!s.sharedControls) {
-    sp.mode = s.mode === 'stack' ? 'stack' : 'overlay';
+    if (!['overlay', 'stack', 'overlap', 'scan'].includes(sp.mode))
+      sp.mode = s.mode === 'stack' ? 'stack' : 'overlay';
     sp.offsetScale = s.offset;
     for (const a of ['x', 'y']) {
       sp[a + 'UseGlobal'] = false;
@@ -229,7 +230,8 @@ export function controls(card, sp, d, onChange) {
   box.ontoggle = () => {
     s.open = box.open;
   };
-  const projection = section('Projections').body;
+  const projectionSection = section('Projections');
+  const projection = projectionSection.body;
   function input(parent, key, title, type = 'text') {
     const l = document.createElement('label');
     l.className = 'control-label';
@@ -309,10 +311,10 @@ export function controls(card, sp, d, onChange) {
     ['imag', 'Imaginary'],
     ['magnitude', 'Magnitude'],
   ]);
-  input(body, 'step', 'Stack every N traces', 'number');
+  input(body, 'step', 'Plot every N traces', 'number');
   const stackInput = body.querySelector('[data-twod=step]');
-  stackInput.disabled = sp.mode !== 'stack';
-  stackInput.title = 'Applies to Stack view';
+  stackInput.disabled = !['stack', 'overlap'].includes(sp.mode);
+  stackInput.title = 'Applies to Stack and Overlap views';
   check(body, 'swap', 'Swap axes', () => {
     const v = orient(d, s.component, s.swap);
     for (const [k, a] of [
@@ -340,13 +342,13 @@ export function controls(card, sp, d, onChange) {
       ['rms', 'RMS'],
       ['sum', 'Sum'],
     ]);
-  check(projection, 'showScanCorrelation', 'Plot Y projection vs scan variable');
-  const scanAxisSelect = select(projection, 'scanAxisMode', 'Correlation X axis', [
+  const scanAxisSelect = select(projection, 'scanAxisMode', 'Variable-scan X axis', [
     ['native', 'Acquired scan variable'],
     ['power', 'Microwave power (mW)'],
   ]);
+  scanAxisSelect.closest('label').classList.add('scan-mode-only');
   const powerReferenceControls = document.createElement('div');
-  powerReferenceControls.className = 'grid2';
+  powerReferenceControls.className = 'grid2 scan-power-reference-controls';
   powerReferenceControls.style.gridColumn = '1 / -1';
   powerReferenceControls.hidden = s.scanAxisMode !== 'power';
   projection.append(powerReferenceControls);
@@ -357,13 +359,16 @@ export function controls(card, sp, d, onChange) {
     onScanAxisChange();
     powerReferenceControls.hidden = scanAxisSelect.value !== 'power';
   };
+  const projectionCoordinateFields = new Map();
   for (const [key, title] of [
     ['projectionXMin', 'Y projection: X min'],
     ['projectionXMax', 'Y projection: X max'],
     ['projectionYMin', 'X projection: Y min'],
     ['projectionYMax', 'X projection: Y max'],
-  ])
+  ]) {
     input(projection, key, title, 'number');
+    projectionCoordinateFields.set(key, projection.querySelector('[data-twod=' + key + ']').closest('label'));
+  }
   for (const [key, title] of [
     ['xProjectionMin', 'Intensity min (auto)'],
     ['xProjectionMax', 'Intensity max (auto)'],
@@ -373,7 +378,7 @@ export function controls(card, sp, d, onChange) {
     input(projection, key, title, 'number');
   for (const [key, label] of [
     ['showXProjection', 'Show X projection'],
-    ['showYProjection', 'Show Y projection (when correlation is off)'],
+    ['showYProjection', 'Show Y projection'],
   ])
     check(projection, key, label, () => {
       s.showProjections = true;
@@ -452,6 +457,13 @@ export function controls(card, sp, d, onChange) {
   input(gaps, 'projectionGapY', 'Top projection gap (px)', 'number');
   const mode = card.querySelector('[data-field=mode]');
   mode.querySelector('[value=overlay]').textContent = 'Heatmap';
+  for (const [value, label] of [['overlap', 'Overlap'], ['scan', 'Variable scan']]) {
+    if (!mode.querySelector('[value=' + value + ']')) {
+      const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
+    }
+  }
+  mode.value = sp.mode;
+  s.mode = sp.mode === 'stack' ? 'stack' : sp.mode === 'overlap' ? 'overlap' : sp.mode === 'scan' ? 'scan' : 'heatmap';
   for (const manager of card.querySelectorAll('.curve-manager')) {
     manager.classList.add('matrix-data');
     manager.children[0].hidden = true;
@@ -469,14 +481,27 @@ export function controls(card, sp, d, onChange) {
     row.title = d.name;
     list.replaceChildren(row);
   }
+  const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
+  projectionSection.box.querySelector('summary').textContent = sp.mode === 'scan' ? 'Variable scan settings' : 'Projections';
+  projectionSection.box.hidden = sp.mode === 'overlap';
+  scanAxisSelect.closest('label').hidden = sp.mode !== 'scan';
+  powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
+  for (const key of ['xMode', 'yMode']) projection.querySelector('[data-twod=' + key + ']').closest('label').hidden = sp.mode === 'overlap';
+  for (const key of ['projectionXMin', 'projectionXMax', 'projectionYMin', 'projectionYMax']) {
+    const label = projectionCoordinateFields.get(key); label.hidden = sp.mode === 'overlap';
+    if (key === 'projectionYMin') label.firstChild.textContent = sp.mode === 'scan' ? 'Scan variable min' : 'X projection: Y min';
+    if (key === 'projectionYMax') label.firstChild.textContent = sp.mode === 'scan' ? 'Scan variable max' : 'X projection: Y max';
+  }
+  for (const key of ['xProjectionMin', 'xProjectionMax', 'yProjectionMin', 'yProjectionMax', 'showXProjection', 'showYProjection', 'showXProjectionRange', 'showYProjectionRange', 'showXProjectionTitle', 'showYProjectionTitle', 'xProjectionTitle', 'yProjectionTitle']) {
+    const el = projection.querySelector('[data-twod=' + key + ']'); if (el) el.closest('label,details').hidden = derivedView;
+  }
+  for (const key of ['zUseGlobal', 'zMin', 'zMax', 'colorbarLabel', 'hideColorbarTitle', 'showColorbar']) {
+    const el = card.querySelector('[data-twod=' + key + ']'); if (el) el.closest('label').hidden = derivedView;
+  }
+  colors.closest('details').hidden = derivedView;
   const summary = card.querySelector('.subplot-summary');
-  summary.textContent =
-    '1 dataset · ' +
-    (sp.mode === 'stack' ? 'Stack' : 'Heatmap') +
-    ' · ' +
-    d.x.values.length +
-    ' × ' +
-    d.y.values.length;
+  const modeLabel = ({overlay:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
+  summary.textContent = '1 dataset · ' + modeLabel + ' · ' + d.x.values.length + ' × ' + d.y.values.length;
 }
 export function projectionCsv(d, s) {
   const { v, p, xr, yr, pxr, pyr } = model(d, s),
@@ -506,12 +531,21 @@ function isAttenuationAxis(axis) {
     /atten|power|功率|衰减/i.test(String(axis?.name || ''));
 }
 
+function fullRangeSettings(d, s) {
+  const v = orient(d, s.component, s.swap), x0 = v.x.values[0], x1 = v.x.values.at(-1), y0 = v.y.values[0], y1 = v.y.values.at(-1);
+  return {...s,xMin:Math.min(x0,x1),xMax:Math.max(x0,x1),yMin:Math.min(y0,y1),yMax:Math.max(y0,y1),zMin:'',zMax:''};
+}
+export function overlapData(d, s) {
+  migrate(d,s);const m=model(d,fullRangeSettings(d,s)),{v}=m;
+  return {valid:true,xAxis:{name:v.x.name,unit:v.x.unit},scanAxis:{name:v.y.name,unit:v.y.unit},traces:stackRows(m,s).map(j=>({index:j,scan:v.y.values[j],x:v.x.values.slice(),y:v.z[j].slice()}))};
+}
+
 export function scanCorrelationData(d, s) {
   migrate(d, s);
   const oriented = orient(d, s.component, s.swap);
   if (s.scanAxisMode === 'power' && !isAttenuationAxis(oriented.y))
     return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis: { name: oriented.y.name, unit: oriented.y.unit } };
-  const { v, p, pyr } = model(d, s);
+  const { v, p, pyr } = model(d, fullRangeSettings(d, s));
   let x = v.y.values.slice(),
     xAxis = { name: v.y.name, unit: v.y.unit };
   if (s.scanAxisMode === 'power') {
@@ -643,8 +677,7 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     w = box.cellW,
     h = box.cellH,
     hasTop = s.showProjections && s.showXProjection !== false,
-    hasCorrelation = s.showScanCorrelation !== false,
-    hasSide = s.showProjections && s.showYProjection !== false && !hasCorrelation,
+    hasSide = s.showProjections && s.showYProjection !== false,
     proj = hasTop || hasSide,
     cb = s.showColorbar && s.mode === 'heatmap',
     axisSize = options.axisSize || 14;
@@ -656,8 +689,7 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     gSpace = gX ? Math.max(34, options.g.titleDistance + axisSize + 8) : 0;
   return {
     left: Math.max(52, options.yTitleDistance || 35),
-    right: (hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20) +
-      (hasCorrelation ? w * 0.30 + 40 : 0),
+    right: hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20,
     top: hasTop
       ? (title.trim() ? 62 : 40) + topH + gapY + gSpace
       : (title.trim() ? 65 : 42) + (gX ? 34 : 0),
@@ -666,7 +698,7 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     gapY,
     topH,
     gSpace,
-    rightFraction: (hasSide ? 0.14 : 0) + (hasCorrelation ? 0.30 : 0),
+    rightFraction: hasSide ? 0.14 : 0,
   };
 }
 export function sharedMainInsets(entries) {
@@ -719,8 +751,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     { v, p, xr, yr, pxr, pyr, xi, yi, zmin, zmax, max } = m,
     { cellX: cx, cellY: cy, cellW: w, cellH: h } = box,
     hasTop = s.showProjections && s.showXProjection !== false,
-    hasCorrelation = s.showScanCorrelation !== false,
-    hasSide = s.showProjections && s.showYProjection !== false && !hasCorrelation,
+    hasSide = s.showProjections && s.showYProjection !== false,
     proj = hasTop || hasSide,
     cb = s.showColorbar && s.mode === 'heatmap',
     stops = colorStops(s, options),
@@ -1079,66 +1110,6 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ctx.restore();
     }
   }
-  let scanCorrelationRegion = null;
-  if (hasCorrelation) {
-    const data = scanCorrelationData(d, s),
-      panel = {
-        x: cb ? bar.x + bar.w + 20 : x + pw + 20,
-        y,
-        w: w * 0.30,
-        h: ph,
-      },
-      plot = { x: panel.x + 46, y: panel.y, w: panel.w - 56, h: panel.h };
-    scanCorrelationRegion = { ...panel };
-    text(s.scanAxisMode === 'power' ? 'Y projection vs power' : 'Y projection vs scan', panel.x + panel.w / 2, cy + 10, tick);
-    if (!data.valid || plot.w < 24 || plot.h < 30) {
-      text(data.reason || 'Scan correlation panel is too small', panel.x + panel.w / 2, panel.y + panel.h / 2, tick);
-    } else {
-      let [xmin, xmax] = extent(data.x, data.x.map((_, i) => i)),
-        [ymin, ymax] = extent(data.y, data.y.map((_, i) => i));
-      const xpad = (xmax - xmin) * 0.05,
-        ypad = (ymax - ymin) * 0.05;
-      xmin -= xpad;
-      xmax += xpad;
-      ymin -= ypad;
-      ymax += ypad;
-      const SX = (value) => plot.x + ((value - xmin) / (xmax - xmin)) * plot.w,
-        SY = (value) => plot.y + plot.h - ((value - ymin) / (ymax - ymin)) * plot.h,
-        xTicks = Array.from({ length: 5 }, (_, k) => xmin + ((xmax - xmin) * k) / 4),
-        yTicks = Array.from({ length: 5 }, (_, k) => ymin + ((ymax - ymin) * k) / 4),
-        xf = tickFormatter(xTicks, options.yTickFormat),
-        yf = tickFormatter(yTicks, options.xTickFormat);
-      if (options.grid) {
-        ctx.save();
-        ctx.strokeStyle = theme.majorGrid;
-        ctx.lineWidth = 0.5;
-        for (let k = 1; k < 4; k++) {
-          ctx.beginPath();
-          ctx.moveTo(SX(xTicks[k]), plot.y);
-          ctx.lineTo(SX(xTicks[k]), plot.y + plot.h);
-          ctx.moveTo(plot.x, SY(yTicks[k]));
-          ctx.lineTo(plot.x + plot.w, SY(yTicks[k]));
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-      clip(plot, () => line(data.x.map((_, i) => i), (i) => [SX(data.x[i]), SY(data.y[i])], projectionColor(s, options)));
-      border(plot);
-      for (let k = 0; k < xTicks.length; k++) {
-        const value = xTicks[k];
-        text(xf.format(value), SX(value), plot.y + plot.h + tick + 3, tick, k === 0 ? 'left' : k === xTicks.length - 1 ? 'right' : 'center');
-      }
-      for (const value of yTicks) text(yf.format(value), plot.x - 6, SY(value), tick, 'right');
-      if (xf.exponent) text(xf.multiplier, plot.x + plot.w, plot.y + plot.h + tick * 2 + 7, tick, 'right');
-      if (yf.exponent) text(yf.multiplier, plot.x - 6, plot.y - 10, tick, 'right');
-      text(data.xAxis.name + (data.xAxis.unit ? ' (' + data.xAxis.unit + ')' : ''), plot.x + plot.w / 2, plot.y + plot.h + (options.xTitleDistance || 20) + tick + 8, axisSize);
-      ctx.save();
-      ctx.translate(panel.x + 12, plot.y + plot.h / 2);
-      ctx.rotate(-Math.PI / 2);
-      text(data.yAxis.name, 0, 0, axisSize);
-      ctx.restore();
-    }
-  }
   ctx.restore();
   return {
     x0: x,
@@ -1153,7 +1124,6 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     twoD: true,
     titleCenter: x + pw / 2,
     projectionRegions,
-    scanCorrelationRegion,
     colorbar: cb ? bar : null,
     zmin,
     zmax,

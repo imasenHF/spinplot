@@ -210,16 +210,22 @@ try {
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');assert.match(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Synthetic 2D/);
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
-  if (process.env.SPINPLOT_TEST_SCAN_CORRELATION === '1') {
-    // Current-branch-only test: the right-side scan-correlation panel is rendered in vector export.
-    const correlationMixed={...mixed,config:{...mixed.config,subplots:mixed.config.subplots.map(sp=>sp.twoD?{...sp,twoD:{...sp.twoD,settings:{...sp.twoD.settings,showScanCorrelation:true}}}:sp)}};
-    await load(correlationMixed,'scan-correlation.spinplot.json');
+  assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
+  if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
+    await load(mixed,'2d-view-modes.spinplot.json');
+    await page.locator('.subplot').nth(1).locator('[data-action="dup"]').click();
+    await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
+    await page.locator('[data-field="title"]').nth(2).fill('Variable scan');
+    await page.locator('[data-field="mode"]').nth(2).selectOption('scan');
+    await page.locator('.subplot').nth(1).locator('[data-action="dup"]').click();
+    await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
+    await page.locator('[data-field="title"]').nth(2).fill('Overlap');
+    await page.locator('[data-field="mode"]').nth(2).selectOption('overlap');
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
-    const [correlationDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
-    await correlationDownload.saveAs('browser-preview/scan-correlation.svg');
-    const correlationSvg=fs.readFileSync('browser-preview/scan-correlation.svg','utf8');
-    assert.match(correlationSvg,/Y projection vs scan/);
-    assert.match(correlationSvg,/Microwave attenuation/);
+    const [viewsDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await viewsDownload.saveAs('browser-preview/2d-view-modes.svg');
+    const viewsSvg=fs.readFileSync('browser-preview/2d-view-modes.svg','utf8');
+    assert.match(viewsSvg,/Variable scan/);assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
   }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {axisKind,fieldToGauss} from './core.js';
-import {defaults,render,projectionColor,projectionCsv,scanCorrelationData,stackRows,model,plotInsets,sharedMainInsets,fitMainColumns} from './ui.js';
+import {defaults,render,projectionColor,projectionCsv,scanCorrelationData,overlapData,stackRows,model,plotInsets,sharedMainInsets,fitMainColumns} from './ui.js';
 for(const [name,unit,kind]of [['Power','mW','power'],['Angle','deg','angle'],['Temperature','K','temperature'],['Modulation amplitude','mT','modulation'],['Delay','ns','time'],['Field','mT','field']])assert.equal(axisKind({name,unit}),kind);
 assert.equal(fieldToGauss({name:'Modulation amplitude',unit:'G'}),null);
 assert.equal(fieldToGauss({name:'Field',unit:'mT'}),10);
@@ -12,7 +12,7 @@ console.log('Shared palette, title center, both magnetic-axis orientations, unit
 
 const ms=defaults(d);assert.equal(ms.projectionGapX,20);assert.equal(ms.projectionGapY,20);ms.mode='stack';ms.step=1;assert.equal(stackRows(model(d,ms),ms).length,2);ms.step=2;assert.equal(stackRows(model(d,ms),ms).length,1);
 const projectionDefaults=defaults(d);projectionDefaults.showScanCorrelation=false;const prs=draw(projectionDefaults).g.projectionRegions;assert.equal(prs.length,2);assert.equal(prs[0].projection,'top');assert.equal(prs[1].projection,'side');assert.equal(prs[0].xmin,300);assert.equal(prs[1].ymax,2);
-const correlationDefaults=defaults(d),correlationDraw=draw(correlationDefaults);assert(correlationDraw.g.scanCorrelationRegion);assert(correlationDraw.texts.some(a=>String(a[0]).includes('Y projection vs scan')));
+const correlationDefaults=defaults(d),correlationDraw=draw(correlationDefaults);assert.equal(correlationDefaults.showScanCorrelation,false);assert.equal(correlationDraw.g.scanCorrelationRegion,undefined);assert(!correlationDraw.texts.some(a=>String(a[0]).includes('Y projection vs scan')));
 const limits=defaults(d);limits.xProjectionMin=-10;limits.xProjectionMax=10;assert.equal(draw(limits).g.projectionRegions[0].ymin,-10);assert.equal(draw(limits).g.projectionRegions[0].ymax,10);
 console.log('Projection geometry, intensity overrides, default gaps and stack decimation passed');
 
@@ -32,7 +32,7 @@ const powerSweep={
  metadata:{setting:{lineEdit_MB_Power:'1.0',lineEdit_MB_Attenuation:'20'}}
 };
 const powerSettings=defaults(powerSweep);
-assert.equal(powerSettings.showScanCorrelation,true);
+assert.equal(powerSettings.showScanCorrelation,false);
 assert.equal(powerSettings.scanPowerReferenceMW,1);
 assert.equal(powerSettings.scanPowerReferenceAttenuationDB,20);
 let corr=scanCorrelationData(powerSweep,powerSettings);
@@ -52,4 +52,5 @@ assert.equal(scanCorrelationData(powerSweep,powerSettings).valid,false);
 const nonPowerSweep={...powerSweep,y:{name:'Time',unit:'ms',values:[0,1,2]}};
 powerSettings.scanPowerReferenceMW=1;
 assert.equal(scanCorrelationData(nonPowerSweep,powerSettings).valid,false);
+const overlapSettings=defaults(powerSweep);overlapSettings.step=1;const overlay=overlapData(powerSweep,overlapSettings);assert.equal(overlay.valid,true);assert.deepEqual(overlay.xAxis,{name:'Field',unit:'G'});assert.deepEqual(overlay.scanAxis,{name:'Microwave attenuation',unit:'dB'});assert.equal(overlay.traces.length,3);assert.deepEqual(overlay.traces[1].x,[3000,3001,3002]);assert.deepEqual(overlay.traces[1].y,[2,4,6]);overlapSettings.step=2;assert.equal(overlapData(powerSweep,overlapSettings).traces.length,2);
 console.log('Scan-correlation statistics, metadata-derived power reference, attenuation-to-mW conversion and invalid calibration guards passed');

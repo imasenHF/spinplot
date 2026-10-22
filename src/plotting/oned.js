@@ -801,6 +801,10 @@ export function renderFigure(
         ctx.stroke();
         ctx.restore();
       });
+      if (sp.renderNotice) {
+        ctx.save();ctx.fillStyle=theme.text;ctx.font=`${Math.max(9,tickSize-1)}px ${font}`;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(String(sp.renderNotice),x0+pw/2,y0+ph/2,Math.max(20,pw-12));ctx.restore();
+      }
       drawMeasurements(ctx, sp, X, { x0, y0, pw, ph }, font);
       state.labelRange = m.ymax - m.ymin;
       const geom = { x0, y0, pw, ph };
