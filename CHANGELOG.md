@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add a right-side scan-correlation plot for common 2D EPR sweeps, using the selected Y-projection statistic.
+- Add optional dB attenuation to microwave-power conversion with explicit reference power and reference attenuation; missing calibration is reported rather than inferred.
+
+
 ## Unreleased (preview branch)
 
 - Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.

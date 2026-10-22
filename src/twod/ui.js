@@ -3,7 +3,10 @@ import { orient, projections, validate, axisKind, fieldToGauss } from './core.js
 import { tickFormatter } from './ticks.js';
 import { COLOR_SCHEMES } from './palettes.js';
 export function defaults(d) {
-  const swap = (axisKind(d.y) === 'field' && axisKind(d.x) !== 'field') || axisKind(d.x) === 'time',
+  const setting = d.metadata?.setting || {},
+    referencePower = Number(setting.lineEdit_MB_Power),
+    referenceAttenuation = Number(setting.lineEdit_MB_Attenuation),
+    swap = (axisKind(d.y) === 'field' && axisKind(d.x) !== 'field') || axisKind(d.x) === 'time',
     v = orient(d, 'real', swap),
     xMin = Math.min(v.x.values[0], v.x.values.at(-1)),
     xMax = Math.max(v.x.values[0], v.x.values.at(-1)),
@@ -26,6 +29,10 @@ export function defaults(d) {
     showProjectionRanges: true,
     showXProjection: true,
     showYProjection: true,
+    showScanCorrelation: true,
+    scanAxisMode: 'native',
+    scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
+    scanPowerReferenceAttenuationDB: Number.isFinite(referenceAttenuation) ? referenceAttenuation : '',
     showXProjectionRange: true,
     showYProjectionRange: true,
     showXProjectionTitle: true,
@@ -278,6 +285,7 @@ export function controls(card, sp, d, onChange) {
     };
     l.append(e);
     parent.append(l);
+    return e;
   }
   function check(parent, key, title, change) {
     const l = document.createElement('label'),
@@ -332,6 +340,23 @@ export function controls(card, sp, d, onChange) {
       ['rms', 'RMS'],
       ['sum', 'Sum'],
     ]);
+  check(projection, 'showScanCorrelation', 'Plot Y projection vs scan variable');
+  const scanAxisSelect = select(projection, 'scanAxisMode', 'Correlation X axis', [
+    ['native', 'Acquired scan variable'],
+    ['power', 'Microwave power (mW)'],
+  ]);
+  const powerReferenceControls = document.createElement('div');
+  powerReferenceControls.className = 'grid2';
+  powerReferenceControls.style.gridColumn = '1 / -1';
+  powerReferenceControls.hidden = s.scanAxisMode !== 'power';
+  projection.append(powerReferenceControls);
+  input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power P₀ (mW)', 'number');
+  input(powerReferenceControls, 'scanPowerReferenceAttenuationDB', 'Reference attenuation A₀ (dB)', 'number');
+  const onScanAxisChange = scanAxisSelect.onchange;
+  scanAxisSelect.onchange = () => {
+    onScanAxisChange();
+    powerReferenceControls.hidden = scanAxisSelect.value !== 'power';
+  };
   for (const [key, title] of [
     ['projectionXMin', 'Y projection: X min'],
     ['projectionXMax', 'Y projection: X max'],
@@ -347,8 +372,8 @@ export function controls(card, sp, d, onChange) {
   ])
     input(projection, key, title, 'number');
   for (const [key, label] of [
-    ['showXProjection', 'Show projection'],
-    ['showYProjection', 'Show projection'],
+    ['showXProjection', 'Show X projection'],
+    ['showYProjection', 'Show Y projection (when correlation is off)'],
   ])
     check(projection, key, label, () => {
       s.showProjections = true;
@@ -476,6 +501,51 @@ export function projectionCsv(d, s) {
   for (let j = 0; j < v.y.values.length; j++) lines.push('Y,' + v.y.values[j] + ',' + p.y[j]);
   return lines.join('\n');
 }
+function isAttenuationAxis(axis) {
+  return String(axis?.unit || '').trim().toLowerCase() === 'db' &&
+    /atten|power|功率|衰减/i.test(String(axis?.name || ''));
+}
+
+export function scanCorrelationData(d, s) {
+  const { v, p, pyr } = model(d, s);
+  let x = v.y.values.slice(),
+    xAxis = { name: v.y.name, unit: v.y.unit };
+  if (s.scanAxisMode === 'power') {
+    if (!isAttenuationAxis(v.y))
+      return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis };
+    const referencePower = Number(s.scanPowerReferenceMW),
+      referenceAttenuation = Number(s.scanPowerReferenceAttenuationDB);
+    if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
+        String(s.scanPowerReferenceAttenuationDB ?? '').trim() === '' ||
+        !Number.isFinite(referencePower) || referencePower <= 0 || !Number.isFinite(referenceAttenuation))
+      return { valid: false, reason: 'Enter a positive reference power and its corresponding attenuation.', xAxis };
+    x = x.map((attenuation) => referencePower * 10 ** (-(attenuation - referenceAttenuation) / 10));
+    xAxis = { name: 'Microwave power', unit: 'mW' };
+  }
+  const lo = Math.min(...pyr),
+    hi = Math.max(...pyr),
+    points = x.map((value, i) => ({
+      x: value,
+      y: p.y[i],
+      scan: v.y.values[i],
+      index: i,
+    })).filter((point) =>
+      point.scan >= lo && point.scan <= hi &&
+      Number.isFinite(point.x) && Number.isFinite(point.y)
+    );
+  if (points.length < 2)
+    return { valid: false, reason: 'The selected scan range contains fewer than two valid points.', xAxis };
+  return {
+    valid: true,
+    x: points.map((point) => point.x),
+    y: points.map((point) => point.y),
+    scan: points.map((point) => point.scan),
+    xAxis,
+    yAxis: { name: 'Y projection (' + s.yMode + ')', unit: '' },
+    mode: s.scanAxisMode,
+  };
+}
+
 export function projectionColor(s, options = {}) {
   const key = s.projectionScheme !== 'inherit' ? s.projectionScheme : options.scheme,
     cs = COLOR_SCHEMES[key] || COLOR_SCHEMES.matlab;
@@ -571,7 +641,8 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     w = box.cellW,
     h = box.cellH,
     hasTop = s.showProjections && s.showXProjection !== false,
-    hasSide = s.showProjections && s.showYProjection !== false,
+    hasCorrelation = s.showScanCorrelation !== false,
+    hasSide = s.showProjections && s.showYProjection !== false && !hasCorrelation,
     proj = hasTop || hasSide,
     cb = s.showColorbar && s.mode === 'heatmap',
     axisSize = options.axisSize || 14;
@@ -583,7 +654,8 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     gSpace = gX ? Math.max(34, options.g.titleDistance + axisSize + 8) : 0;
   return {
     left: Math.max(52, options.yTitleDistance || 35),
-    right: hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20,
+    right: (hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20) +
+      (hasCorrelation ? w * 0.30 + 40 : 0),
     top: hasTop
       ? (title.trim() ? 62 : 40) + topH + gapY + gSpace
       : (title.trim() ? 65 : 42) + (gX ? 34 : 0),
@@ -592,7 +664,7 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     gapY,
     topH,
     gSpace,
-    rightFraction: hasSide ? 0.14 : 0,
+    rightFraction: (hasSide ? 0.14 : 0) + (hasCorrelation ? 0.30 : 0),
   };
 }
 export function sharedMainInsets(entries) {
@@ -645,7 +717,8 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     { v, p, xr, yr, pxr, pyr, xi, yi, zmin, zmax, max } = m,
     { cellX: cx, cellY: cy, cellW: w, cellH: h } = box,
     hasTop = s.showProjections && s.showXProjection !== false,
-    hasSide = s.showProjections && s.showYProjection !== false,
+    hasCorrelation = s.showScanCorrelation !== false,
+    hasSide = s.showProjections && s.showYProjection !== false && !hasCorrelation,
     proj = hasTop || hasSide,
     cb = s.showColorbar && s.mode === 'heatmap',
     stops = colorStops(s, options),
@@ -1004,6 +1077,66 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ctx.restore();
     }
   }
+  let scanCorrelationRegion = null;
+  if (hasCorrelation) {
+    const data = scanCorrelationData(d, s),
+      panel = {
+        x: cb ? bar.x + bar.w + 20 : x + pw + 20,
+        y,
+        w: w * 0.30,
+        h: ph,
+      },
+      plot = { x: panel.x + 46, y: panel.y, w: panel.w - 56, h: panel.h };
+    scanCorrelationRegion = { ...panel };
+    text('Y projection vs ' + (data.xAxis?.name || v.y.name), panel.x + panel.w / 2, cy + 10, titleSize);
+    if (!data.valid || plot.w < 24 || plot.h < 30) {
+      text(data.reason || 'Scan correlation panel is too small', panel.x + panel.w / 2, panel.y + panel.h / 2, tick);
+    } else {
+      let [xmin, xmax] = extent(data.x, data.x.map((_, i) => i)),
+        [ymin, ymax] = extent(data.y, data.y.map((_, i) => i));
+      const xpad = (xmax - xmin) * 0.05,
+        ypad = (ymax - ymin) * 0.05;
+      xmin -= xpad;
+      xmax += xpad;
+      ymin -= ypad;
+      ymax += ypad;
+      const SX = (value) => plot.x + ((value - xmin) / (xmax - xmin)) * plot.w,
+        SY = (value) => plot.y + plot.h - ((value - ymin) / (ymax - ymin)) * plot.h,
+        xTicks = Array.from({ length: 5 }, (_, k) => xmin + ((xmax - xmin) * k) / 4),
+        yTicks = Array.from({ length: 5 }, (_, k) => ymin + ((ymax - ymin) * k) / 4),
+        xf = tickFormatter(xTicks, options.yTickFormat),
+        yf = tickFormatter(yTicks, options.xTickFormat);
+      if (options.grid) {
+        ctx.save();
+        ctx.strokeStyle = theme.majorGrid;
+        ctx.lineWidth = 0.5;
+        for (let k = 1; k < 4; k++) {
+          ctx.beginPath();
+          ctx.moveTo(SX(xTicks[k]), plot.y);
+          ctx.lineTo(SX(xTicks[k]), plot.y + plot.h);
+          ctx.moveTo(plot.x, SY(yTicks[k]));
+          ctx.lineTo(plot.x + plot.w, SY(yTicks[k]));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      clip(plot, () => line(data.x.map((_, i) => i), (i) => [SX(data.x[i]), SY(data.y[i])], projectionColor(s, options)));
+      border(plot);
+      for (let k = 0; k < xTicks.length; k++) {
+        const value = xTicks[k];
+        text(xf.format(value), SX(value), plot.y + plot.h + tick + 3, tick, k === 0 ? 'left' : k === xTicks.length - 1 ? 'right' : 'center');
+      }
+      for (const value of yTicks) text(yf.format(value), plot.x - 6, SY(value), tick, 'right');
+      if (xf.exponent) text(xf.multiplier, plot.x + plot.w, plot.y + plot.h + tick * 2 + 7, tick, 'right');
+      if (yf.exponent) text(yf.multiplier, plot.x - 6, plot.y - 10, tick, 'right');
+      text(data.xAxis.name + (data.xAxis.unit ? ' (' + data.xAxis.unit + ')' : ''), plot.x + plot.w / 2, plot.y + plot.h + (options.xTitleDistance || 20) + tick + 8, axisSize);
+      ctx.save();
+      ctx.translate(panel.x + 12, plot.y + plot.h / 2);
+      ctx.rotate(-Math.PI / 2);
+      text(data.yAxis.name, 0, 0, axisSize);
+      ctx.restore();
+    }
+  }
   ctx.restore();
   return {
     x0: x,
@@ -1018,6 +1151,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     twoD: true,
     titleCenter: x + pw / 2,
     projectionRegions,
+    scanCorrelationRegion,
     colorbar: cb ? bar : null,
     zmin,
     zmax,

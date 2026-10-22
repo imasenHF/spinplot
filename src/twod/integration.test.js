@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {axisKind,fieldToGauss} from './core.js';
-import {defaults,render,projectionColor,projectionCsv,stackRows,model,plotInsets,sharedMainInsets,fitMainColumns} from './ui.js';
+import {defaults,render,projectionColor,projectionCsv,scanCorrelationData,stackRows,model,plotInsets,sharedMainInsets,fitMainColumns} from './ui.js';
 for(const [name,unit,kind]of [['Power','mW','power'],['Angle','deg','angle'],['Temperature','K','temperature'],['Modulation amplitude','mT','modulation'],['Delay','ns','time'],['Field','mT','field']])assert.equal(axisKind({name,unit}),kind);
 assert.equal(fieldToGauss({name:'Modulation amplitude',unit:'G'}),null);
 assert.equal(fieldToGauss({name:'Field',unit:'mT'}),10);
@@ -11,13 +11,45 @@ const {texts,g}=draw(s,'My spectrum');assert(!texts.some(a=>a[0]===d.name));asse
 console.log('Shared palette, title center, both magnetic-axis orientations, units and projection CSV passed');
 
 const ms=defaults(d);assert.equal(ms.projectionGapX,20);assert.equal(ms.projectionGapY,20);ms.mode='stack';ms.step=1;assert.equal(stackRows(model(d,ms),ms).length,2);ms.step=2;assert.equal(stackRows(model(d,ms),ms).length,1);
-const prs=draw(defaults(d)).g.projectionRegions;assert.equal(prs.length,2);assert.equal(prs[0].projection,'top');assert.equal(prs[1].projection,'side');assert.equal(prs[0].xmin,300);assert.equal(prs[1].ymax,2);
+const projectionDefaults=defaults(d);projectionDefaults.showScanCorrelation=false;const prs=draw(projectionDefaults).g.projectionRegions;assert.equal(prs.length,2);assert.equal(prs[0].projection,'top');assert.equal(prs[1].projection,'side');assert.equal(prs[0].xmin,300);assert.equal(prs[1].ymax,2);
+const correlationDefaults=defaults(d),correlationDraw=draw(correlationDefaults);assert(correlationDraw.g.scanCorrelationRegion);assert(correlationDraw.texts.some(a=>String(a[0]).includes('Y projection vs Power')));
 const limits=defaults(d);limits.xProjectionMin=-10;limits.xProjectionMax=10;assert.equal(draw(limits).g.projectionRegions[0].ymin,-10);assert.equal(draw(limits).g.projectionRegions[0].ymax,10);
 console.log('Projection geometry, intensity overrides, default gaps and stack decimation passed');
 
 // Equal spans share the drawable main frame, including mixed g visibility.
 const box={cellW:600,cellH:500},opts={axisSize:14,g:{show:false,titleDistance:22},frequency:9.85};const map=defaults(d),noG=plotInsets(d,map,box,'',opts),withG=plotInsets(d,map,box,'',{...opts,g:{show:true,titleDistance:22}});const entries=[{index:0,box,insets:{left:56,right:16,top:34,bottom:34},twoD:false},{index:1,box,insets:noG,twoD:true},{index:2,box,insets:withG,twoD:true}];const common=sharedMainInsets(entries);assert.deepEqual(common.get(0),common.get(1));assert.deepEqual(common.get(1),common.get(2));for(const entry of entries)for(const k of ['left','right','top','bottom'])assert(common.get(entry.index)[k]>=entry.insets[k]);const plain=sharedMainInsets([{index:0,box,insets:{left:56,right:16,top:10,bottom:34}},{index:1,box,insets:{left:56,right:16,top:45,bottom:34}}]);assert.equal(plain.get(0).top,45);assert.equal(plain.get(1).top,45);assert.equal(sharedMainInsets([{index:0,box,insets:noG},{index:1,box:{cellW:1200,cellH:500},insets:withG}]).size,0);console.log('Equal-span main frames: mixed 1D/2D, g on/off; explicit unequal spans preserved');
 
-for(const [top,side] of [[true,true],[true,false],[false,true],[false,false]]){const cfg=defaults(d);cfg.showXProjection=top;cfg.showYProjection=side;const r=draw(cfg);assert.deepEqual(r.g.projectionRegions.map(x=>x.projection),[...(top?['top']:[]),...(side?['side']:[])]);assert.equal(r.texts.some(x=>String(x[0]).includes('projection (mean)')),top);assert.equal(r.texts.some(x=>String(x[0]).includes('projection (rms)')),side);}
-const labels=defaults(d);const allLabels=draw(labels).texts.map(x=>x[0]);labels.showXProjectionRange=false;labels.showYProjectionRange=false;labels.showXProjectionTitle=false;labels.showYProjectionTitle=false;const hiddenLabels=draw(labels);assert.equal(hiddenLabels.g.projectionRegions.length,2);assert(hiddenLabels.texts.length<allLabels.length);assert(!hiddenLabels.texts.some(x=>String(x[0]).includes('projection (')));
-const packed=fitMainColumns(entries.map((e,i)=>({...e,col:i+1})),3,1700);assert(Math.abs(packed.widths.reduce((a,b)=>a+b,0)-1700)<1e-8);for(let i=0;i<3;i++)assert(Math.abs(packed.widths[i]-packed.insets[i].left-packed.insets[i].right-packed.width)<1e-8);assert(packed.widths[0]<packed.widths[1]);const hidden=defaults(d);hidden.showYProjection=false;const hiddenInsets=plotInsets(d,hidden,box,'',opts);assert(hiddenInsets.right<noG.right);assert.equal(hiddenInsets.rightFraction,0);console.log('Independent projection visibility and compact equal-width main columns passed');
+for(const [top,side] of [[true,true],[true,false],[false,true],[false,false]]){const cfg=defaults(d);cfg.showScanCorrelation=false;cfg.showXProjection=top;cfg.showYProjection=side;const r=draw(cfg);assert.deepEqual(r.g.projectionRegions.map(x=>x.projection),[...(top?['top']:[]),...(side?['side']:[])]);assert.equal(r.texts.some(x=>String(x[0]).includes('projection (mean)')),top);assert.equal(r.texts.some(x=>String(x[0]).includes('projection (rms)')),side);}
+const labels=defaults(d);labels.showScanCorrelation=false;const allLabels=draw(labels).texts.map(x=>x[0]);labels.showXProjectionRange=false;labels.showYProjectionRange=false;labels.showXProjectionTitle=false;labels.showYProjectionTitle=false;const hiddenLabels=draw(labels);assert.equal(hiddenLabels.g.projectionRegions.length,2);assert(hiddenLabels.texts.length<allLabels.length);assert(!hiddenLabels.texts.some(x=>String(x[0]).includes('projection (')));
+const packed=fitMainColumns(entries.map((e,i)=>({...e,col:i+1})),3,1700);assert(Math.abs(packed.widths.reduce((a,b)=>a+b,0)-1700)<1e-8);for(let i=0;i<3;i++)assert(Math.abs(packed.widths[i]-packed.insets[i].left-packed.insets[i].right-packed.width)<1e-8);assert(packed.widths[0]<packed.widths[1]);const hidden=defaults(d);hidden.showScanCorrelation=false;hidden.showYProjection=false;const hiddenInsets=plotInsets(d,hidden,box,'',opts);assert(hiddenInsets.right<noG.right);assert.equal(hiddenInsets.rightFraction,0);console.log('Independent projection visibility and compact equal-width main columns passed');
+
+const powerSweep={
+ name:'synthetic-power-sweep',
+ x:{name:'Field',unit:'G',values:[3000,3001,3002]},
+ y:{name:'Microwave attenuation',unit:'dB',values:[20,21,22]},
+ real:[[1,2,3],[2,4,6],[4,8,12]],
+ imag:[[0,0,0],[0,0,0],[0,0,0]],
+ metadata:{setting:{lineEdit_MB_Power:'1.0',lineEdit_MB_Attenuation:'20'}}
+};
+const powerSettings=defaults(powerSweep);
+assert.equal(powerSettings.showScanCorrelation,true);
+assert.equal(powerSettings.scanPowerReferenceMW,1);
+assert.equal(powerSettings.scanPowerReferenceAttenuationDB,20);
+let corr=scanCorrelationData(powerSweep,powerSettings);
+assert.equal(corr.valid,true);
+assert.deepEqual(corr.x,[20,21,22]);
+assert.deepEqual(corr.y,[Math.sqrt(14/3),Math.sqrt(56/3),Math.sqrt(224/3)]);
+powerSettings.scanAxisMode='power';
+corr=scanCorrelationData(powerSweep,powerSettings);
+assert.equal(corr.valid,true);
+assert.equal(corr.xAxis.name,'Microwave power');
+assert.equal(corr.xAxis.unit,'mW');
+assert(Math.abs(corr.x[0]-1)<1e-12);
+assert(Math.abs(corr.x[1]-10**(-0.1))<1e-12);
+assert(Math.abs(corr.x[2]-10**(-0.2))<1e-12);
+powerSettings.scanPowerReferenceMW='';
+assert.equal(scanCorrelationData(powerSweep,powerSettings).valid,false);
+const nonPowerSweep={...powerSweep,y:{name:'Time',unit:'ms',values:[0,1,2]}};
+powerSettings.scanPowerReferenceMW=1;
+assert.equal(scanCorrelationData(nonPowerSweep,powerSettings).valid,false);
+console.log('Scan-correlation statistics, metadata-derived power reference, attenuation-to-mW conversion and invalid calibration guards passed');
