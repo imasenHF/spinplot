@@ -53,6 +53,7 @@ try {
   // The pre-migration reference does not contain these controls and remains an A/B baseline.
   if (process.env.SPINPLOT_TEST_FREQUENCY_ALIGNMENT === '1') {
     await page.locator('button.tab-btn[data-tab="data"]').click();
+    assert.equal(await page.locator('#globalFreqMode').inputValue(),'local_mean','Global frequency mode defaults to Local mean');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="freqMode"]').inputValue(),'local','New subplots default to local alignment');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').inputValue(),'mean','New subplots default to Local mean');
     await page.locator('#freqTable [data-source-frequency="0"]').fill('9.5');
@@ -67,8 +68,20 @@ try {
     assert.ok(Math.abs(coordinateFor(localMeanCSV,0)-3300*9.6/9.5)<1e-7,'Default Local mean must align both curves to 9.6 GHz');
     assert.ok(Math.abs(coordinateFor(localMeanCSV,1)-3300*9.6/9.7)<1e-7,'Default Local mean must use each source frequency');
 
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await page.locator('#groupExpression').fill('0 / 1');
+    await page.locator('#applyGroupsBtn').click();
+    const localGroupsCSV=await exportDisplay('browser-preview/frequency-local-groups.csv');
+    assert.equal(coordinateFor(localGroupsCSV,0),3300,'Local mean aligns a single-curve subplot to its own source frequency');
+    assert.equal(coordinateFor(localGroupsCSV,1),3300,'Local mean is calculated independently for each subplot');
+
     await page.locator('button.tab-btn[data-tab="data"]').click();
-    await page.locator('#globalFreqMode').selectOption('mean');
+    await page.locator('#globalFreqMode').selectOption('global_mean');
+    const globalMeanCSV=await exportDisplay('browser-preview/frequency-global-mean.csv');
+    assert.ok(Math.abs(coordinateFor(globalMeanCSV,0)-3300*9.6/9.5)<1e-7,'Global mean must use the mean frequency across all curves');
+    assert.ok(Math.abs(coordinateFor(globalMeanCSV,1)-3300*9.6/9.7)<1e-7,'Global mean target must apply to each subplot');
+
+    await page.locator('button.tab-btn[data-tab="data"]').click();
     await page.locator('#globalFreqMode').selectOption('manual');
     await page.locator('#targetFreq').fill('10');
     const globalTargetCSV=await exportDisplay('browser-preview/frequency-global-target.csv');
@@ -84,6 +97,8 @@ try {
       if(!await details.evaluate(el=>el.open))await details.locator('summary').click();
     };
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await page.locator('#groupExpression').fill('0,1');
+    await page.locator('#applyGroupsBtn').click();
     await openFrequencySettings();
     await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
     await openFrequencySettings();
