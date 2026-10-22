@@ -12,7 +12,7 @@ console.log('Shared palette, title center, both magnetic-axis orientations, unit
 
 const ms=defaults(d);assert.equal(ms.projectionGapX,20);assert.equal(ms.projectionGapY,20);ms.mode='stack';ms.step=1;assert.equal(stackRows(model(d,ms),ms).length,2);ms.step=2;assert.equal(stackRows(model(d,ms),ms).length,1);
 const projectionDefaults=defaults(d);projectionDefaults.showScanCorrelation=false;const prs=draw(projectionDefaults).g.projectionRegions;assert.equal(prs.length,2);assert.equal(prs[0].projection,'top');assert.equal(prs[1].projection,'side');assert.equal(prs[0].xmin,300);assert.equal(prs[1].ymax,2);
-const correlationDefaults=defaults(d),correlationDraw=draw(correlationDefaults);assert(correlationDraw.g.scanCorrelationRegion);assert(correlationDraw.texts.some(a=>String(a[0]).includes('Y projection vs Power')));
+const correlationDefaults=defaults(d),correlationDraw=draw(correlationDefaults);assert(correlationDraw.g.scanCorrelationRegion);assert(correlationDraw.texts.some(a=>String(a[0]).includes('Y projection vs scan')));
 const limits=defaults(d);limits.xProjectionMin=-10;limits.xProjectionMax=10;assert.equal(draw(limits).g.projectionRegions[0].ymin,-10);assert.equal(draw(limits).g.projectionRegions[0].ymax,10);
 console.log('Projection geometry, intensity overrides, default gaps and stack decimation passed');
 

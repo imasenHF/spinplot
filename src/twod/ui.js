@@ -1090,7 +1090,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       },
       plot = { x: panel.x + 46, y: panel.y, w: panel.w - 56, h: panel.h };
     scanCorrelationRegion = { ...panel };
-    text('Y projection vs ' + (data.xAxis?.name || v.y.name), panel.x + panel.w / 2, cy + 10, titleSize);
+    text(s.scanAxisMode === 'power' ? 'Y projection vs power' : 'Y projection vs scan', panel.x + panel.w / 2, cy + 10, tick);
     if (!data.valid || plot.w < 24 || plot.h < 30) {
       text(data.reason || 'Scan correlation panel is too small', panel.x + panel.w / 2, panel.y + panel.h / 2, tick);
     } else {
