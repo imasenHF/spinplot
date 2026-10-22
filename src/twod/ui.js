@@ -507,12 +507,14 @@ function isAttenuationAxis(axis) {
 }
 
 export function scanCorrelationData(d, s) {
+  migrate(d, s);
+  const oriented = orient(d, s.component, s.swap);
+  if (s.scanAxisMode === 'power' && !isAttenuationAxis(oriented.y))
+    return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis: { name: oriented.y.name, unit: oriented.y.unit } };
   const { v, p, pyr } = model(d, s);
   let x = v.y.values.slice(),
     xAxis = { name: v.y.name, unit: v.y.unit };
   if (s.scanAxisMode === 'power') {
-    if (!isAttenuationAxis(v.y))
-      return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis };
     const referencePower = Number(s.scanPowerReferenceMW),
       referenceAttenuation = Number(s.scanPowerReferenceAttenuationDB);
     if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
