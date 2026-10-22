@@ -220,7 +220,7 @@ try {
         layout:{...fieldProject.config.layout,rows:1,cols:1,spans:'1'},
         subplots:[{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:1,
           xUseGlobal:false,xMin:3305,xMax:3345,yUseGlobal:false,yMin:-2,yMax:12,
-          twoD:{index:0,settings:{mode:'heatmap',showColorbar:true,showProjections:false,
+          twoD:{index:0,settings:{mode:'heatmap',showColorbar:true,showProjections:false,showScanCorrelation:false,
             xMin:3305,xMax:3345,yMin:-2,yMax:12,zMin:'',zMax:'',zUseGlobal:false}}}]
       }
     };
