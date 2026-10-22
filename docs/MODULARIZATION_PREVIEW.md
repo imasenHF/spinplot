@@ -97,6 +97,14 @@ npm run build
 [浏览器对照、模块测试与构建（38369179810）](https://github.com/imasenHF/spinplot/actions/runs/38369179810) 全部通过；[公开预览浏览器测试（38369179836）](https://github.com/imasenHF/spinplot/actions/runs/38369179836) 通过；[主站 Pages 发布（38368916198）](https://github.com/imasenHF/imasenhf.github.io/actions/runs/38368916198) 成功。公开预览已加载本轮构建 `index-CdHZZgtg.js`，正式 `/spinplot/` 未改变。首次 CI 的项目重载等待超时已通过测试脚本修订排除，迁移源码保持不变。
 
 
+## 二维扫描变量关联图与功率轴换算（2026-10-23）
+
+- 右侧关联图默认显示，横轴为扫描变量，纵轴为当前信号分量的 Y 投影统计值；可切换 mean、max、min、peak-to-peak、RMS、sum，并可关闭关联图以恢复传统 Y 投影。
+- Field–Power Sweep 支持以文件设置中的参考功率和对应参考衰减值换算 mW 轴；参考值可手动修改。缺少有效校准参数时显示提示，不把 dB 直接标成 mW。
+- 预览分支数值/二维回归、生产构建、Chromium 浏览器回归、关联图 SVG 导出检查和迁移前输出对照通过（[运行 39853484035](https://github.com/imasenHF/spinplot/actions/runs/39853484035)）。临时页面部署成功（[Pages 运行 39854065484](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39854065484)），公开资源检查通过（[运行 39854270983](https://github.com/imasenHF/spinplot/actions/runs/39854270983)）；公开 Chromium 关联图验收仍在运行（[运行 39854271283](https://github.com/imasenHF/spinplot/actions/runs/39854271283)）。
+- 实现代码位于 `src/twod/ui.js`；计算和渲染回归位于 `src/twod/integration.test.js`；公开页面烟测位于 `scripts/preview-browser-smoke.mjs`。真实实验数据文件仅用于本次本地检查，未上传到公开仓库。
+- 功率换算关系：`P = P_ref × 10^(-(A - A_ref)/10)`，其中参考功率与参考衰减值必须对应。第二阶段 CW EPR 饱和拟合尚未实现。
+
 ## 频率校正 Target 模式修复
 
 - 新建子图继续默认使用 `freqMode: local`、`localFreqMode: mean`。
