@@ -213,6 +213,7 @@ try {
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     await load(mixed,'2d-view-modes.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
     await page.locator('.subplot').nth(1).locator('[data-action="dup"]').click();
     await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
     await page.locator('[data-field="title"]').nth(2).fill('Variable scan');
