@@ -225,7 +225,9 @@ try {
     await page.waitForTimeout(250);
     assert.equal(errors.length,0,'2D scan/overlap render error: '+errors.join(' | '));
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
-    const [viewsDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    let viewsDownload;
+    try { [viewsDownload]=await Promise.all([page.waitForEvent('download',{timeout:8000}),page.locator('#exportImageBtnSide').click()]); }
+    catch (error) { throw new Error('2D view SVG export failed; status='+await page.locator('#status').textContent()+'; pageErrors='+errors.join(' | ')+'; '+error.message); }
     await viewsDownload.saveAs('browser-preview/2d-view-modes.svg');
     const viewsSvg=fs.readFileSync('browser-preview/2d-view-modes.svg','utf8');
     assert.match(viewsSvg,/Variable scan/);assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
