@@ -222,6 +222,8 @@ try {
     await page.locator('.subplot').nth(2).locator('[data-action="collapse"]').click();
     await page.locator('[data-field="title"]').nth(2).fill('Overlap');
     await page.locator('[data-field="mode"]').nth(2).selectOption('overlap');
+    await page.waitForTimeout(250);
+    assert.equal(errors.length,0,'2D scan/overlap render error: '+errors.join(' | '));
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
     const [viewsDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await viewsDownload.saveAs('browser-preview/2d-view-modes.svg');
