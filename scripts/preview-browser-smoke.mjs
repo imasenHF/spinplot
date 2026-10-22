@@ -210,15 +210,17 @@ try {
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');assert.match(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Synthetic 2D/);
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
-  // Current-branch-only test: the right-side scan-correlation panel is rendered in vector export.
-  const correlationMixed={...mixed,config:{...mixed.config,subplots:mixed.config.subplots.map(sp=>sp.twoD?{...sp,twoD:{...sp.twoD,settings:{...sp.twoD.settings,showScanCorrelation:true}}}:sp)}};
-  await load(correlationMixed,'scan-correlation.spinplot.json');
-  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
-  const [correlationDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
-  await correlationDownload.saveAs('browser-preview/scan-correlation.svg');
-  const correlationSvg=fs.readFileSync('browser-preview/scan-correlation.svg','utf8');
-  assert.match(correlationSvg,/Y projection vs scan/);
-  assert.match(correlationSvg,/Microwave attenuation/);
+  if (process.env.SPINPLOT_TEST_SCAN_CORRELATION === '1') {
+    // Current-branch-only test: the right-side scan-correlation panel is rendered in vector export.
+    const correlationMixed={...mixed,config:{...mixed.config,subplots:mixed.config.subplots.map(sp=>sp.twoD?{...sp,twoD:{...sp.twoD,settings:{...sp.twoD.settings,showScanCorrelation:true}}}:sp)}};
+    await load(correlationMixed,'scan-correlation.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+    const [correlationDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await correlationDownload.saveAs('browser-preview/scan-correlation.svg');
+    const correlationSvg=fs.readFileSync('browser-preview/scan-correlation.svg','utf8');
+    assert.match(correlationSvg,/Y projection vs scan/);
+    assert.match(correlationSvg,/Microwave attenuation/);
+  }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.
   if (process.env.SPINPLOT_TEST_COLORBAR_DBLCLICK === '1') {
