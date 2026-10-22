@@ -10,7 +10,7 @@ Copyright © 2026 SpinPlot
 Contact: wuhaifeng@ustc.edu.cn
 -->
 <!-- SpinPlot V26: numeric validation, interaction fixes, vector export -->
-  <script type="module" crossorigin src="./assets/index-CHz1kJpt.js"></script>
+  <script type="module" crossorigin src="./assets/index-B0c3a1JS.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DBe1jDsW.css">
 </head>
 <body>
@@ -46,7 +46,7 @@ Contact: wuhaifeng@ustc.edu.cn
       <div class="section-title"><span>DATA & ALIGNMENT</span><small>datasets + frequency</small></div>
       <section class="card"><h3>Source & microwave frequency <button class="help-tip" data-help="New subplots default to Local mean. Changing the global frequency mode makes subplots without an explicit local override inherit the global target; explicit local overrides remain active. For 1D CSV or other field data without source-frequency metadata, enter ν raw in the dataset inventory. Bcorr = Braw × νtarget / νraw.">?</button></h3><div class="body">
         <div class="field"><label>Current data</label><div id="fileInfo" class="file-pill">No data loaded</div></div><button id="clearDataBtnSide">Clear all data</button>
-        <div class="field"><label>Global frequency alignment</label><select id="globalFreqMode"><option value="manual">Manual target</option><option value="first_file">First curve frequency</option><option value="mean">Mean frequency</option><option value="none">None</option></select></div>
+        <div class="field"><label>Global frequency alignment</label><select id="globalFreqMode"><option value="manual">Manual target</option><option value="first_file">First curve frequency</option><option value="global_mean">Global mean</option><option value="local_mean" selected>Local mean</option><option value="none">None</option></select></div>
         <div class="field" id="globalFreqManualWrap"><label>Target frequency / GHz</label><input id="targetFreq" type="number" step="0.000001" value="9.85"><div class="switch"><input id="confirmManualFrequency" type="checkbox"><label for="confirmManualFrequency">Confirm manual frequency for g values when source frequency is missing</label></div></div>
       </div></section>
       <section class="card"><h3>Frequency table <span class="badge" id="dataCount">0</span></h3><div class="body"><div class="table-wrap"><table><thead><tr><th>#</th><th>Dataset / axes</th><th title="Editable source microwave frequency for 1D magnetic-field data. CSV files usually require manual entry.">ν raw / GHz</th><th>Global scale</th></tr></thead><tbody id="freqTable"></tbody></table></div></div></section>
