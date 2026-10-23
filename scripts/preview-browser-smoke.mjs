@@ -336,7 +336,7 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const sourceCard = page.locator('.subplot').first();
     const legendSection = sourceCard.locator('details[data-section="legend"]');
-    if (!await legendSection.evaluate(el => el.open)) await legendSection.locator('summary').click();
+    if (!await legendSection.evaluate(el => el.open)) await legendSection.locator('summary').first().click();
     const labelBounds = await sourceCard.locator('.label-settings-row > .field > label').boundingBox();
     const legendBounds = await sourceCard.locator('.label-settings-row .legend-position-field > summary').boundingBox();
     const labelControl = await sourceCard.locator('[data-field="labelMode"]').boundingBox();
