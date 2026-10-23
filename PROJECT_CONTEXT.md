@@ -63,7 +63,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。二维扫描变量图现按独立子图设计实施，Overlap 为独立绘图模式；2026-10-23 的浏览器回归仍待修复并重新通过后再更新临时预览。当前代码和测试结果以 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md) 及最新 Actions 为准；正式 main 尚未合并。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。2026-10-23 提交 ce23fb6 将 Variable scan 改为显式创建的独立子图，并保留源二维图及 Y 投影；Overlap 模式保留。数值/二维回归、生产构建、Chromium 浏览器回归及迁移前对照通过（[运行 39951954898](https://github.com/imasenHF/spinplot/actions/runs/39951954898)）；静态预览构建 d1e478f 已同步至主站，Pages 发布成功（[运行 39953758517](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39953758517)），公开浏览器检查通过（[运行 39951955041，第二次尝试](https://github.com/imasenHF/spinplot/actions/runs/39951955041)）。真实 CIQTEK 样本验收仍待重新取得 exp(1).zip；正式 main 尚未合并。详细状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。

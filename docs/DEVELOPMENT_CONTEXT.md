@@ -99,11 +99,13 @@
 
 ### 当前实施与验收状态（2026-10-23）
 
-- 预览分支代码已包含扫描统计、Overlap 数据处理及普通子图渲染路径；此前实现把扫描图作为绘图模式直接替换当前二维视图，需改为显式创建独立子图。
-- 最新已核查的旧回归运行 39864468704 在四行子图测试布局中失败，报错 Subplot 1: plot area too small。新的浏览器测试应使用有效的两行布局，检查扫描图与源图并排、Overlap 单独显示、项目保存和 SVG 导出。
-- 本轮代码变更、浏览器回归、公开预览同步和真实仪器数据验收分别记录，不以构建成功代替其余验收。
-- 用户此前上传的 exp(1).zip 计划用于 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 等二维样本检查；截至本轮开始，当前对话附件与可检索的 Library 中未找到该 ZIP。未重新取得前，不得声称真实样本验收通过，也不得将样本复制到公开仓库。
-- 本轮预览代码保持在 preview/modularization-phase1-20261009 和 Draft PR #1；未经明确授权不合并 main，正式 /spinplot/ 不做改动。临时页面必须在新构建通过检查后单独同步主站快照。
+- 代码提交 ce23fb6 已将 Variable scan 实现为显式新增的独立子图：导入默认保留 Heatmap，选择该模式后扫描图初始放在源图右侧；原图与 Y 投影保留。复杂布局无法直接插入右侧时追加为新行。实现位于 src/main.js 的 addVariableScanSubplot() 和二维 Plot mode 变更处理；src/twod/ui.js 显示 Variable scan (new subplot) 菜单项。
+- 自动化运行 39951954898 全部通过：数值、CSV/插值、一维处理、项目版本兼容、现有二维回归、显示/坐标/导出测试、生产构建、Chromium 浏览器回归与迁移前对照均成功。浏览器测试验证扫描子图创建、源 Heatmap 保留、右侧布局、项目保存的布局信息及包含 Variable scan / Overlap 的 SVG 导出。
+- 静态预览构建提交 d1e478f 已同步到主站，主站提交 3e50725 更新预览快照与资源检查页；Pages 发布运行 39953758517 成功，公开浏览器检查运行 39951955041 的第二次尝试通过。第一次公开检查使用旧快照，部署新资源后重跑通过。
+- 用户此前上传的 exp(1).zip 计划用于 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 等二维样本检查；当前对话附件与可检索 Library 中仍未找到该 ZIP。真实仪器样本的坐标、单位、信号分量和项目保存验收仍待重新取得文件后执行。不得声称真实样本验收通过，也不得将样本复制到公开仓库。
+- 本轮代码继续保持在 preview/modularization-phase1-20261009 和 Draft PR #1；未经明确授权不合并 main，正式 /spinplot/ 未修改。主站临时快照不会随预览分支自动同步。
+
+
 
 ## 后续二维开发方向
 
