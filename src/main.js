@@ -179,9 +179,9 @@ function addVariableScanSubplot(source,sourceIndex){
  scanSettings.mode='scan';
  scanSettings.swap=orientationDefaults.swap;
  scanSettings.scanStatistic=sourceSettings.yMode||'rms';
- const statisticMin=Number(sourceSettings.projectionXMin),statisticMax=Number(sourceSettings.projectionXMax);
- scanSettings.scanStatisticMin=sourceSettings.projectionXMin!==undefined&&sourceSettings.projectionXMin!==null&&sourceSettings.projectionXMin!==''&&Number.isFinite(statisticMin)?statisticMin:orientationDefaults.scanStatisticMin;
- scanSettings.scanStatisticMax=sourceSettings.projectionXMax!==undefined&&sourceSettings.projectionXMax!==null&&sourceSettings.projectionXMax!==''&&Number.isFinite(statisticMax)?statisticMax:orientationDefaults.scanStatisticMax;
+ const sameScanOrientation=sourceSettings.swap===orientationDefaults.swap,statisticMin=Number(sourceSettings.projectionXMin),statisticMax=Number(sourceSettings.projectionXMax);
+ scanSettings.scanStatisticMin=sameScanOrientation&&sourceSettings.projectionXMin!==undefined&&sourceSettings.projectionXMin!==null&&sourceSettings.projectionXMin!==''&&Number.isFinite(statisticMin)?statisticMin:orientationDefaults.scanStatisticMin;
+ scanSettings.scanStatisticMax=sameScanOrientation&&sourceSettings.projectionXMax!==undefined&&sourceSettings.projectionXMax!==null&&sourceSettings.projectionXMax!==''&&Number.isFinite(statisticMax)?statisticMax:orientationDefaults.scanStatisticMax;
  const next={...source,title:'Variable scan',collapsed:false,curves:[],mode:'scan',annotations:[],measurements:[],annotationsEnabled:false,noiseRegions:'',showNoiseRegions:false,xAxisLabel:'',yAxisLabel:'',xUseGlobal:false,xMin:'',xMax:'',xStep:'',yUseGlobal:false,yMin:'',yMax:'',yStep:'',gUseGlobal:false,gShow:false,rowSpan:1,colSpan:1,twoD:{index:source.twoD.index,settings:scanSettings}};
  let insertAt=state.subplots.length;
  if(canPlaceRight){
