@@ -192,7 +192,7 @@ export function controls(card, sp, d, onChange) {
   const s = migrate(d, sp.twoD.settings),
     root = card.querySelector('.subplot-body');
   if (!s.sharedControls) {
-    if (!['overlay', 'stack', 'overlap', 'scan'].includes(sp.mode))
+    if (!['overlay', 'heatmap', 'stack', 'overlap', 'scan'].includes(sp.mode))
       sp.mode = s.mode === 'stack' ? 'stack' : 'overlay';
     sp.offsetScale = s.offset;
     for (const a of ['x', 'y']) {
@@ -498,7 +498,17 @@ export function controls(card, sp, d, onChange) {
   input(gaps, 'projectionGapX', 'Right projection gap (px)', 'number');
   input(gaps, 'projectionGapY', 'Top projection gap (px)', 'number');
   const mode = card.querySelector('[data-field=mode]');
-  mode.querySelector('[value=overlay]').textContent = 'Heatmap';
+  const manualDerived = !!sp.twoD.derivedFromCurves;
+  const overlayOption = mode.querySelector('[value=overlay]');
+  overlayOption.textContent = 'Heatmap';
+  if (manualDerived) {
+    overlayOption.hidden = true;
+    for (const [value, label] of [['heatmap', 'Heatmap'], ['overlay1d', 'Overlay (1D)'], ['stack1d', 'Stack (1D)']]) {
+      if (!mode.querySelector('[value=' + value + ']')) {
+        const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
+      }
+    }
+  }
   for (const [value, label] of [['overlap', 'Overlap'], ['scan', 'Variable scan (new subplot)']]) {
     if (!mode.querySelector('[value=' + value + ']')) {
       const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
@@ -519,7 +529,7 @@ export function controls(card, sp, d, onChange) {
     list.style.height = 'auto';
     const row = document.createElement('div');
     row.className = 'order-item matrix-data-row';
-    row.textContent = sp.twoD.index + '. ' + d.name;
+    row.textContent = sp.twoD.derivedFromCurves ? sp.twoD.curveIndices.length + ' manual 1D curves' : sp.twoD.index + '. ' + d.name;
     row.title = d.name;
     list.replaceChildren(row);
   }
@@ -544,8 +554,63 @@ export function controls(card, sp, d, onChange) {
   }
   colors.closest('details').hidden = derivedView;
   const summary = card.querySelector('.subplot-summary');
-  const modeLabel = ({overlay:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
-  summary.textContent = '1 dataset · ' + modeLabel + ' · ' + d.x.values.length + ' × ' + d.y.values.length;
+  const modeLabel = ({overlay:'Heatmap',heatmap:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
+  summary.textContent = (manualDerived ? sp.twoD.curveIndices.length + ' curves' : '1 dataset') + ' · ' + modeLabel + ' · ' + d.x.values.length + ' × ' + d.y.values.length;
+  if (manualDerived) {
+    const variable = sp.scanVariable || (sp.scanVariable = {name:'Curve index',unit:'',mode:'linear',start:0,step:1,valuesByCurve:{}});
+    if (!variable.valuesByCurve || typeof variable.valuesByCurve !== 'object') variable.valuesByCurve = {};
+    const curveIds = sp.twoD.curveIndices || [];
+    const orderedValues = curveIds.map((id, i) => Number.isFinite(Number(variable.valuesByCurve[id])) ? Number(variable.valuesByCurve[id]) : i);
+    const {box: variableBox, body: variableBody} = section('Scan variable', true);
+    variableBox.classList.add('manual-scan-variable');
+    function manualField(title, key, type, value) {
+      const label = document.createElement('label'); label.className = 'control-label'; label.textContent = title;
+      const input = document.createElement('input'); input.type = type; input.dataset.manualScan = key; input.value = value ?? '';
+      if (type === 'number') input.step = 'any';
+      label.append(input); variableBody.append(label); return {label, input};
+    }
+    const nameField = manualField('Variable name', 'name', 'text', variable.name || 'Curve index');
+    const unitField = manualField('Unit', 'unit', 'text', variable.unit || '');
+    const modeLabelEl = document.createElement('label'); modeLabelEl.className = 'control-label'; modeLabelEl.textContent = 'Value mode';
+    const modeSelect = document.createElement('select'); modeSelect.dataset.manualScan = 'mode';
+    for (const [value, text] of [['linear','Equally spaced'],['array','Custom array']]) {const option = document.createElement('option'); option.value = value; option.textContent = text; modeSelect.append(option);}
+    modeSelect.value = variable.mode === 'array' ? 'array' : 'linear'; modeLabelEl.append(modeSelect); variableBody.append(modeLabelEl);
+    const startField = manualField('Start value', 'start', 'number', variable.start ?? 0);
+    const stepField = manualField('Interval', 'step', 'number', variable.step ?? 1);
+    const arrayField = manualField('Values in current curve order', 'values', 'text', orderedValues.join(', '));
+    arrayField.label.style.gridColumn = '1 / -1'; arrayField.input.placeholder = '0, 2, 5';
+    const note = document.createElement('div'); note.className = 'small manual-scan-note'; note.textContent = 'Custom values must match the selected curve count. Values remain attached to their source curves when the curve order changes.'; variableBody.append(note);
+    const updateVariableMode = () => {const arrayMode = modeSelect.value === 'array'; startField.label.hidden = arrayMode; stepField.label.hidden = arrayMode; arrayField.label.hidden = !arrayMode;};
+    const writeLinearValues = () => {
+      const start = Number(variable.start), step = Number(variable.step);
+      if (!Number.isFinite(start) || !Number.isFinite(step) || step === 0) throw new Error('Equal-spacing mode requires a finite start and a non-zero interval.');
+      variable.valuesByCurve = Object.fromEntries(curveIds.map((id, i) => [id, start + i * step]));
+      arrayField.input.value = curveIds.map(id => variable.valuesByCurve[id]).join(', ');
+    };
+    nameField.input.onchange = () => {variable.name = nameField.input.value.trim() || 'Curve index'; onChange();};
+    unitField.input.onchange = () => {variable.unit = unitField.input.value.trim(); onChange();};
+    modeSelect.onchange = () => {
+      variable.mode = modeSelect.value;
+      try {if (variable.mode === 'linear') writeLinearValues(); else arrayField.input.value = curveIds.map(id => variable.valuesByCurve[id]).join(', ');}
+      catch (error) {modeSelect.setCustomValidity(error.message);modeSelect.reportValidity();modeSelect.value = 'array';variable.mode = 'array';}
+      updateVariableMode(); onChange();
+    };
+    startField.input.onchange = () => {
+      const value = Number(startField.input.value); if (!Number.isFinite(value)) {startField.input.setCustomValidity('Enter a finite start value.');startField.input.reportValidity();return;}
+      variable.start = value; try {writeLinearValues();startField.input.setCustomValidity('');onChange();} catch (error) {startField.input.setCustomValidity(error.message);startField.input.reportValidity();}
+    };
+    stepField.input.onchange = () => {
+      const value = Number(stepField.input.value); if (!Number.isFinite(value) || value === 0) {stepField.input.setCustomValidity('Interval must be finite and non-zero.');stepField.input.reportValidity();return;}
+      variable.step = value; try {writeLinearValues();stepField.input.setCustomValidity('');onChange();} catch (error) {stepField.input.setCustomValidity(error.message);stepField.input.reportValidity();}
+    };
+    arrayField.input.onchange = () => {
+      const tokens = arrayField.input.value.trim().split(/[,;\s]+/).filter(Boolean), values = tokens.map(Number);
+      if (values.length !== curveIds.length || values.some(value => !Number.isFinite(value))) {arrayField.input.setCustomValidity('Enter exactly ' + curveIds.length + ' finite values.');arrayField.input.reportValidity();return;}
+      if (new Set(values).size !== values.length) {arrayField.input.setCustomValidity('Scan-variable values must be unique.');arrayField.input.reportValidity();return;}
+      variable.valuesByCurve = Object.fromEntries(curveIds.map((id, i) => [id, values[i]])); variable.mode = 'array'; arrayField.input.setCustomValidity(''); onChange();
+    };
+    updateVariableMode();
+  }
 }
 export function projectionCsv(d, s) {
   const { v, p, xr, yr, pxr, pyr } = model(d, s),

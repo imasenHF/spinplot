@@ -122,3 +122,11 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .spinplot-brand a:focus-visible{outline:2px solid #b68c37;outline-offset:2px}
 @media(max-width:420px){.spinplot-brand{gap:5px}.spinplot-brand .brand-name{font-size:15px}.brand-version{font-size:10px}.titlebar{padding-left:5px}}
 .projection-gaps label{display:flex;flex-direction:column;justify-content:flex-end;min-width:0;white-space:normal;line-height:1.35}.projection-gaps input{width:100%;box-sizing:border-box}.local-palette-control{position:relative;width:100%}.local-palette-control select[hidden]{display:none}.local-palette-swatch{position:absolute;right:27px;top:50%;transform:translateY(-50%);width:34%;height:12px;pointer-events:none;border:1px solid #aaa}
+
+/* Keep Label mode and Legend position labels and controls on the same baseline. */
+.subplot-section .label-settings-row .legend-position-field,
+.advanced-layout .label-settings-row .legend-position-field { border-top: 0; margin: 0; padding: 0; align-self: start; }
+.label-settings-row > .field > label,
+.label-settings-row .legend-position-field > summary { box-sizing: border-box; min-height: 14px; line-height: 14px; margin: 0 0 3px; padding: 0; }
+.label-settings-row .legend-position-field .field { margin: 0 0 7px; }
+.manual-scan-variable .manual-scan-note { grid-column: 1 / -1; }
