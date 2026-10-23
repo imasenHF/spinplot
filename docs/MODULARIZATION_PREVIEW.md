@@ -97,13 +97,16 @@ npm run build
 [浏览器对照、模块测试与构建（38369179810）](https://github.com/imasenHF/spinplot/actions/runs/38369179810) 全部通过；[公开预览浏览器测试（38369179836）](https://github.com/imasenHF/spinplot/actions/runs/38369179836) 通过；[主站 Pages 发布（38368916198）](https://github.com/imasenHF/imasenhf.github.io/actions/runs/38368916198) 成功。公开预览已加载本轮构建 `index-CdHZZgtg.js`，正式 `/spinplot/` 未改变。首次 CI 的项目重载等待超时已通过测试脚本修订排除，迁移源码保持不变。
 
 
-## 二维扫描变量关联图与功率轴换算（2026-10-23）
+## 二维 Variable scan 独立子图、Overlap 与功率轴换算（2026-10-23）
 
-- 右侧关联图默认显示，横轴为扫描变量，纵轴为当前信号分量的 Y 投影统计值；可切换 mean、max、min、peak-to-peak、RMS、sum，并可关闭关联图以恢复传统 Y 投影。
-- Field–Power Sweep 支持以文件设置中的参考功率和对应参考衰减值换算 mW 轴；参考值可手动修改。缺少有效校准参数时显示提示，不把 dB 直接标成 mW。
-- 预览分支数值/二维回归、生产构建、Chromium 浏览器回归、关联图 SVG 导出检查和迁移前输出对照通过（[运行 39853484035](https://github.com/imasenHF/spinplot/actions/runs/39853484035)）。临时页面部署成功（[Pages 运行 39854065484](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39854065484)），公开资源检查通过（[运行 39854270983](https://github.com/imasenHF/spinplot/actions/runs/39854270983)）；公开 Chromium 关联图验收仍在运行（[运行 39854271283](https://github.com/imasenHF/spinplot/actions/runs/39854271283)）。
-- 实现代码位于 `src/twod/ui.js`；计算和渲染回归位于 `src/twod/integration.test.js`；公开页面烟测位于 `scripts/preview-browser-smoke.mjs`。真实实验数据文件仅用于本次本地检查，未上传到公开仓库。
-- 功率换算关系：`P = P_ref × 10^(-(A - A_ref)/10)`，其中参考功率与参考衰减值必须对应。第二阶段 CW EPR 饱和拟合尚未实现。
+- 二维导入默认只创建原有 Heatmap，不自动生成 Variable scan 子图；原有顶部与右侧 Y 投影保持可用。
+- 在二维子图的 Plot mode 菜单选择 Variable scan (new subplot)，显式创建独立扫描子图。初始布局优先放在源图右侧；若复杂布局无法直接插入，则追加为新行。新图使用标准子图位置、尺寸、排序、项目保存和导出操作。
+- Overlap 是独立二维绘图模式：所选扫描轨迹共享 X 坐标轴，轨迹标签包含扫描变量及单位；Plot every N traces 控制显示抽样。原始矩阵和轨迹数值不受显示偏移影响。
+- Variable scan 的 X 轴是扫描变量，Y 轴是所选统计方式下的 Y 投影值。支持 mean、max、min、peak-to-peak、RMS、sum；样本点求和不是按非等距坐标加权的积分，RMS 不保留符号。
+- Field–Power Sweep 的 dB 衰减换算仅在参考功率与对应参考衰减均有效时输出 mW，关系为 P = P_ref × 10^(-(A - A_ref)/10)。缺少校准值时保留原始衰减轴，不把 dB 直接标为 mW。第二阶段 CW EPR 饱和功率拟合尚未实现。
+- 自动化验收运行 39951954898 通过数值/二维回归、生产构建、Chromium 浏览器回归和迁移前对照。浏览器测试覆盖显式新增扫描子图、源 Heatmap 保留、右侧初始布局、项目保存布局及含 Variable scan / Overlap 的 SVG 导出。
+- 静态预览构建 d1e478f（应用源码提交 ce23fb6）已同步至主站提交 3e50725；Pages 发布 39953758517 成功，公开浏览器检查 39951955041 第二次尝试通过。正式 /spinplot/ 未修改，临时快照不会随预览分支自动同步。
+- 实现位于 src/main.js 的 addVariableScanSubplot() 与二维 Plot mode 变更处理、src/twod/ui.js 的模式菜单和数据处理，以及 scripts/preview-browser-smoke.mjs 的浏览器回归。用户此前上传的 exp(1).zip 当前未出现在对话附件或可检索 Library 中；真实 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 样本验收仍待重新取得文件。样本文件不得复制到公开仓库。
 
 ## 频率校正 Target 模式修复
 
