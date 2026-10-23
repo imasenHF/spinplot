@@ -254,7 +254,7 @@ try {
     catch (error) { throw new Error('2D view SVG export failed; status='+await page.locator('#status').textContent()+'; pageErrors='+errors.join(' | ')+'; '+error.message); }
     await viewsDownload.saveAs('browser-preview/2d-view-modes.svg');
     const viewsSvg=fs.readFileSync('browser-preview/2d-view-modes.svg','utf8');
-    assert.match(viewsSvg,/Variable scan/);assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
+    assert.doesNotMatch(viewsSvg,/>Variable scan<\/text>/,'Variable scan subplot has no default title');assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
   }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.
