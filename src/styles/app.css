@@ -132,10 +132,13 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .manual-scan-variable .manual-scan-note { grid-column: 1 / -1; }
 
 
-/* Keep the Label mode and Legend position fields on identical rows. */
-.label-settings-row{align-items:stretch}
-.label-settings-row>.field,.label-settings-row>.legend-position-field{display:flex;flex-direction:column;min-width:0;margin:0}
-.label-settings-row>.field>label,.label-settings-row>.legend-position-field>summary{box-sizing:border-box;display:flex;align-items:center;flex:0 0 16px;height:16px;min-height:16px;line-height:16px;margin:0 0 3px;padding:0;white-space:normal;overflow-wrap:anywhere}
-.label-settings-row>.legend-position-field>summary{cursor:pointer;list-style-position:inside}
-.label-settings-row>.legend-position-field>.field{margin:0 0 7px;min-width:0}
+/* Keep the Label mode and Legend position labels and controls on identical rows. */
+.label-settings-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start!important;gap:7px}
+.label-settings-row>.field,.label-settings-row>.legend-position-field{display:flex!important;flex-direction:column;align-self:start!important;min-width:0;margin:0!important;padding:0!important;border:0!important}
+.label-settings-row>.field>label,.label-settings-row>.legend-position-field>summary{box-sizing:border-box;display:flex!important;align-items:center!important;flex:0 0 16px!important;height:16px!important;min-height:16px!important;line-height:16px!important;margin:0 0 3px!important;padding:0!important;white-space:normal;overflow-wrap:anywhere}
+.label-settings-row>.legend-position-field>summary{cursor:pointer;list-style:none!important}
+.label-settings-row>.legend-position-field>summary::-webkit-details-marker{display:none}
+.label-settings-row>.legend-position-field>summary::before{content:'▸';display:inline-block;flex:0 0 10px;line-height:16px}
+.label-settings-row>.legend-position-field[open]>summary::before{content:'▾'}
+.label-settings-row>.legend-position-field>.field{margin:0 0 7px!important;min-width:0}
 .label-settings-row select{box-sizing:border-box}
