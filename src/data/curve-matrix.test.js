@@ -1,61 +1,72 @@
+import test from "node:test";
 import assert from "node:assert/strict";
 import { createCurveMatrix } from "./curve-matrix.js";
 
-const axis = { name: "Magnetic field", unit: "G" };
-const curves = [
-  { index: 7, B: [1, 2, 3], y: [70, 71, 72], xAxis: axis },
-  { index: 2, B: [1, 2, 3], y: [20, 21, 22], xAxis: axis },
-  { index: 5, B: [1, 2, 3], y: [50, 51, 52], xAxis: axis },
-];
-const variable = {
-  name: "Temperature",
-  unit: "K",
-  mode: "array",
-  valuesByCurve: { 7: 50, 2: 10, 5: 30 },
-};
-const matrix = createCurveMatrix(curves, [7, 2, 5], variable);
+function curve(index, B, y, xAxis = { name: "Magnetic Field", unit: "G" }) {
+  return { index, name: "Trace " + index, B, y, xAxis };
+}
 
-assert.deepEqual(matrix.x, { name: "Magnetic field", unit: "G", values: [1, 2, 3] });
-assert.deepEqual(matrix.y, { name: "Temperature", unit: "K", values: [10, 30, 50] });
-assert.deepEqual(matrix.metadata.curveIndices, [2, 5, 7]);
-assert.deepEqual(matrix.real, [
-  [20, 21, 22],
-  [50, 51, 52],
-  [70, 71, 72],
-]);
-assert.deepEqual(curves[0].y, [70, 71, 72], "source curve data must remain unchanged");
-
-const unitless = createCurveMatrix(curves, [2, 5, 7], {
-  name: "Scan index",
-  unit: "",
-  mode: "linear",
-  valuesByCurve: { 2: 0, 5: 1, 7: 2 },
+test("manual curve matrix interpolates only inside the shared X range", () => {
+  const matrix = createCurveMatrix([
+    curve(0, [0, 1, 2, 3], [0, 10, 20, 30]),
+    curve(1, [0.5, 1.5, 2.5, 3], [1, 11, 21, 31]),
+  ], [0, 1], { name: "Temperature", unit: "K", valuesByCurve: { 0: 10, 1: 30 } });
+  assert.deepEqual(matrix.x.values, [1, 2, 3]);
+  assert.deepEqual(matrix.y.values, [10, 30]);
+  assert.deepEqual(matrix.real[0], [10, 20, 30]);
+  assert.deepEqual(matrix.real[1], [6, 16, 31]);
+  assert.deepEqual(matrix.metadata.curveIndices, [0, 1]);
 });
-assert.equal(unitless.y.name, "Scan index");
-assert.equal(unitless.y.unit, "", "empty units stay empty rather than creating empty parentheses");
 
-assert.throws(
-  () => createCurveMatrix(curves, [2, 5, 7], {
-    name: "Temperature",
-    unit: "K",
-    valuesByCurve: { 2: 10, 5: 10, 7: 30 },
-  }),
-  /values must be unique/i,
-);
-assert.throws(
-  () => createCurveMatrix(curves, [2, 5, 7], {
-    name: "Temperature",
-    unit: "K",
-    valuesByCurve: { 2: 10, 5: 30 },
-  }),
-  /must have a scan-variable value/i,
-);
-assert.throws(
-  () => createCurveMatrix([
-    curves[0],
-    { ...curves[1], xAxis: { name: "Magnetic field", unit: "mT" } },
-  ], [7, 2], { name: "Temperature", unit: "K", valuesByCurve: { 7: 0, 2: 1 } }),
-  /incompatible X-axis quantities or units/i,
-);
+test("scan values remain attached to curve IDs and rows are sorted by variable value", () => {
+  const matrix = createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 1, 1]),
+    curve(1, [0, 1, 2], [2, 2, 2]),
+    curve(2, [0, 1, 2], [3, 3, 3]),
+  ], [2, 0, 1], { name: "Temperature", unit: "K", valuesByCurve: { 0: 50, 1: 10, 2: 30 } });
+  assert.deepEqual(matrix.y.values, [10, 30, 50]);
+  assert.deepEqual(matrix.metadata.curveIndices, [1, 2, 0]);
+  assert.deepEqual(matrix.real.map((row) => row[0]), [2, 3, 1]);
+});
 
-console.log("Manual-curve matrix construction, scan-axis labels, ordering, and validation passed.");
+test("manual curve matrix rejects incompatible units, non-overlapping ranges and duplicate scan values", () => {
+  assert.throws(() => createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 2, 3]),
+    curve(1, [0, 1, 2], [2, 3, 4], { name: "Magnetic Field", unit: "mT" }),
+  ], [0, 1], { valuesByCurve: { 0: 0, 1: 1 } }), /incompatible X-axis/);
+  assert.throws(() => createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 2, 3]), curve(1, [3, 4, 5], [2, 3, 4]),
+  ], [0, 1], { valuesByCurve: { 0: 0, 1: 1 } }), /no common X-axis/);
+  assert.throws(() => createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 2, 3]), curve(1, [0, 1, 2], [2, 3, 4]),
+  ], [0, 1], { valuesByCurve: { 0: 1, 1: 1 } }), /must be unique/);
+});
+
+
+test("unitless scan axes keep an empty unit and source curves remain unchanged", () => {
+  const source = [
+    curve(4, [1, 2, 3], [4, 5, 6]),
+    curve(8, [1, 2, 3], [8, 9, 10]),
+  ];
+  const matrix = createCurveMatrix(source, [4, 8], {
+    name: "Scan index",
+    unit: "",
+    mode: "array",
+    valuesByCurve: { 4: 0, 8: 1 },
+  });
+  assert.equal(matrix.y.name, "Scan index");
+  assert.equal(matrix.y.unit, "");
+  assert.deepEqual(source[0].B, [1, 2, 3]);
+  assert.deepEqual(source[0].y, [4, 5, 6]);
+});
+
+test("manual curve matrix rejects missing or non-finite scan values", () => {
+  assert.throws(() => createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 2, 3]),
+    curve(1, [0, 1, 2], [2, 3, 4]),
+  ], [0, 1], { valuesByCurve: { 0: 0 } }), /scan-variable value/);
+  assert.throws(() => createCurveMatrix([
+    curve(0, [0, 1, 2], [1, 2, 3]),
+    curve(1, [0, 1, 2], [2, 3, 4]),
+  ], [0, 1], { valuesByCurve: { 0: 0, 1: "NaN" } }), /finite numbers/);
+});
