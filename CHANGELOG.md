@@ -11,6 +11,10 @@
 
 ## Unreleased (preview branch)
 
+- Fix Label mode / Legend position label and control alignment in narrow and desktop sidebars.
+- Initialize empty manual scan-variable maps from the configured linear start and interval; add regression tests for manual-curve matrix ordering, axis units, and invalid scan values.
+
+
 - Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.
 - Make the source microwave frequency editable for 1D magnetic-field datasets, including CSV files without frequency metadata; show no scale until a valid source frequency is supplied.
 - Add Chromium coverage for default Local mean, global Manual target, local Manual target, and CSV source-frequency entry.

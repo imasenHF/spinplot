@@ -11,7 +11,7 @@
 | 范围 | 当前功能 |
 | --- | --- |
 | 数据输入 | CSV、CIQTEK `.epr`、BES3T `.DSC/.DTA`（部分坐标轴需 `.XGF/.YGF`）；多文件导入 |
-| 一维数据 | 多曲线叠加与 Stack、全局/子图频率设置、磁场对齐、基线和幅度处理、坐标与 `g` 轴、图例和标注、ΔB 测距 |
+| 一维数据 | 多曲线叠加与 Stack、全局/子图频率设置、磁场对齐、基线和幅度处理、坐标与 `g` 轴、图例和标注、ΔB 测距；可将手动选定的多条 1D 曲线转换为 Heatmap 或独立 Variable scan 子图 |
 | 二维数据 | Heatmap / Stack / Overlap；可显式新增独立 Variable scan 子图；实部/虚部/模值、X/Y/Z 轴与色标、保留顶部/右侧投影、统计范围、调色板和多子图混排 |
 | 制图界面 | Data / Processing / Subplots / Axes / Style / Export 六个选项卡；画布尺寸、局部覆盖、撤销/重做 |
 | 输出 | PNG、JPEG、WebP、BMP、TIFF、SVG、PDF、数据及投影 CSV、频率元数据 |
@@ -51,6 +51,7 @@ node src/twod/bes3t.test.js
 node src/twod/large.test.js
 node src/twod/integration.test.js
 node src/twod/ticks.test.js
+node src/data/curve-matrix.test.js
 ```
 
 仪器样本回归（需使用本地、未公开的实验文件）参见 [二维数据说明](docs/TWO_DIMENSIONAL.md)。构建通过不等同于浏览器全流程或科学数值验收通过。

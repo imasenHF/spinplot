@@ -76,7 +76,7 @@ function ensureManualScanVariable(sp,curveIndices=sp.curves||[]){
  if(!v.valuesByCurve||typeof v.valuesByCurve!=='object'||Array.isArray(v.valuesByCurve))v.valuesByCurve={};
  const map=v.valuesByCurve,used=new Set();
  for(const id of curveIndices){const value=Number(map[id]);if(map[id]!==undefined&&map[id]!==null&&String(map[id]).trim()!==''&&Number.isFinite(value)){map[id]=value;used.add(value);}}
- if(!Object.keys(map).length){curveIndices.forEach((id,i)=>{map[id]=i;used.add(i);});}
+ if(!Object.keys(map).length){curveIndices.forEach((id,i)=>{const value=v.mode==='linear'?Number(v.start)+i*Number(v.step):i;map[id]=value;used.add(value);});}
  else for(let i=0;i<curveIndices.length;i++){const id=curveIndices[i];if(map[id]!==undefined&&map[id]!==null&&String(map[id]).trim()!==''&&Number.isFinite(Number(map[id])))continue;let value=Number(v.start)+i*Number(v.step),delta=Number(v.step)||1,tries=0;while(used.has(value)&&tries++<curveIndices.length+5)value+=delta;if(used.has(value))value=Math.max(-Infinity,...used)+1;map[id]=value;used.add(value);}
  return v;
 }
