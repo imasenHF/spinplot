@@ -341,7 +341,6 @@ try {
     const legendBounds = await sourceCard.locator('.label-settings-row .legend-position-field > summary').boundingBox();
     const labelControl = await sourceCard.locator('[data-field="labelMode"]').boundingBox();
     const legendControl = await sourceCard.locator('[data-field="legendPosition"]').boundingBox();
-    console.log('ALIGN DEBUG', JSON.stringify({labelBounds,legendBounds,labelControl,legendControl}));
     assert.ok(labelBounds && legendBounds && Math.abs(labelBounds.y - legendBounds.y) <= 1, 'Label mode and Legend position labels must align');
     assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');

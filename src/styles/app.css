@@ -136,6 +136,7 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .label-settings-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start!important;gap:7px}
 .label-settings-row>.field,.label-settings-row>.legend-position-field{display:flex!important;flex-direction:column;align-self:start!important;min-width:0;margin:0!important;padding:0!important;border:0!important}
 .label-settings-row>.field>label,.label-settings-row>.legend-position-field>summary{box-sizing:border-box;display:flex!important;align-items:center!important;flex:0 0 16px!important;height:16px!important;min-height:16px!important;line-height:16px!important;margin:0 0 3px!important;padding:0!important;white-space:normal;overflow-wrap:anywhere}
+.label-settings-row>.field>label{margin-bottom:0!important}
 .label-settings-row>.legend-position-field>summary{cursor:pointer;list-style:none!important}
 .label-settings-row>.legend-position-field>summary::-webkit-details-marker{display:none}
 .label-settings-row>.legend-position-field>summary::before{content:'▸';display:inline-block;flex:0 0 10px;line-height:16px}
