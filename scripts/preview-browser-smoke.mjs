@@ -226,12 +226,26 @@ try {
     assert.equal(await page.locator('.subplot').count(),3,'Selecting Variable scan adds a separate subplot');
     const modes=await page.locator('[data-field="mode"]').evaluateAll(els=>els.map(e=>e.value));
     assert.deepEqual(modes,['overlay','scan','overlap'],'The source Heatmap remains alongside Variable scan and Overlap');
+    const scanCard=page.locator('.subplot').nth(1);
+    for(const key of ['xMode','yMode','projectionXMin','projectionXMax','projectionYMin','projectionYMax','showXProjection','showYProjection'])
+      assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),false,'Variable scan must not expose 2D projection control '+key);
+    for(const key of ['scanAxisMode','scanStatistic','scanStatisticMin','scanStatisticMax'])
+      assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),true,'Variable scan control '+key+' must be visible');
+    await scanCard.locator('[data-twod="scanStatistic"]').selectOption('max');
+    await scanCard.locator('[data-twod="scanStatisticMin"]').fill('3320');
+    await scanCard.locator('[data-twod="scanStatisticMax"]').fill('3350');
+    await scanCard.locator('[data-twod="scanStatisticMax"]').press('Tab');
     const savedViews=await save('browser-preview/2d-view-modes.json');
     assert.equal(savedViews.config.subplots[0].mode,'overlay');
     assert.equal(savedViews.config.subplots[1].mode,'scan');
     assert.equal(savedViews.config.subplots[1].gridRow,savedViews.config.subplots[0].gridRow);
     assert.equal(savedViews.config.subplots[1].gridCol,savedViews.config.subplots[0].gridCol+1,'Scan subplot is initially placed to the right of the source map');
     assert.equal(savedViews.config.subplots[2].mode,'overlap');
+    assert.equal(savedViews.config.subplots[0].twoD.settings.yMode,'rms','Changing the scan statistic must not alter the source map right-projection statistic');
+    assert.equal(savedViews.config.subplots[0].twoD.settings.projectionXMin,3300,'Changing the scan interval must not alter the source map projection interval');
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatistic,'max');
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMin,3320);
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMax,3350);
     assert.equal(savedViews.config.layout.spans,'1,1 / 2','The added subplot is included in the saved layout');
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
     let viewsDownload;

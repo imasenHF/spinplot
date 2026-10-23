@@ -1,5 +1,5 @@
 import { gFromCoordinate, coordinateFromG } from '../processing/axis.js';
-import { orient, projections, validate, axisKind, fieldToGauss } from './core.js';
+import { orient, projections, reduce, validate, axisKind, fieldToGauss } from './core.js';
 import { tickFormatter } from './ticks.js';
 import { COLOR_SCHEMES } from './palettes.js';
 export function defaults(d) {
@@ -37,6 +37,9 @@ export function defaults(d) {
     showScanCorrelation: false,
     scanAxisMode: 'native',
     scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
+    scanStatistic: 'rms',
+    scanStatisticMin: xMin,
+    scanStatisticMax: xMax,
     showXProjectionRange: true,
     showYProjectionRange: true,
     showXProjectionTitle: true,
@@ -93,6 +96,16 @@ export function migrate(d, s) {
   for (const k of ['showXProjectionRange', 'showYProjectionRange'])
     if (s[k] === undefined) s[k] = s.showProjectionRanges !== false;
   const base = defaults(d);
+  if (s.scanStatistic === undefined) s.scanStatistic = s.yMode || base.scanStatistic;
+  if (!['mean', 'max', 'min', 'ptp', 'rms', 'sum'].includes(s.scanStatistic)) s.scanStatistic = base.scanStatistic;
+  if (s.scanStatisticMin === undefined) {
+    const value = s.projectionXMin;
+    s.scanStatisticMin = value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMin;
+  }
+  if (s.scanStatisticMax === undefined) {
+    const value = s.projectionXMax;
+    s.scanStatisticMax = value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMax;
+  }
   for (const [k, v] of Object.entries(base)) if (s[k] === undefined) s[k] = v;
   return s;
 }
@@ -243,11 +256,14 @@ export function controls(card, sp, d, onChange) {
     s.open !== false,
   );
   box.classList.add('twod-options');
+  if (sp.mode === 'scan') box.querySelector('summary').textContent = 'Signal source · ' + d.name;
   box.ontoggle = () => {
     s.open = box.open;
   };
   const projectionSection = section('Projections');
   const projection = projectionSection.body;
+  const scanSection = section('Variable scan settings', sp.mode === 'scan');
+  const scanSettings = scanSection.body;
   function input(parent, key, title, type = 'text') {
     const l = document.createElement('label');
     l.className = 'control-label';
@@ -350,7 +366,7 @@ export function controls(card, sp, d, onChange) {
     for (const e of card.querySelectorAll('input[data-twod]')) e.value = s[e.dataset.twod];
   });
   for (const key of ['xMode', 'yMode'])
-    select(projection, key, 'Statistic', [
+    select(projection, key, key === 'xMode' ? 'Top projection statistic' : 'Right projection statistic', [
       ['mean', 'Mean'],
       ['max', 'Maximum'],
       ['min', 'Minimum'],
@@ -358,16 +374,27 @@ export function controls(card, sp, d, onChange) {
       ['rms', 'RMS'],
       ['sum', 'Sum'],
     ]);
-  const scanAxisSelect = select(projection, 'scanAxisMode', 'Variable-scan X axis', [
+  const scanAxisSelect = select(scanSettings, 'scanAxisMode', 'Scan X axis', [
     ['native', 'Acquired scan variable'],
     ['power', 'Microwave power (mW)'],
   ]);
-  scanAxisSelect.closest('label').classList.add('scan-mode-only');
+  select(scanSettings, 'scanStatistic', 'Statistic', [
+    ['mean', 'Mean'],
+    ['max', 'Maximum'],
+    ['min', 'Minimum'],
+    ['ptp', 'Peak-to-peak (max − min)'],
+    ['rms', 'RMS'],
+    ['sum', 'Sum'],
+  ]);
+  const statisticAxis = orient(d, s.component, s.swap).x;
+  const statisticAxisLabel = statisticAxis.name + (statisticAxis.unit ? ' (' + statisticAxis.unit + ')' : '');
+  input(scanSettings, 'scanStatisticMin', 'Statistic interval · ' + statisticAxisLabel + ' min', 'number');
+  input(scanSettings, 'scanStatisticMax', 'Statistic interval · ' + statisticAxisLabel + ' max', 'number');
   const powerReferenceControls = document.createElement('div');
   powerReferenceControls.className = 'grid2 scan-power-reference-controls';
   powerReferenceControls.style.gridColumn = '1 / -1';
   powerReferenceControls.hidden = s.scanAxisMode !== 'power';
-  projection.append(powerReferenceControls);
+  scanSettings.append(powerReferenceControls);
   input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power at 0 dB attenuation P₀ (mW)', 'number');
   const onScanAxisChange = scanAxisSelect.onchange;
   scanAxisSelect.onchange = () => {
@@ -497,11 +524,13 @@ export function controls(card, sp, d, onChange) {
     list.replaceChildren(row);
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
-  projectionSection.box.querySelector('summary').textContent = sp.mode === 'scan' ? 'Variable scan settings' : 'Projections';
-  projectionSection.box.hidden = sp.mode === 'overlap';
-  scanAxisSelect.closest('label').hidden = sp.mode !== 'scan';
+  projectionSection.box.querySelector('summary').textContent = 'Projections';
+  projectionSection.box.hidden = sp.mode === 'overlap' || sp.mode === 'scan';
+  scanSection.box.hidden = sp.mode !== 'scan';
   powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
-  for (const key of ['xMode', 'yMode']) projection.querySelector('[data-twod=' + key + ']').closest('label').hidden = sp.mode === 'overlap';
+  stackInput.closest('label').hidden = sp.mode === 'scan';
+  body.querySelector('[data-twod=swap]').closest('label').hidden = sp.mode === 'scan';
+  for (const key of ['xMode', 'yMode']) projection.querySelector('[data-twod=' + key + ']').closest('label').hidden = sp.mode === 'overlap' || sp.mode === 'scan';
   for (const key of ['projectionXMin', 'projectionXMax', 'projectionYMin', 'projectionYMax']) {
     const label = projectionCoordinateFields.get(key); label.hidden = sp.mode === 'overlap';
     if (key === 'projectionYMin') label.firstChild.textContent = sp.mode === 'scan' ? 'Scan variable min' : 'X projection: Y min';
@@ -557,10 +586,24 @@ export function overlapData(d, s) {
 
 export function scanCorrelationData(d, s) {
   migrate(d, s);
-  const oriented = orient(d, s.component, s.swap);
-  if (s.scanAxisMode === 'power' && !isAttenuationAxis(oriented.y))
-    return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis: { name: oriented.y.name, unit: oriented.y.unit } };
-  const { v, p, pyr } = model(d, fullRangeSettings(d, s));
+  const v = orient(d, s.component, s.swap);
+  if (s.scanAxisMode === 'power' && !isAttenuationAxis(v.y))
+    return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis: { name: v.y.name, unit: v.y.unit } };
+  const rangeMin = Number(s.scanStatisticMin),
+    rangeMax = Number(s.scanStatisticMax);
+  if (
+    String(s.scanStatisticMin ?? '').trim() === '' ||
+    String(s.scanStatisticMax ?? '').trim() === '' ||
+    !Number.isFinite(rangeMin) || !Number.isFinite(rangeMax) || rangeMin >= rangeMax
+  )
+    return { valid: false, reason: 'Enter a valid statistic interval.', xAxis: { name: v.y.name, unit: v.y.unit } };
+  const xi = v.x.values.map((value, i) => value >= rangeMin && value <= rangeMax ? i : -1).filter(i => i >= 0);
+  if (!xi.length)
+    return { valid: false, reason: 'The statistic interval contains no X-axis samples.', xAxis: { name: v.y.name, unit: v.y.unit } };
+  const statistic = ['mean', 'max', 'min', 'ptp', 'rms', 'sum'].includes(s.scanStatistic)
+      ? s.scanStatistic
+      : 'rms',
+    signal = v.z.map(row => reduce(xi.map(i => row[i]), statistic));
   let x = v.y.values.slice(),
     xAxis = { name: v.y.name, unit: v.y.unit };
   if (s.scanAxisMode === 'power') {
@@ -568,29 +611,27 @@ export function scanCorrelationData(d, s) {
     if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
         !Number.isFinite(referencePower) || referencePower <= 0)
       return { valid: false, reason: 'Enter a positive reference power at 0 dB attenuation.', xAxis };
-    x = x.map((attenuation) => referencePower * 10 ** (-attenuation / 10));
+    x = x.map(attenuation => referencePower * 10 ** (-attenuation / 10));
     xAxis = { name: 'Microwave power', unit: 'mW' };
   }
-  const lo = Math.min(...pyr),
-    hi = Math.max(...pyr),
-    points = x.map((value, i) => ({
-      x: value,
-      y: p.y[i],
-      scan: v.y.values[i],
-      index: i,
-    })).filter((point) =>
-      point.scan >= lo && point.scan <= hi &&
-      Number.isFinite(point.x) && Number.isFinite(point.y)
-    );
+  const points = x.map((value, i) => ({
+    x: value,
+    y: signal[i],
+    scan: v.y.values[i],
+    index: i,
+  })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
   if (points.length < 2)
-    return { valid: false, reason: 'The selected scan range contains fewer than two valid points.', xAxis };
+    return { valid: false, reason: 'The scan contains fewer than two valid points.', xAxis };
+  const statisticLabel = ({ mean: 'Mean', max: 'Maximum', min: 'Minimum', ptp: 'Peak-to-peak', rms: 'RMS', sum: 'Sum' })[statistic];
   return {
     valid: true,
-    x: points.map((point) => point.x),
-    y: points.map((point) => point.y),
-    scan: points.map((point) => point.scan),
+    x: points.map(point => point.x),
+    y: points.map(point => point.y),
+    scan: points.map(point => point.scan),
     xAxis,
-    yAxis: { name: 'Y projection (' + s.yMode + ')', unit: '' },
+    yAxis: { name: 'Signal (' + statisticLabel + ')', unit: '' },
+    statistic,
+    statisticRange: [rangeMin, rangeMax],
     mode: s.scanAxisMode,
   };
 }
