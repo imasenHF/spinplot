@@ -1076,7 +1076,8 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         const title = s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`;
         const measureWidth = (value) => {
           ctx.font = tick + 'px ' + font;
-          return typeof ctx.measureText === 'function' ? ctx.measureText(value).width : String(value).length * tick * 0.6;
+          const measured = typeof ctx.measureText === 'function' ? ctx.measureText(value)?.width : undefined;
+          return Number.isFinite(measured) ? measured : String(value).length * tick * 0.6;
         };
         if (measureWidth(title) > side.w) {
           let lines;
