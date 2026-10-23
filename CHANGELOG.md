@@ -13,6 +13,7 @@
 
 - Fix Label mode / Legend position label and control alignment in narrow and desktop sidebars.
 - Initialize empty manual scan-variable maps from the configured linear start and interval; add regression tests for manual-curve matrix ordering, axis units, and invalid scan values.
+- Add an independent Projection titles font-size control (default 11 px) shared by top and right projections, separate from tick labels; preserve right-title wrapping and reserve additional top spacing for larger titles.
 
 
 - Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.
