@@ -457,7 +457,7 @@ export function controls(card, sp, d, onChange) {
   input(gaps, 'projectionGapY', 'Top projection gap (px)', 'number');
   const mode = card.querySelector('[data-field=mode]');
   mode.querySelector('[value=overlay]').textContent = 'Heatmap';
-  for (const [value, label] of [['overlap', 'Overlap'], ['scan', 'Variable scan']]) {
+  for (const [value, label] of [['overlap', 'Overlap'], ['scan', 'Variable scan (new subplot)']]) {
     if (!mode.querySelector('[value=' + value + ']')) {
       const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
     }

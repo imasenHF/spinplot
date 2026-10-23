@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Add a right-side scan-correlation plot for common 2D EPR sweeps, using the selected Y-projection statistic.
-- Add optional dB attenuation to microwave-power conversion with explicit reference power and reference attenuation; missing calibration is reported rather than inferred.
+- Add an explicit Variable scan subplot for 2D EPR sweeps. It is created from the 2D Plot mode menu, starts beside the source map when the layout permits, and preserves the original Y projection.
+- Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
+- Add calibrated dB attenuation-to-microwave-power conversion with explicit reference power and reference attenuation; missing calibration is reported rather than inferred.
 
 
 ## Unreleased (preview branch)

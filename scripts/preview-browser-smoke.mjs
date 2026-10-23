@@ -213,14 +213,26 @@ try {
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
-    const extraView=(title,row)=>({...JSON.parse(JSON.stringify(source2D)),title,mode:'overlay',gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}});
-    const viewMixed={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:4,cols:1,spans:'1 / 1 / 1 / 1'},subplots:[...mixed.config.subplots,extraView('Variable scan',3),extraView('Overlap',4)]}};
+    const extraView=(title,row,mode)=>({...JSON.parse(JSON.stringify(source2D)),title,mode,gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}});
+    const viewMixed={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[
+      {...source2D,title:'Synthetic 2D',mode:'overlay',gridRow:1,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}},
+      extraView('Overlap',2,'overlap')
+    ]}};
     await load(viewMixed,'2d-view-modes.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    await page.locator('[data-field="mode"]').nth(2).selectOption('scan');
-    await page.locator('[data-field="mode"]').nth(3).selectOption('overlap');
+    assert.equal(await page.locator('.subplot').count(),2,'No scan subplot is created on 2D import');
+    await page.locator('[data-field="mode"]').first().selectOption('scan');
     await page.waitForTimeout(250);
-    assert.equal(errors.length,0,'2D scan/overlap render error: '+errors.join(' | '));
+    assert.equal(await page.locator('.subplot').count(),3,'Selecting Variable scan adds a separate subplot');
+    const modes=await page.locator('[data-field="mode"]').evaluateAll(els=>els.map(e=>e.value));
+    assert.deepEqual(modes,['overlay','scan','overlap'],'The source Heatmap remains alongside Variable scan and Overlap');
+    const savedViews=await save('browser-preview/2d-view-modes.json');
+    assert.equal(savedViews.config.subplots[0].mode,'overlay');
+    assert.equal(savedViews.config.subplots[1].mode,'scan');
+    assert.equal(savedViews.config.subplots[1].gridRow,savedViews.config.subplots[0].gridRow);
+    assert.equal(savedViews.config.subplots[1].gridCol,savedViews.config.subplots[0].gridCol+1,'Scan subplot is initially placed to the right of the source map');
+    assert.equal(savedViews.config.subplots[2].mode,'overlap');
+    assert.equal(savedViews.config.layout.spans,'1,1 / 2','The added subplot is included in the saved layout');
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
     let viewsDownload;
     try { [viewsDownload]=await Promise.all([page.waitForEvent('download',{timeout:8000}),page.locator('#exportImageBtnSide').click()]); }
