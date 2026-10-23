@@ -100,11 +100,11 @@ export function migrate(d, s) {
   if (!['mean', 'max', 'min', 'ptp', 'rms', 'sum'].includes(s.scanStatistic)) s.scanStatistic = base.scanStatistic;
   if (s.scanStatisticMin === undefined) {
     const value = s.projectionXMin;
-    s.scanStatisticMin = value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMin;
+    s.scanStatisticMin = value !== undefined && value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMin;
   }
   if (s.scanStatisticMax === undefined) {
     const value = s.projectionXMax;
-    s.scanStatisticMax = value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMax;
+    s.scanStatisticMax = value !== undefined && value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : base.scanStatisticMax;
   }
   for (const [k, v] of Object.entries(base)) if (s[k] === undefined) s[k] = v;
   return s;

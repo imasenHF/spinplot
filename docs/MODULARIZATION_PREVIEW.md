@@ -102,7 +102,8 @@ npm run build
 - 二维导入默认只创建原有 Heatmap，不自动生成 Variable scan 子图；原有顶部与右侧 Y 投影保持可用。
 - 在二维子图的 Plot mode 菜单选择 Variable scan (new subplot)，显式创建独立扫描子图。初始布局优先放在源图右侧；若复杂布局无法直接插入，则追加为新行。新图使用标准子图位置、尺寸、排序、项目保存和导出操作。
 - Overlap 是独立二维绘图模式：所选扫描轨迹共享 X 坐标轴，轨迹标签包含扫描变量及单位；Plot every N traces 控制显示抽样。原始矩阵和轨迹数值不受显示偏移影响。
-- Variable scan 的 X 轴是扫描变量，Y 轴是所选统计方式下的 Y 投影值。支持 mean、max、min、peak-to-peak、RMS、sum；样本点求和不是按非等距坐标加权的积分，RMS 不保留符号。
+- Variable scan 的 X 轴是扫描变量，Y 轴是每条扫描轨迹在独立统计区间内的统计值。统计方式与区间分别保存在 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax`，复用右侧投影的样本归约函数；新建时在坐标方向一致时以源图右侧投影的统计方式和 X 区间初始化，随后与源图的 `yMode`、`projectionXMin/Max` 独立。扫描视图隐藏二维 Top/Right projection 控件。统计方式支持 mean、max、min、peak-to-peak、RMS、sum；样本点求和不是按非等距坐标加权的积分，RMS 不保留符号。
+- 2026-10-23 本次实现已加入数值回归和 Chromium 浏览器检查：验证扫描视图隐藏二维投影控件、扫描统计方式/区间与源图独立，并覆盖旧配置迁移。最新完整回归仍在执行；公开临时预览尚未同步此修正，正式 `/spinplot/` 保持不变。
 - Field–Power Sweep 的 dB 衰减换算仅需零衰减参考功率 P₀，关系为 P(A) = P₀ × 10^(-A/10)。界面只显示 P₀；旧项目中的 (P_ref, A_ref) 会迁移为等效 P₀ = P_ref × 10^(A_ref/10)。缺少有效 P₀ 时不把 dB 直接标为 mW。第二阶段 CW EPR 饱和功率拟合尚未实现。
 - 自动化验收运行 39951954898 通过数值/二维回归、生产构建、Chromium 浏览器回归和迁移前对照。浏览器测试覆盖显式新增扫描子图、源 Heatmap 保留、右侧初始布局、项目保存布局及含 Variable scan / Overlap 的 SVG 导出。
 - 静态预览构建 d1e478f（应用源码提交 ce23fb6）已同步至主站提交 3e50725；Pages 发布 39953758517 成功，公开浏览器检查 39951955041 第二次尝试通过。正式 /spinplot/ 未修改，临时快照不会随预览分支自动同步。

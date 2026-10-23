@@ -99,8 +99,8 @@
 
 ### 当前实施与验收状态（2026-10-23）
 
-- 代码提交 ce23fb6 已将 Variable scan 实现为显式新增的独立子图：导入默认保留 Heatmap，选择该模式后扫描图初始放在源图右侧；原图与 Y 投影保留。复杂布局无法直接插入右侧时追加为新行。实现位于 src/main.js 的 addVariableScanSubplot() 和二维 Plot mode 变更处理；src/twod/ui.js 显示 Variable scan (new subplot) 菜单项。
-- 自动化运行 39951954898 全部通过：数值、CSV/插值、一维处理、项目版本兼容、现有二维回归、显示/坐标/导出测试、生产构建、Chromium 浏览器回归与迁移前对照均成功。浏览器测试验证扫描子图创建、源 Heatmap 保留、右侧布局、项目保存的布局信息及包含 Variable scan / Overlap 的 SVG 导出。
+- Variable scan 独立投影设置修正（2026-10-23）：扫描曲线使用 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax` 独立保存统计方式与 X 坐标统计区间，计算复用右侧投影的样本归约函数。创建时在坐标方向一致的条件下，以源图 `yMode` 和 `projectionXMin/Max` 初始化，之后与源图设置独立；扫描视图隐藏 Top/Right projection 控件，只显示扫描轴、统计方式、统计区间和必要的功率换算。实现位于 `src/main.js` 的 `addVariableScanSubplot()` 及 `src/twod/ui.js`。本次完整回归与公开预览同步待执行。
+- 上一轮自动化运行 39951954898 全部通过：数值、CSV/插值、一维处理、项目版本兼容、现有二维回归、显示/坐标/导出测试、生产构建、Chromium 浏览器回归与迁移前对照均成功。浏览器测试验证扫描子图创建、源 Heatmap 保留、右侧布局、项目保存的布局信息及包含 Variable scan / Overlap 的 SVG 导出。
 - 静态预览构建提交 d1e478f 已同步到主站，主站提交 3e50725 更新预览快照与资源检查页；Pages 发布运行 39953758517 成功，公开浏览器检查运行 39951955041 的第二次尝试通过。第一次公开检查使用旧快照，部署新资源后重跑通过。
 - 用户此前上传的 exp(1).zip 计划用于 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 等二维样本检查；当前对话附件与可检索 Library 中仍未找到该 ZIP。真实仪器样本的坐标、单位、信号分量和项目保存验收仍待重新取得文件后执行。不得声称真实样本验收通过，也不得将样本复制到公开仓库。
 - 本轮代码继续保持在 preview/modularization-phase1-20261009 和 Draft PR #1；未经明确授权不合并 main，正式 /spinplot/ 未修改。主站临时快照不会随预览分支自动同步。
