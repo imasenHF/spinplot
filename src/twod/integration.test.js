@@ -8,9 +8,24 @@ assert.equal(fieldToGauss({name:'Modulation amplitude',unit:'G'}),null);
 assert.equal(fieldToGauss({name:'Field',unit:'mT'}),10);
 const d={name:'PRIVATE_FILE.DSC',x:{name:'Power',unit:'mW',values:[1,2]},y:{name:'Field',unit:'mT',values:[300,310]},real:[[1,2],[3,4]],imag:[[0,0],[0,0]]};
 const s=defaults(d);assert.equal(s.swap,true);assert.equal(projectionColor(s,{scheme:'matlab'}),'#0072BD');s.projectionScheme='jacs';assert.equal(projectionColor(s,{scheme:'matlab'}),'#1F5A85');s.scheme='plasma';assert.equal(projectionColor(s,{scheme:'matlab'}),'#1F5A85');
-function draw(s,title='',data=d){const texts=[];const ctx=new Proxy({drawImage:undefined,fillText:(...a)=>texts.push(a),measureText:t=>({width:String(t).length*7})},{get:(o,k)=>k in o?o[k]:()=>{},set:(o,k,v)=>(o[k]=v,true)});const g=render(ctx,data,s,{cellX:0,cellY:0,cellW:1000,cellH:700},'Arial',{text:'#000',axis:'#000'},title,{scheme:'matlab',g:{show:true,decimals:3,label:'g factor',titleDistance:22},frequency:9.85,gTicks:(lo,hi)=>[(lo+hi)/2]});return {texts,g};}
+function draw(s,title='',data=d,renderOptions={}){const texts=[],fonts=[];let ctx;ctx=new Proxy({drawImage:undefined,fillText:(...a)=>{texts.push(a);fonts.push(ctx.font)},measureText:t=>({width:String(t).length*7})},{get:(o,k)=>k in o?o[k]:()=>{},set:(o,k,v)=>(o[k]=v,true)});const g=render(ctx,data,s,{cellX:0,cellY:0,cellW:1000,cellH:700},'Arial',{text:'#000',axis:'#000'},title,{scheme:'matlab',g:{show:true,decimals:3,label:'g factor',titleDistance:22},frequency:9.85,gTicks:(lo,hi)=>[(lo+hi)/2],...renderOptions});return {texts,g,fonts};}
 const {texts,g}=draw(s,'My spectrum');assert(!texts.some(a=>a[0]===d.name));assert.equal(texts.find(a=>a[0]==='My spectrum')[1],g.titleCenter);assert(texts.some(a=>a[0]==='g factor'));assert(!draw(s).texts.some(a=>a[0]===d.name));s.swap=false;s.xMin=1;s.xMax=2;s.yMin=300;s.yMax=310;s.projectionXMin=1;s.projectionXMax=2;s.projectionYMin=300;s.projectionYMax=310;assert(draw(s).texts.some(a=>a[0]==='g factor'));assert(projectionCsv(d,s).includes('projectionXRange'));
 console.log('Shared palette, title center, both magnetic-axis orientations, units and projection CSV passed');
+
+const projectionTypography = {...defaults(d), xProjectionTitle:'Top projection', yProjectionTitle:'Right projection'};
+const sizedProjection = draw(projectionTypography, '', d, {tickSize:8, projectionTitleSize:17});
+for (const label of ['Top projection', 'Right projection']) {
+  const index = sizedProjection.texts.findIndex(entry => entry[0] === label);
+  assert.ok(index >= 0, `Expected projection title: ${label}`);
+  assert.equal(sizedProjection.fonts[index], '17px Arial', `${label} must use the independent projection title size`);
+}
+assert(sizedProjection.fonts.includes('8px Arial'), 'Tick labels must retain their own font size');
+const defaultProjection = draw(projectionTypography);
+const defaultTopTitle = defaultProjection.texts.findIndex(entry => entry[0] === 'Top projection');
+assert.equal(defaultProjection.fonts[defaultTopTitle], '11px Arial', 'Missing saved setting should preserve the historical 11px projection title size');
+const projectionBox = {cellX:0, cellY:0, cellW:1000, cellH:700};
+assert(plotInsets(d, defaults(d), projectionBox, '', {projectionTitleSize:24}).top > plotInsets(d, defaults(d), projectionBox, '', {projectionTitleSize:11}).top, 'Large projection titles must reserve enough top space');
+console.log('Independent projection title typography and layout spacing passed');
 
 const ms=defaults(d);assert.equal(ms.projectionGapX,20);assert.equal(ms.projectionGapY,20);ms.mode='stack';ms.step=1;assert.equal(stackRows(model(d,ms),ms).length,2);ms.step=2;assert.equal(stackRows(model(d,ms),ms).length,1);
 const projectionDefaults=defaults(d);projectionDefaults.showScanCorrelation=false;const prs=draw(projectionDefaults).g.projectionRegions;assert.equal(prs.length,2);assert.equal(prs[0].projection,'top');assert.equal(prs[1].projection,'side');assert.equal(prs[0].xmin,300);assert.equal(prs[1].ymax,2);

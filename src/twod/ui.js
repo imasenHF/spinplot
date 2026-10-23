@@ -799,7 +799,8 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     hasSide = s.showProjections && s.showYProjection !== false,
     proj = hasTop || hasSide,
     cb = s.showColorbar && s.mode === 'heatmap',
-    axisSize = options.axisSize || 14;
+    axisSize = options.axisSize || 14,
+    projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || 11);
   const gX = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.x),
     gY = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.y),
     gapX = Math.max(gY ? 80 : 0, Number(s.projectionGapX) || 0),
@@ -810,8 +811,8 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     left: Math.max(52, options.yTitleDistance || 35),
     right: hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20,
     top: hasTop
-      ? (title.trim() ? 62 : 40) + topH + gapY + gSpace
-      : (title.trim() ? 65 : 42) + (gX ? 34 : 0),
+      ? Math.max(title.trim() ? 62 : 40, projectionTitleSize * 2 + 4) + topH + gapY + gSpace
+      : Math.max(title.trim() ? 65 : 42, hasSide ? projectionTitleSize * 2 + 4 : 0) + (gX ? 34 : 0),
     bottom: Math.max(55, (options.xTitleDistance || 20) + axisSize + 20),
     gapX,
     gapY,
@@ -875,6 +876,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     cb = s.showColorbar && s.mode === 'heatmap',
     stops = colorStops(s, options),
     tick = options.tickSize || 11,
+    projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || tick),
     axisSize = options.axisSize || 14,
     titleSize = options.titleSize || 15,
     lineWidth = options.lineWidth || 1.4;
@@ -1085,7 +1087,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           s.xProjectionTitle || `${v.x.name} projection (${s.xMode})`,
           top.x + top.w / 2,
           top.y - 18,
-          tick,
+          projectionTitleSize,
         );
       if (s.showProjectionRanges && s.showXProjectionRange !== false)
         text(
@@ -1140,9 +1142,9 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       if (s.showYProjectionTitle !== false) {
         const title = s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`;
         const measureWidth = (value) => {
-          ctx.font = tick + 'px ' + font;
+          ctx.font = projectionTitleSize + 'px ' + font;
           const measured = typeof ctx.measureText === 'function' ? ctx.measureText(value)?.width : undefined;
-          return Number.isFinite(measured) ? measured : String(value).length * tick * 0.6;
+          return Number.isFinite(measured) ? measured : String(value).length * projectionTitleSize * 0.6;
         };
         if (measureWidth(title) > side.w) {
           let lines;
@@ -1165,15 +1167,15 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
             }
           }
           const fitSize = (line) => {
-            ctx.font = tick + 'px ' + font;
+            ctx.font = projectionTitleSize + 'px ' + font;
             const width = measureWidth(line);
-            return width > side.w ? Math.max(7, tick * side.w / width) : tick;
+            return width > side.w ? Math.max(7, projectionTitleSize * side.w / width) : projectionTitleSize;
           };
-          const lineGap = Math.max(10, tick * 1.15);
+          const lineGap = Math.max(10, projectionTitleSize * 1.15);
           const firstY = y - 28 - (lines.length - 1) * lineGap / 2;
           lines.forEach((line, i) => text(line, side.x + side.w / 2, firstY + i * lineGap, fitSize(line)));
         } else {
-          text(title, side.x + side.w / 2, y - 28, tick);
+          text(title, side.x + side.w / 2, y - 28, projectionTitleSize);
         }
       }
       if (s.showProjectionRanges && s.showYProjectionRange !== false)

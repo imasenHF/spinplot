@@ -330,6 +330,7 @@ export function renderFigure(
       figSize = Number($("figureTitleSize").value) || 18,
       subTitleSize = Number($("subplotTitleSize").value) || 15,
       tickSize = Number($("tickSize").value) || 11,
+      projectionTitleSize = Number($("projectionTitleSize").value) || 11,
       axisTitleSize = Number($("axisTitleSize").value) || 14,
       lineW = Number($("lineWidth").value) || 1.4,
       tickLen = 6,
@@ -363,6 +364,7 @@ export function renderFigure(
         },
         options = {
           axisSize: axisTitleSize,
+          projectionTitleSize,
           xTitleDistance: Number($("xTitleDistance").value),
           yTitleDistance: Number($("yTitleDistance").value),
           g: subplotGConfig(m.sp),
@@ -447,6 +449,7 @@ export function renderFigure(
                 ? sp.colorSchemeOverride
                 : $("colorScheme").value,
             tickSize,
+            projectionTitleSize,
             axisSize: axisTitleSize,
             titleSize: subTitleSize,
             lineWidth: lineW,
