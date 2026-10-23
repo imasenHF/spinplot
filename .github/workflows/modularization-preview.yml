@@ -30,6 +30,8 @@ jobs:
         run: node --test src/processing/signal.test.js
       - name: Project serialization and compatibility regression
         run: node --test src/project/project.test.js
+      - name: Manual 1D curve to 2D matrix regression
+        run: node --test src/data/curve-matrix.test.js
       - name: Existing 2D regression
         run: |
           node src/twod/core.test.js

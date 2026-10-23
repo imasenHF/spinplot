@@ -323,6 +323,82 @@ try {
     // Restore the export control state so the pre-migration comparison remains apples-to-apples.
     await page.locator('#imageFormat').selectOption('svg');
   }
+
+  if (process.env.SPINPLOT_TEST_MANUAL_CURVE_HEATMAP === '1') {
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    await page.locator('#clearDataBtn').click();
+    await page.locator('#dataFiles').setInputFiles({name:'manual-curves.csv',mimeType:'text/csv',buffer:Buffer.from(
+      'B,Trace A,Trace B,Trace C\n3300,0,0,0\n3310,1,2,3\n3320,2,4,6\n3330,0,0,0\n3340,-1,-2,-3\n3350,0,0,0\n'
+    )});
+    await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '3', null, {timeout:20000});
+    await page.locator('button.tab-btn[data-tab="scaling"]').click();
+    await page.locator('#baselineMode').selectOption('none');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const sourceCard = page.locator('.subplot').first();
+    const legendSection = sourceCard.locator('details[data-section="legend"]');
+    if (!await legendSection.evaluate(el => el.open)) await legendSection.locator('summary').click();
+    const labelBounds = await sourceCard.locator('.label-settings-row > .field > label').boundingBox();
+    const legendBounds = await sourceCard.locator('.label-settings-row .legend-position-field > summary').boundingBox();
+    const labelControl = await sourceCard.locator('[data-field="labelMode"]').boundingBox();
+    const legendControl = await sourceCard.locator('[data-field="legendPosition"]').boundingBox();
+    assert.ok(labelBounds && legendBounds && Math.abs(labelBounds.y - legendBounds.y) <= 1, 'Label mode and Legend position labels must align');
+    assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
+    assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');
+    assert.equal(await sourceCard.locator('[data-field="mode"] option[value="scan"]').count(),1,'Manual 1D subplots must offer Variable scan');
+    await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
+    await page.waitForTimeout(200);
+    assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
+    await sourceCard.locator('[data-manual-scan="name"]').fill('Temperature');
+    await sourceCard.locator('[data-manual-scan="name"]').press('Tab');
+    await sourceCard.locator('[data-manual-scan="unit"]').fill('K');
+    await sourceCard.locator('[data-manual-scan="unit"]').press('Tab');
+    await sourceCard.locator('[data-manual-scan="mode"]').selectOption('array');
+    await sourceCard.locator('[data-manual-scan="values"]').fill('10, 30, 80');
+    await sourceCard.locator('[data-manual-scan="values"]').press('Tab');
+    await sourceCard.locator('[data-field="mode"]').selectOption('scan');
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('.subplot').count(),2,'Manual Variable scan must create an independent subplot');
+    assert.equal(await page.locator('.subplot').nth(0).locator('[data-field="mode"]').inputValue(),'heatmap','Source heatmap must remain unchanged');
+    assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan','New subplot must use Variable scan mode');
+    const scanCard = page.locator('.subplot').nth(1);
+    assert.equal(await scanCard.locator('[data-manual-scan="name"]').inputValue(),'Temperature');
+    assert.equal(await scanCard.locator('[data-manual-scan="unit"]').inputValue(),'K');
+    await sourceCard.locator('[data-field="mode"]').selectOption('overlay1d');
+    await sourceCard.locator('.order-item[data-curve="2"]').click();
+    await sourceCard.locator('[data-action="moveTop"]').click();
+    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1]);
+    await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
+    await page.waitForTimeout(200);
+    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'80, 10, 30','Variable values must follow source curves after reordering');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const saved=await save('browser-preview/manual-curves.spinplot.json');
+    assert.equal(saved.rawCurves.length,3,'Derived heatmap must not append duplicate matrix data to the source data list');
+    assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
+    assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
+    assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
+    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:10,1:30,2:80});
+    assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
+    assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
+    assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
+    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:10,1:30,2:80});
+    const [projectionDownload] = await Promise.all([
+      page.waitForEvent('download',{timeout:15000}),
+      page.getByRole('button',{name:'Export projection CSV',exact:true}).click()
+    ]);
+    await projectionDownload.saveAs('browser-preview/manual-curve-projections.csv');
+    const projectionRows=fs.readFileSync('browser-preview/manual-curve-projections.csv','utf8').trim().split(/\r?\n/).map(line=>line.split(','));
+    const yRows=projectionRows.filter(row=>row[0]==='Y');
+    assert.deepEqual(yRows.map(row=>Number(row[1])),[10,30,80],'Heatmap must use the custom non-uniform variable values');
+    const projected=yRows.map(row=>Number(row[2]));
+    assert.ok(projected[0]!==0 && Math.abs(projected[1]/projected[0]-2)<1e-8 && Math.abs(projected[2]/projected[0]-3)<1e-8,
+      'Signal rows must remain mapped to their original curves after reordering');
+    await load(saved,'manual-curves-reload.spinplot.json');
+    assert.equal(await page.locator('.subplot').count(),2,'Manual heatmap and Variable scan must survive project reload');
+    assert.equal(await page.locator('.subplot').first().locator('[data-field="mode"]').inputValue(),'heatmap');
+    assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan');
+    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'80, 10, 30');
+  }
+
   // A legacy single-trace CSV can still be opened after a multi-curve project.
   await page.locator('button.tab-btn[data-tab="scaling"]').click();
   await page.locator('#baselineMode').selectOption('none');
