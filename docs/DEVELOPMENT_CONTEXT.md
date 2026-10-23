@@ -99,7 +99,7 @@
 
 ### 当前实施与验收状态（2026-10-23）
 
-- Variable scan 独立投影设置修正（2026-10-23）：扫描曲线使用 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax` 独立保存统计方式与 X 坐标统计区间，计算复用右侧投影的样本归约函数。创建时在坐标方向一致的条件下，以源图 `yMode` 和 `projectionXMin/Max` 初始化，之后与源图设置独立；扫描视图隐藏 Top/Right projection 控件，只显示扫描轴、统计方式、统计区间和必要的功率换算。实现位于 `src/main.js` 的 `addVariableScanSubplot()` 及 `src/twod/ui.js`。本次完整回归与公开预览同步待执行。
+- Variable scan 独立投影设置修正（2026-10-23）：扫描曲线使用 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax` 独立保存统计方式与 X 坐标统计区间，计算复用右侧投影的样本归约函数。创建时在坐标方向一致的条件下，以源图 `yMode` 和 `projectionXMin/Max` 初始化，之后与源图设置独立；扫描视图隐藏 Top/Right projection 控件，只显示扫描轴、统计方式、统计区间和必要的功率换算。实现位于 `src/main.js` 的 `addVariableScanSubplot()` 及 `src/twod/ui.js`；后续标题与配色修正及公开预览状态见下方最新记录。
 - 变量扫描与投影排版修正（2026-10-24）：新增 Variable scan 子图默认标题为空；右侧投影标题宽度超过绘图区时，自动拆分为变量名和 `projection (统计方式)` 两行，并按可用宽度调整文字字号；连续色带配色仅有一条曲线时使用色带起始颜色，避免 BWR 等色带的中点浅色导致曲线近乎不可见。新增二维渲染回归和浏览器配置检查；发布状态以本次提交和 Actions 结果为准。
 - 上一轮自动化运行 39951954898 全部通过：数值、CSV/插值、一维处理、项目版本兼容、现有二维回归、显示/坐标/导出测试、生产构建、Chromium 浏览器回归与迁移前对照均成功。浏览器测试验证扫描子图创建、源 Heatmap 保留、右侧布局、项目保存的布局信息及包含 Variable scan / Overlap 的 SVG 导出。
 - 静态预览构建提交 d1e478f 已同步到主站，主站提交 3e50725 更新预览快照与资源检查页；Pages 发布运行 39953758517 成功，公开浏览器检查运行 39951955041 的第二次尝试通过。第一次公开检查使用旧快照，部署新资源后重跑通过。
