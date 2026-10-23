@@ -20,7 +20,7 @@ for (const label of ['Top projection', 'Right projection']) {
   assert.equal(sizedProjection.fonts[index], '17px Arial', `${label} must use the independent projection title size`);
 }
 assert(sizedProjection.fonts.includes('8px Arial'), 'Tick labels must retain their own font size');
-const defaultProjection = draw(projectionTypography);
+const defaultProjection = draw(projectionTypography, '', d, {tickSize:8});
 const defaultTopTitle = defaultProjection.texts.findIndex(entry => entry[0] === 'Top projection');
 assert.equal(defaultProjection.fonts[defaultTopTitle], '11px Arial', 'Missing saved setting should preserve the historical 11px projection title size');
 const projectionBox = {cellX:0, cellY:0, cellW:1000, cellH:700};

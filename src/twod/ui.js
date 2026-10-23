@@ -876,7 +876,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     cb = s.showColorbar && s.mode === 'heatmap',
     stops = colorStops(s, options),
     tick = options.tickSize || 11,
-    projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || tick),
+    projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || 11),
     axisSize = options.axisSize || 14,
     titleSize = options.titleSize || 15,
     lineWidth = options.lineWidth || 1.4;
