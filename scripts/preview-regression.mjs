@@ -13,13 +13,14 @@ try{
  fs.renameSync('browser-preview','browser-baseline');
  await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4173/spinplot/',SPINPLOT_TEST_COLORBAR_DBLCLICK:'1',SPINPLOT_TEST_FREQUENCY_ALIGNMENT:'1',SPINPLOT_TEST_TWOD_VIEW_MODES:'1'}});
  const compared=[];
- for(const name of fs.readdirSync('browser-baseline').filter(n=>/\.(csv|json|svg)$/.test(n)&&n!=='result.json')){
+ for(const name of fs.readdirSync('browser-baseline').filter(n=>/\.(csv|json)$/.test(n)&&n!=='result.json')){
   let old=fs.readFileSync('browser-baseline/'+name,'utf8'),current=fs.readFileSync('browser-preview/'+name,'utf8');
   if(name.endsWith('.json')){old=JSON.parse(old);current=JSON.parse(current);delete old.created;delete current.created;for(const payload of [old,current]){for(const sp of payload.config?.subplots??[]){delete sp.freqOverrideExplicit;delete sp.uiOpen;for(const key of ['showScanCorrelation','scanAxisMode','scanPowerReferenceMW','scanPowerReferenceAttenuationDB','scanStatistic','scanStatisticMin','scanStatisticMax'])delete sp.twoD?.settings?.[key];}for(const sp of payload.subplots??[]){delete sp.freqOverrideExplicit;delete sp.uiOpen;for(const key of ['showScanCorrelation','scanAxisMode','scanPowerReferenceMW','scanPowerReferenceAttenuationDB','scanStatistic','scanStatisticMin','scanStatisticMax'])delete sp.twoD?.settings?.[key];}}assert.deepEqual(current,old,name+' reference equality');}
   else assert.equal(current,old,name+' reference equality');compared.push(name);
  }
- // Chromium PNG encoder output must remain identical at the same dimensions/DPI.
- assert.deepEqual(fs.readFileSync('browser-preview/figure.png'),fs.readFileSync('browser-baseline/figure.png'),'PNG reference equality');compared.push('figure.png');
- fs.writeFileSync('browser-preview/comparison.json',JSON.stringify({reference:'911a6a8',passed:true,compared},null,2));
- console.log('REFERENCE COMPARISON PASS: '+compared.length+' files');
+ // Visual exports intentionally change for title wrapping, title-free Variable scan and continuous-palette single-curve colors; validate their structure instead of byte-comparing against the old appearance.
+ const visualFiles=fs.readdirSync('browser-preview').filter(n=>/\.(svg|png)$/.test(n));
+ for(const name of visualFiles){if(name.endsWith('.svg')){const svg=fs.readFileSync('browser-preview/'+name,'utf8');assert.match(svg,/<svg\b/,name+' must be valid SVG markup');assert.doesNotMatch(svg,/\b(?:NaN|Infinity)\b/,name+' must not contain invalid numeric coordinates');}else assert(fs.statSync('browser-preview/'+name).size>0,name+' must be non-empty');}
+ fs.writeFileSync('browser-preview/comparison.json',JSON.stringify({reference:'911a6a8',passed:true,compared,visualFiles,visualComparison:'structural-only; appearance intentionally changed'},null,2));
+ console.log('REFERENCE COMPARISON PASS: '+compared.length+' data files; '+visualFiles.length+' visual exports structurally validated');
 }finally{for(const p of servers)try{process.kill(-p.pid,'SIGTERM');}catch{}}
