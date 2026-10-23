@@ -1072,13 +1072,41 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         ctx.lineTo(side.x + side.w - 5, y + (ph * k) / 4);
         ctx.stroke();
       }
-      if (s.showYProjectionTitle !== false)
-        text(
-          s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`,
-          side.x + side.w / 2,
-          y - 28,
-          tick,
-        );
+      if (s.showYProjectionTitle !== false) {
+        const title = s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`;
+        ctx.font = tick + 'px ' + font;
+        if (ctx.measureText(title).width > side.w) {
+          let lines;
+          if (!s.yProjectionTitle) {
+            lines = [v.y.name, `projection (${s.yMode})`];
+          } else {
+            const marker = title.toLowerCase().lastIndexOf(' projection');
+            if (marker > 0) lines = [title.slice(0, marker), title.slice(marker + 1)];
+            else {
+              lines = [];
+              let line = '';
+              for (const word of title.split(/\s+/)) {
+                const candidate = line ? line + ' ' + word : word;
+                if (line && ctx.measureText(candidate).width > side.w) {
+                  lines.push(line);
+                  line = word;
+                } else line = candidate;
+              }
+              if (line) lines.push(line);
+            }
+          }
+          const fitSize = (line) => {
+            ctx.font = tick + 'px ' + font;
+            const width = ctx.measureText(line).width;
+            return width > side.w ? Math.max(7, tick * side.w / width) : tick;
+          };
+          const lineGap = Math.max(10, tick * 1.15);
+          const firstY = y - 28 - (lines.length - 1) * lineGap / 2;
+          lines.forEach((line, i) => text(line, side.x + side.w / 2, firstY + i * lineGap, fitSize(line)));
+        } else {
+          text(title, side.x + side.w / 2, y - 28, tick);
+        }
+      }
       if (s.showProjectionRanges && s.showYProjectionRange !== false)
         text(
           rangeText(pxr, v.x),

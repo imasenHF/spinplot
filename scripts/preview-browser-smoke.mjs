@@ -238,6 +238,7 @@ try {
     const savedViews=await save('browser-preview/2d-view-modes.json');
     assert.equal(savedViews.config.subplots[0].mode,'overlay');
     assert.equal(savedViews.config.subplots[1].mode,'scan');
+    assert.equal(savedViews.config.subplots[1].title,'','Variable scan starts without a subplot title');
     assert.equal(savedViews.config.subplots[1].gridRow,savedViews.config.subplots[0].gridRow);
     assert.equal(savedViews.config.subplots[1].gridCol,savedViews.config.subplots[0].gridCol+1,'Scan subplot is initially placed to the right of the source map');
     assert.equal(savedViews.config.subplots[2].mode,'overlap');

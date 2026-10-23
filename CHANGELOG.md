@@ -6,6 +6,7 @@
 - Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
 - Convert dB attenuation sweeps to microwave power from a single zero-dB reference power P₀ using P(A) = P₀ × 10^(-A/10); migrate legacy paired reference-power/attenuation settings to equivalent P₀.
 - Give Variable scan an independent statistic and X-coordinate interval; hide the 2D top/right projection controls in scan mode and keep the source map's projection settings unchanged.
+- Start Variable scan subplots without a title, wrap oversized right-projection titles into a variable-name line and a projection/statistic line, and use the starting color of continuous palettes for single-curve subplots.
 
 
 ## Unreleased (preview branch)
