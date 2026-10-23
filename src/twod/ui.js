@@ -1074,8 +1074,11 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       }
       if (s.showYProjectionTitle !== false) {
         const title = s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`;
-        ctx.font = tick + 'px ' + font;
-        if (ctx.measureText(title).width > side.w) {
+        const measureWidth = (value) => {
+          ctx.font = tick + 'px ' + font;
+          return typeof ctx.measureText === 'function' ? ctx.measureText(value).width : String(value).length * tick * 0.6;
+        };
+        if (measureWidth(title) > side.w) {
           let lines;
           if (!s.yProjectionTitle) {
             lines = [v.y.name, `projection (${s.yMode})`];
@@ -1087,7 +1090,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
               let line = '';
               for (const word of title.split(/\s+/)) {
                 const candidate = line ? line + ' ' + word : word;
-                if (line && ctx.measureText(candidate).width > side.w) {
+                if (line && measureWidth(candidate) > side.w) {
                   lines.push(line);
                   line = word;
                 } else line = candidate;
@@ -1097,7 +1100,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           }
           const fitSize = (line) => {
             ctx.font = tick + 'px ' + font;
-            const width = ctx.measureText(line).width;
+            const width = measureWidth(line);
             return width > side.w ? Math.max(7, tick * side.w / width) : tick;
           };
           const lineGap = Math.max(10, tick * 1.15);
