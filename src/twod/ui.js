@@ -4,8 +4,13 @@ import { tickFormatter } from './ticks.js';
 import { COLOR_SCHEMES } from './palettes.js';
 export function defaults(d) {
   const setting = d.metadata?.setting || {},
-    referencePower = Number(setting.lineEdit_MB_Power),
-    referenceAttenuation = Number(setting.lineEdit_MB_Attenuation),
+    settingPower = Number(setting.lineEdit_MB_Power),
+    settingAttenuationRaw = setting.lineEdit_MB_Attenuation,
+    hasSettingAttenuation = settingAttenuationRaw !== undefined && settingAttenuationRaw !== null &&
+      String(settingAttenuationRaw).trim() !== '' && Number.isFinite(Number(settingAttenuationRaw)),
+    referencePower = Number.isFinite(settingPower) && settingPower > 0
+      ? settingPower * (hasSettingAttenuation ? 10 ** (Number(settingAttenuationRaw) / 10) : 1)
+      : NaN,
     swap = (axisKind(d.y) === 'field' && axisKind(d.x) !== 'field') || axisKind(d.x) === 'time',
     v = orient(d, 'real', swap),
     xMin = Math.min(v.x.values[0], v.x.values.at(-1)),
@@ -32,7 +37,6 @@ export function defaults(d) {
     showScanCorrelation: false,
     scanAxisMode: 'native',
     scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
-    scanPowerReferenceAttenuationDB: Number.isFinite(referenceAttenuation) ? referenceAttenuation : '',
     showXProjectionRange: true,
     showYProjectionRange: true,
     showXProjectionTitle: true,
@@ -67,6 +71,18 @@ export function defaults(d) {
   };
 }
 export function migrate(d, s) {
+  // Convert legacy paired reference power/attenuation to an equivalent zero-dB P0.
+  if (Object.prototype.hasOwnProperty.call(s, 'scanPowerReferenceAttenuationDB')) {
+    const oldPower = Number(s.scanPowerReferenceMW),
+      oldAttenuation = Number(s.scanPowerReferenceAttenuationDB);
+    if (
+      String(s.scanPowerReferenceMW ?? '').trim() !== '' &&
+      String(s.scanPowerReferenceAttenuationDB ?? '').trim() !== '' &&
+      Number.isFinite(oldPower) && oldPower > 0 &&
+      Number.isFinite(oldAttenuation)
+    ) s.scanPowerReferenceMW = oldPower * 10 ** (oldAttenuation / 10);
+    delete s.scanPowerReferenceAttenuationDB;
+  }
   if (s.zUseGlobal === undefined)
     s.zUseGlobal = !(
       (s.zMin !== undefined && s.zMin !== '') ||
@@ -352,8 +368,7 @@ export function controls(card, sp, d, onChange) {
   powerReferenceControls.style.gridColumn = '1 / -1';
   powerReferenceControls.hidden = s.scanAxisMode !== 'power';
   projection.append(powerReferenceControls);
-  input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power P₀ (mW)', 'number');
-  input(powerReferenceControls, 'scanPowerReferenceAttenuationDB', 'Reference attenuation A₀ (dB)', 'number');
+  input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power at 0 dB attenuation P₀ (mW)', 'number');
   const onScanAxisChange = scanAxisSelect.onchange;
   scanAxisSelect.onchange = () => {
     onScanAxisChange();
@@ -549,13 +564,11 @@ export function scanCorrelationData(d, s) {
   let x = v.y.values.slice(),
     xAxis = { name: v.y.name, unit: v.y.unit };
   if (s.scanAxisMode === 'power') {
-    const referencePower = Number(s.scanPowerReferenceMW),
-      referenceAttenuation = Number(s.scanPowerReferenceAttenuationDB);
+    const referencePower = Number(s.scanPowerReferenceMW);
     if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
-        String(s.scanPowerReferenceAttenuationDB ?? '').trim() === '' ||
-        !Number.isFinite(referencePower) || referencePower <= 0 || !Number.isFinite(referenceAttenuation))
-      return { valid: false, reason: 'Enter a positive reference power and its corresponding attenuation.', xAxis };
-    x = x.map((attenuation) => referencePower * 10 ** (-(attenuation - referenceAttenuation) / 10));
+        !Number.isFinite(referencePower) || referencePower <= 0)
+      return { valid: false, reason: 'Enter a positive reference power at 0 dB attenuation.', xAxis };
+    x = x.map((attenuation) => referencePower * 10 ** (-attenuation / 10));
     xAxis = { name: 'Microwave power', unit: 'mW' };
   }
   const lo = Math.min(...pyr),

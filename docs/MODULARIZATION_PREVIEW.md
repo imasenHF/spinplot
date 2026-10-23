@@ -103,7 +103,7 @@ npm run build
 - 在二维子图的 Plot mode 菜单选择 Variable scan (new subplot)，显式创建独立扫描子图。初始布局优先放在源图右侧；若复杂布局无法直接插入，则追加为新行。新图使用标准子图位置、尺寸、排序、项目保存和导出操作。
 - Overlap 是独立二维绘图模式：所选扫描轨迹共享 X 坐标轴，轨迹标签包含扫描变量及单位；Plot every N traces 控制显示抽样。原始矩阵和轨迹数值不受显示偏移影响。
 - Variable scan 的 X 轴是扫描变量，Y 轴是所选统计方式下的 Y 投影值。支持 mean、max、min、peak-to-peak、RMS、sum；样本点求和不是按非等距坐标加权的积分，RMS 不保留符号。
-- Field–Power Sweep 的 dB 衰减换算仅在参考功率与对应参考衰减均有效时输出 mW，关系为 P = P_ref × 10^(-(A - A_ref)/10)。缺少校准值时保留原始衰减轴，不把 dB 直接标为 mW。第二阶段 CW EPR 饱和功率拟合尚未实现。
+- Field–Power Sweep 的 dB 衰减换算仅需零衰减参考功率 P₀，关系为 P(A) = P₀ × 10^(-A/10)。界面只显示 P₀；旧项目中的 (P_ref, A_ref) 会迁移为等效 P₀ = P_ref × 10^(A_ref/10)。缺少有效 P₀ 时不把 dB 直接标为 mW。第二阶段 CW EPR 饱和功率拟合尚未实现。
 - 自动化验收运行 39951954898 通过数值/二维回归、生产构建、Chromium 浏览器回归和迁移前对照。浏览器测试覆盖显式新增扫描子图、源 Heatmap 保留、右侧初始布局、项目保存布局及含 Variable scan / Overlap 的 SVG 导出。
 - 静态预览构建 d1e478f（应用源码提交 ce23fb6）已同步至主站提交 3e50725；Pages 发布 39953758517 成功，公开浏览器检查 39951955041 第二次尝试通过。正式 /spinplot/ 未修改，临时快照不会随预览分支自动同步。
 - 实现位于 src/main.js 的 addVariableScanSubplot() 与二维 Plot mode 变更处理、src/twod/ui.js 的模式菜单和数据处理，以及 scripts/preview-browser-smoke.mjs 的浏览器回归。用户此前上传的 exp(1).zip 当前未出现在对话附件或可检索 Library 中；真实 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 样本验收仍待重新取得文件。样本文件不得复制到公开仓库。

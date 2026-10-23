@@ -4,7 +4,7 @@
 
 - Add an explicit Variable scan subplot for 2D EPR sweeps. It is created from the 2D Plot mode menu, starts beside the source map when the layout permits, and preserves the original Y projection.
 - Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
-- Add calibrated dB attenuation-to-microwave-power conversion with explicit reference power and reference attenuation; missing calibration is reported rather than inferred.
+- Convert dB attenuation sweeps to microwave power from a single zero-dB reference power P₀ using P(A) = P₀ × 10^(-A/10); migrate legacy paired reference-power/attenuation settings to equivalent P₀.
 
 
 ## Unreleased (preview branch)
