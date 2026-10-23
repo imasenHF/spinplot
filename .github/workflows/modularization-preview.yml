@@ -43,6 +43,8 @@ jobs:
         run: node --test src/plotting/oned.test.js src/processing/axis.test.js src/export/export.test.js
       - name: Production-equivalent build
         run: npm run build
+      - name: Syntax-check browser regression harness
+        run: node --check scripts/preview-browser-smoke.mjs && node --check scripts/preview-regression.mjs
       - name: Install browser regression runtime
         run: |
           npm install --no-save playwright
