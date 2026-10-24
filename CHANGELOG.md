@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+- Reset runtime `sharedControls` state when returning a curve-derived Heatmap to 1D so recreating the Heatmap restores its 2D axis ranges; add regression coverage through projection CSV export.
+- Validate project references for curve-derived Heatmap and Variable scan subplots separately from original 2D matrix references; add save/load and invalid-reference tests.
+- Add browser verification that projection titles use 23 px while tick labels remain 9 px, and normalize the new typography control only in old-version baseline comparisons.
+- Add an explicit Variable scan subplot for 2D EPR sweeps. It is created from the 2D Plot mode menu, starts beside the source map when the layout permits, and preserves the original Y projection.
+- Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
+- Convert dB attenuation sweeps to microwave power from a single zero-dB reference power P₀ using P(A) = P₀ × 10^(-A/10); migrate legacy paired reference-power/attenuation settings to equivalent P₀.
+- Give Variable scan an independent statistic and X-coordinate interval; hide the 2D top/right projection controls in scan mode and keep the source map's projection settings unchanged.
+- Start Variable scan subplots without a title, wrap oversized right-projection titles into a variable-name line and a projection/statistic line, and use the starting color of continuous palettes for single-curve subplots.
+
+
+## Unreleased (preview branch)
+
+- Fix Label mode / Legend position label and control alignment in narrow and desktop sidebars.
+- Initialize empty manual scan-variable maps from the configured linear start and interval; add regression tests for manual-curve matrix ordering, axis units, and invalid scan values.
+- Add an independent Projection titles font-size control (default 11 px) shared by top and right projections, separate from tick labels; preserve right-title wrapping and reserve additional top spacing for larger titles.
+
+
+- Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.
+- Make the source microwave frequency editable for 1D magnetic-field datasets, including CSV files without frequency metadata; show no scale until a valid source frequency is supplied.
+- Add Chromium coverage for default Local mean, global Manual target, local Manual target, and CSV source-frequency entry.
+
+- Restore automatic Z limits when double-clicking the 2D colorbar after wheel zoom; preserve the existing heatmap-body double-click behavior for X/Y axes.
+- Add Chromium regression coverage for colorbar wheel zoom, colorbar double-click reset, and heatmap X/Y reset on both the local preview build and published temporary preview.
+
+## Unreleased (preview verification status, 2026-10-24)
+
+- The Typography panel includes an independent `Projection titles` size control (default 11 px, range 7–40 px), passed separately from tick-label size to 1D and 2D plot renderers.
+- Latest preview workflow [`40016524070`](https://github.com/imasenHF/spinplot/actions/runs/40016524070) passes numerical/data regressions and production build, but Chromium regression fails at the existing manual-curves-to-Heatmap path while waiting for the `Export projection CSV` download (15 s timeout at `scripts/preview-browser-smoke.mjs:385`). Root cause and full browser acceptance remain unresolved; the static preview HTTP check [`40016524252`](https://github.com/imasenHF/spinplot/actions/runs/40016524252) passes. No change to formal `main` or `/spinplot/`.
+
 ## 0.9.2
 
 - Give button rows vertical clearance and place Auto Z in its own action row.

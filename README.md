@@ -11,9 +11,9 @@
 | 范围 | 当前功能 |
 | --- | --- |
 | 数据输入 | CSV、CIQTEK `.epr`、BES3T `.DSC/.DTA`（部分坐标轴需 `.XGF/.YGF`）；多文件导入 |
-| 一维数据 | 多曲线叠加与 Stack、全局/子图频率设置、磁场对齐、基线和幅度处理、坐标与 `g` 轴、图例和标注、ΔB 测距 |
-| 二维数据 | Heatmap / Stack、实部/虚部/模值、X/Y/Z 轴与色标、顶部/右侧投影、统计范围、调色板和多子图混排 |
-| 制图界面 | Data / Processing / Subplots / Axes / Style / Export 六个选项卡；画布尺寸、局部覆盖、撤销/重做 |
+| 一维数据 | 多曲线叠加与 Stack、全局/子图频率设置、磁场对齐、基线和幅度处理、坐标与 `g` 轴、图例和标注、ΔB 测距；可将手动选定的多条 1D 曲线转换为 Heatmap 或独立 Variable scan 子图 |
+| 二维数据 | Heatmap / Stack / Overlap；可显式新增独立 Variable scan 子图；实部/虚部/模值、X/Y/Z 轴与色标、保留顶部/右侧投影、统计范围、调色板和多子图混排 |
+| 制图界面 | Data / Processing / Subplots / Axes / Style / Export 六个选项卡；投影标题字号独立设置，画布尺寸、局部覆盖、撤销/重做 |
 | 输出 | PNG、JPEG、WebP、BMP、TIFF、SVG、PDF、数据及投影 CSV、频率元数据 |
 | 工作保存 | 独立配置 JSON 与包含原始数据的项目文件；数据默认在浏览器本地处理 |
 
@@ -22,7 +22,7 @@
 ## 使用与科研限制
 
 1. 使用 **Open Data** 导入数据；CSV、CIQTEK 和 BES3T 文件的具体匹配关系由解析器检查。后续导入的数据可追加为新的子图。
-2. 根据源数据设置或确认微波频率，检查磁场单位及轴方向，再进行频率对齐和 `g` 值绘制。时间轴、功率衰减和调制幅度等物理量不能作为磁场进行 `g` 换算。
+2. 新子图默认采用 **Local mean**。切换全局频率模式或修改全局目标频率后，尚未设置局部频率覆盖的子图会继承全局设置；显式局部设置保持有效。CSV 等缺少源微波频率元数据的一维磁场曲线，可在 Data 页频率表的 `ν raw / GHz` 中填写源频率，目标频率本身不足以计算缩放比例。检查磁场单位及轴方向后再进行频率对齐和 `g` 值绘制。时间轴、功率衰减和调制幅度等物理量不能作为磁场进行 `g` 换算。
 3. 一维基线/噪声处理不会自动应用到二维矩阵。二维投影的均值、RMS 与求和使用样本点统计，**求和不等同于按非等间距坐标加权积分**。
 4. 输出前核查原始信号、显示偏移、坐标范围及单位。当前 PDF 基础字体不完整支持中文；含中文文字时优先导出 SVG。
 5. 项目提供本地文件处理，不配置在线账户和实验谱图上传服务器。大型二维矩阵和矢量输出受浏览器资源限制。
@@ -51,6 +51,7 @@ node src/twod/bes3t.test.js
 node src/twod/large.test.js
 node src/twod/integration.test.js
 node src/twod/ticks.test.js
+node src/data/curve-matrix.test.js
 ```
 
 仪器样本回归（需使用本地、未公开的实验文件）参见 [二维数据说明](docs/TWO_DIMENSIONAL.md)。构建通过不等同于浏览器全流程或科学数值验收通过。
@@ -64,7 +65,7 @@ node src/twod/ticks.test.js
 
 ## 源码、部署和维护
 
-目前主要应用逻辑和 CSS 仍在根目录 `index.html`；`src/interface.js` 管理子图控件重组，`src/twod/` 包含二维解析、显示、调色板、刻度及测试。Vite 用于构建，React/TypeScript 依赖尚未对应完整的前端模块迁移。现行代码结构与规划详见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+正式 main 的主要应用逻辑和 CSS 仍在根目录 `index.html`；`src/interface.js` 管理子图控件重组，`src/twod/` 包含二维解析、显示、调色板、刻度及测试。Vite 用于构建，React/TypeScript 依赖尚未对应完整的前端模块迁移。预览分支已将实际一维绘图、坐标、导出和处理流水线接入独立模块，详见 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 与 [预览验收记录](docs/MODULARIZATION_PREVIEW.md)。
 
 提交至 `main` 通过 GitHub Actions 构建和发布 GitHub Pages，Vite 的基础路径为 `/spinplot/`。正式入口是 [plastocyanin.org/spinplot/](https://plastocyanin.org/spinplot/)；旧 `/spinplot/legacy/` 用于兼容跳转，主站另维护旧大写路径的跳转。
 
