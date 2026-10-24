@@ -138,6 +138,13 @@ npm run build
 
 应依据实际修改范围补充相应测试。命令未执行时不得报告通过。构建通过不等于真实仪器数据数值验收、浏览器交互验收或部署验收通过。
 
+## 最新状态核查（2026-10-24）
+
+- 最新源码分支 HEAD：`ddfc5473adbf9be173929e01ced9bbc43ac59c58`（`test: keep projection title default independent of tick size`）。`index.html` 已包含 Typography → `Projection titles` 数值输入框，默认 11 px、范围 7–40 px；`src/main.js` 将其列入通用控件采集与事件绑定，`src/plotting/oned.js` 将独立值传给一维绘图模型，`src/twod/ui.js` 使用该值绘制顶部与右侧投影标题。实现已存在于源码，仍需在实际浏览器中确认修改数值后两处标题变化且不影响刻度字号。
+- 当前自动化工作流 [`40016524070`](https://github.com/imasenHF/spinplot/actions/runs/40016524070) 的数值回归、CSV/插值、一维处理、项目兼容、手动曲线转二维矩阵、现有二维回归、显示/坐标/导出测试、生产构建和浏览器测试脚本语法检查均通过；Chromium 回归在 `scripts/preview-browser-smoke.mjs:385` 等待 `Export projection CSV` 下载时超时（15 s），因此整个工作流失败。此失败点发生在手动曲线转 Heatmap/Variable scan 流程，尚未确认根因，不得据此认定投影标题字号功能失败或通过。
+- 同一提交的临时预览 HTTP 检查 [`40016524252`](https://github.com/imasenHF/spinplot/actions/runs/40016524252) 成功；这只确认静态页面可访问，不能代替浏览器交互验收。当前静态预览尚未由失败的主工作流更新。正式 `main` 与 `/spinplot/` 均未修改，也未合并 Draft PR #1。
+- 下一步先定位并修复 CSV 下载回归测试超时，再运行完整 Chromium 回归；随后单独验证 `Projection titles` 字号输入对顶部/右侧标题的影响、项目保存/载入后的默认值与兼容性。完成后再更新临时预览快照及主站索引。
+
 ## 维护规则
 
 - 本文维护当前有效决定、最近核查基线、活动任务及未完成验收项；不持续追加已失效的讨论。完整历史由 Git 保存。
