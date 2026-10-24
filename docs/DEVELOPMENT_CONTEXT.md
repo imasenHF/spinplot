@@ -147,12 +147,9 @@ npm run build
 - `scripts/preview-browser-smoke.mjs` 已新增专门的 SVG 浏览器断言：在 `SPINPLOT_TEST_PROJECTION_TITLE_SIZE=1` 时将投影标题字号设为 23 px、刻度字号设为 9 px，检查导出 SVG 中投影标题采用 23 px 且刻度仍使用 9 px。该测试只由模块化预览回归显式启用，避免对仍运行旧版静态快照的公开预览检查造成误报。最新完整工作流 [40060098623](https://github.com/imasenHF/spinplot/actions/runs/40060098623) 已通过，包含该项投影标题字号与刻度字号独立性断言。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
 
 
-## 最新状态核查（2026-10-24）
+## 过往核查记录
 
-- 最新源码分支 HEAD：`ddfc5473adbf9be173929e01ced9bbc43ac59c58`（`test: keep projection title default independent of tick size`）。`index.html` 已包含 Typography → `Projection titles` 数值输入框，默认 11 px、范围 7–40 px；`src/main.js` 将其列入通用控件采集与事件绑定，`src/plotting/oned.js` 将独立值传给一维绘图模型，`src/twod/ui.js` 使用该值绘制顶部与右侧投影标题。实现已存在于源码，仍需在实际浏览器中确认修改数值后两处标题变化且不影响刻度字号。
-- 当前自动化工作流 [`40016524070`](https://github.com/imasenHF/spinplot/actions/runs/40016524070) 的数值回归、CSV/插值、一维处理、项目兼容、手动曲线转二维矩阵、现有二维回归、显示/坐标/导出测试、生产构建和浏览器测试脚本语法检查均通过；Chromium 回归在 `scripts/preview-browser-smoke.mjs:385` 等待 `Export projection CSV` 下载时超时（15 s），因此整个工作流失败。此失败点发生在手动曲线转 Heatmap/Variable scan 流程，尚未确认根因，不得据此认定投影标题字号功能失败或通过。
-- 同一提交的临时预览 HTTP 检查 [`40016524252`](https://github.com/imasenHF/spinplot/actions/runs/40016524252) 成功；这只确认静态页面可访问，不能代替浏览器交互验收。当前静态预览尚未由失败的主工作流更新。正式 `main` 与 `/spinplot/` 均未修改，也未合并 Draft PR #1。
-- 下一步先定位并修复 CSV 下载回归测试超时，再运行完整 Chromium 回归；随后单独验证 `Projection titles` 字号输入对顶部/右侧标题的影响、项目保存/载入后的默认值与兼容性。完成后再更新临时预览快照及主站索引。
+当前有效状态以本文件前面的“最新状态核查（2026-10-24，追加复测）”为准；更早的运行结果由 Git 历史保留。
 
 ## 维护规则
 
