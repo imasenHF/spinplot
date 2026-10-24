@@ -36,6 +36,23 @@ test('config format and references remain checked',()=>{
  assert.throws(()=>validateProjectConfig({version:10,subplots:[{curves:[],twoD:{index:0,settings:null}}]},1),/Invalid 2D subplot reference/);
  assert.throws(()=>parseProjectCurves({type:'SpinPlotProject',version:11,rawCurves:[one()],config:{version:10,subplots:[{curves:[],twoD:{index:0,settings:{mode:'heatmap'}}}]}}),/non-matrix/);
 });
+test('manual curve-derived Heatmap and Variable scan project references survive reload',()=>{
+ const curves=[0,1,2].map(i=>({...one(),name:'Curve '+i,y:[i+1,i+2,i+3]}));
+ const ids=[2,0,1];
+ const obj={type:'SpinPlotProject',version:11,rawCurves:curves,config:{version:10,subplots:[
+  {curves:ids,twoD:{derivedFromCurves:true,curveIndices:ids,settings:{mode:'heatmap'}}},
+  {curves:[],twoD:{derivedFromCurves:true,curveIndices:ids,settings:{mode:'scan'}}}
+ ]}};
+ assert.equal(parseProjectCurves(obj).length,3);
+});
+test('manual 2D project references reject invalid indices and matrix source curves',()=>{
+ const ids=[0,1];
+ const config={version:10,subplots:[{curves:ids,twoD:{derivedFromCurves:true,curveIndices:ids,settings:{mode:'heatmap'}}}]};
+ assert.throws(()=>validateProjectConfig({...config,subplots:[{curves:ids,twoD:{...config.subplots[0].twoD,curveIndices:[0,3]}}]},2),/Invalid manual 2D subplot curve reference/);
+ const matrix={name:'2D',x:{name:'Field',unit:'G',values:[3300,3310]},y:{name:'Time',unit:'ns',values:[0,1]},real:[[1,2],[3,4]],imag:[[0,0],[0,0]]};
+ const obj={type:'SpinPlotProject',version:11,rawCurves:[{...one(),matrix},one()],config:{version:10,subplots:[{curves:[0,1],twoD:{derivedFromCurves:true,curveIndices:[0,1],settings:{mode:'heatmap'}}}]}};
+ assert.throws(()=>parseProjectCurves(obj),/Manual 2D subplot references non-1D data/);
+});
 test('valid 2D matrix references are restored and retained',()=>{
  const d={name:'2D',x:{name:'Field',unit:'G',values:[3300,3310]},y:{name:'Time',unit:'ns',values:[0,1]},real:[[1,2],[3,4]],imag:[[0,0],[0,0]]};
  const c={...one(),matrix:d};
