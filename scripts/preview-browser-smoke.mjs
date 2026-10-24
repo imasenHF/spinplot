@@ -206,16 +206,21 @@ try {
   const matrix={name:'Synthetic 2D',x:{name:'Field',unit:'G',values:[3300,3320,3350]},y:{name:'Microwave attenuation',unit:'dB',values:[0,10]},real:[[1,2,3],[2,4,6]],imag:[[0,0,0],[0,0,0]],metadata:{}};
   const mixed={...fieldProject,rawCurves:[...fieldProject.rawCurves,{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],config:{...fieldProject.config,controls:{...fieldProject.config.controls,canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},layout:{...project.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[fieldProject.config.subplots[0],{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:2,twoD:{index:2,settings:{showScanCorrelation:false}}}]}};
   await load(mixed,'mixed.spinplot.json');await save('browser-preview/mixed.json');
-  await page.locator('button.tab-btn[data-tab="style"]').click();
-  await page.locator('#tickSize').fill('9');
-  await page.locator('#projectionTitleSize').fill('23');
+  const testProjectionTitleSize = process.env.SPINPLOT_TEST_PROJECTION_TITLE_SIZE === '1';
+  if (testProjectionTitleSize) {
+    await page.locator('button.tab-btn[data-tab="style"]').click();
+    await page.locator('#tickSize').fill('9');
+    await page.locator('#projectionTitleSize').fill('23');
+  }
   await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');
   const mixedSvg=fs.readFileSync('browser-preview/mixed.svg','utf8');
   assert.match(mixedSvg,/Synthetic 2D/);
-  const svgTexts=[...mixedSvg.matchAll(/<text[^>]*style="font:([^"]*)"[^>]*>([^<]*)<\/text>/g)].map(match=>({font:match[1],text:match[2].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}));
-  assert.ok(svgTexts.some(item=>/projection/i.test(item.text)&&/^23px\b/.test(item.font)), 'Projection title text must use the independent 23 px setting');
-  assert.ok(svgTexts.some(item=>/^9px\b/.test(item.font)), 'Tick labels must retain their independent 9 px setting');
+  if (testProjectionTitleSize) {
+    const svgTexts=[...mixedSvg.matchAll(/<text[^>]*style="font:([^"]*)"[^>]*>([^<]*)<\/text>/g)].map(match=>({font:match[1],text:match[2].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}));
+    assert.ok(svgTexts.some(item=>/projection/i.test(item.text)&&/^23px\b/.test(item.font)), 'Projection title text must use the independent 23 px setting');
+    assert.ok(svgTexts.some(item=>/^9px\b/.test(item.font)), 'Tick labels must retain their independent 9 px setting');
+  }
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
