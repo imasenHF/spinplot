@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reset runtime `sharedControls` state when returning a curve-derived Heatmap to 1D so recreating the Heatmap restores its 2D axis ranges; add regression coverage through projection CSV export.
+- Validate project references for curve-derived Heatmap and Variable scan subplots separately from original 2D matrix references; add save/load and invalid-reference tests.
+- Add browser verification that projection titles use 23 px while tick labels remain 9 px, and normalize the new typography control only in old-version baseline comparisons.
 - Add an explicit Variable scan subplot for 2D EPR sweeps. It is created from the 2D Plot mode menu, starts beside the source map when the layout permits, and preserves the original Y projection.
 - Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
 - Convert dB attenuation sweeps to microwave power from a single zero-dB reference power P₀ using P(A) = P₀ × 10^(-A/10); migrate legacy paired reference-power/attenuation settings to equivalent P₀.
