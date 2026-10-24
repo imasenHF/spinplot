@@ -143,7 +143,9 @@ npm run build
 - 本轮复测确认手动曲线转 Heatmap 后的投影 CSV 导出问题源自坐标范围状态：从派生二维图返回一维时，运行时标记 `sharedControls` 被保留，重新创建 Heatmap 时旧的一维坐标范围覆盖二维范围。提交 `757a7b263a6ee5eb52c6737ef2f8785930f47e95` 在切回一维时将缓存的二维设置 `sharedControls` 重置为 `false`。修复后浏览器日志确认投影 CSV 已导出。
 - 随后项目重载发现校验器只接受 `twoD.index` 指向原始二维矩阵，拒绝 `derivedFromCurves` 的手动 Heatmap / Variable scan。提交 `ab9b32c72fdf84e90ca388148e5e1f922252bb51` 修改 `src/project/project.js`：分别验证原始二维数据索引与派生二维曲线索引，并拒绝将已有二维矩阵当作派生曲线来源。提交 `02ae520bdbef1c7ff550aa12e002ff53f6a00d62` 为两种派生视图补充了项目重载及无效引用测试。
 - 浏览器回归已通过手动 Heatmap 的 CSV 导出、项目保存/重载、SVG 导出、迁移前数据对照及新增投影标题字号检查。完整工作流 [40060098623](https://github.com/imasenHF/spinplot/actions/runs/40060098623) 成功；对照归一化忽略新加的 `projectionTitleSize` 字段，仅用于与旧版数据结构比较，不影响应用保存该设置。
-- 数值、CSV/插值、一维处理、项目版本兼容、手动曲线矩阵、现有二维回归、显示/坐标/导出测试、生产构建及浏览器测试脚本语法检查均通过。完整浏览器回归及迁移前对照尚未在最新 HEAD 上全部通过。
+- 数值、CSV/插值、一维处理、项目版本兼容、手动曲线矩阵、现有二维回归、显示/坐标/导出测试、生产构建及浏览器测试脚本语法检查均通过。完整浏览器回归与迁移前对照已在提交 `60ba4c85f4d229aa72ec126b877e9ef921620199` 通过，模块化预览工作流为 [40060236078](https://github.com/imasenHF/spinplot/actions/runs/40060236078)，HTTP 检查为 [40060236132](https://github.com/imasenHF/spinplot/actions/runs/40060236132)。
+- 2026-10-24 对用户提供的本地 CIQTEK `.epr` 归档完成静态数据契约检查：6 个文件均可解析为项目当前声明支持的 1D Field/Time Sweep、2D Field-Power、Field-Delay、Field-Modulation Amplitude 与 Time-Field 类型；检查了各轨迹 X 坐标一致性、实部/虚部维度、信号有限值、逐轨迹频率及第二坐标单调性，均通过。Time-Field 数据符合默认转置为 Field-horizontal 的规则。归档未上传至公开仓库。此项为本地数据结构检查，尚未在真实浏览器中对这 6 个文件完成导入、绘图、投影 CSV 与项目保存/重载全流程。
+- 其中 Field-Delay 文件未声明延迟轴单位，解析器按现有规则保留数值并提示单位未声明；不推定为 ms 或 μs。文件级 `setting.frequency` 与轨迹级 `line.freq` 存在小幅差异，当前解析器使用轨迹级频率，后续如做频率对齐需继续核对来源定义。
 - `scripts/preview-browser-smoke.mjs` 已新增专门的 SVG 浏览器断言：在 `SPINPLOT_TEST_PROJECTION_TITLE_SIZE=1` 时将投影标题字号设为 23 px、刻度字号设为 9 px，检查导出 SVG 中投影标题采用 23 px 且刻度仍使用 9 px。该测试只由模块化预览回归显式启用，避免对仍运行旧版静态快照的公开预览检查造成误报。最新完整工作流 [40060098623](https://github.com/imasenHF/spinplot/actions/runs/40060098623) 已通过，包含该项投影标题字号与刻度字号独立性断言。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
 
 
