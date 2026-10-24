@@ -138,6 +138,14 @@ npm run build
 
 应依据实际修改范围补充相应测试。命令未执行时不得报告通过。构建通过不等于真实仪器数据数值验收、浏览器交互验收或部署验收通过。
 
+## 最新状态核查（2026-10-24，追加复测）
+
+- 本轮复测发现先前 Chromium 下载超时的直接前置错误为 `Display range contains no samples`。日志顺序显示：创建手动 Heatmap、创建 Variable scan、切回 1D、调整曲线顺序，再次创建 Heatmap 后，二维显示范围仍受一维子图旧范围影响，导致投影 CSV 导出没有下载事件。
+- 修复提交：`757a7b263a6ee5eb52c6737ef2f8785930f47e95`（`fix: reset shared axis controls when returning to manual 1D`）。切回一维时保存二维设置，并将运行时标记 `sharedControls` 重置为 `false`，使再次创建 Heatmap 时重新从二维设置恢复子图坐标范围。
+- 浏览器测试脚本诊断提交：`6a82daa1136e10e424b81a762a954ea7414b1f5c`，下载失败时会附带状态栏、操作日志和页面异常信息，便于区分范围状态错误与下载机制错误。
+- 修复前复测运行 [40059460264](https://github.com/imasenHF/spinplot/actions/runs/40059460264) 已触发，正在执行浏览器回归；在该运行完成前，不将修复记为已通过。数值、CSV/插值、一维处理、项目兼容、手动曲线矩阵、二维回归、显示/坐标/导出测试、生产构建及测试脚本语法检查均通过。
+- 独立字号 `Projection titles`（默认 11 px，范围 7–40 px）尚未加入专门的浏览器交互断言；待手动曲线回归通过后补测顶部/右侧投影标题及刻度字号独立性。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
+
 ## 最新状态核查（2026-10-24）
 
 - 最新源码分支 HEAD：`ddfc5473adbf9be173929e01ced9bbc43ac59c58`（`test: keep projection title default independent of tick size`）。`index.html` 已包含 Typography → `Projection titles` 数值输入框，默认 11 px、范围 7–40 px；`src/main.js` 将其列入通用控件采集与事件绑定，`src/plotting/oned.js` 将独立值传给一维绘图模型，`src/twod/ui.js` 使用该值绘制顶部与右侧投影标题。实现已存在于源码，仍需在实际浏览器中确认修改数值后两处标题变化且不影响刻度字号。
