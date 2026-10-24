@@ -213,9 +213,9 @@ try {
   const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');
   const mixedSvg=fs.readFileSync('browser-preview/mixed.svg','utf8');
   assert.match(mixedSvg,/Synthetic 2D/);
-  const svgTexts=[...mixedSvg.matchAll(/<text[^>]*style="font:([^"]*)"[^>]*>([^<]*)<\\/text>/g)].map(match=>({font:match[1],text:match[2].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}));
-  assert.ok(svgTexts.some(item=>/projection/i.test(item.text)&&/^23px\\b/.test(item.font)), 'Projection title text must use the independent 23 px setting');
-  assert.ok(svgTexts.some(item=>/^9px\\b/.test(item.font)), 'Tick labels must retain their independent 9 px setting');
+  const svgTexts=[...mixedSvg.matchAll(/<text[^>]*style="font:([^"]*)"[^>]*>([^<]*)<\/text>/g)].map(match=>({font:match[1],text:match[2].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}));
+  assert.ok(svgTexts.some(item=>/projection/i.test(item.text)&&/^23px\b/.test(item.font)), 'Projection title text must use the independent 23 px setting');
+  assert.ok(svgTexts.some(item=>/^9px\b/.test(item.font)), 'Tick labels must retain their independent 9 px setting');
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
