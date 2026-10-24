@@ -23,6 +23,11 @@
 - Restore automatic Z limits when double-clicking the 2D colorbar after wheel zoom; preserve the existing heatmap-body double-click behavior for X/Y axes.
 - Add Chromium regression coverage for colorbar wheel zoom, colorbar double-click reset, and heatmap X/Y reset on both the local preview build and published temporary preview.
 
+## Unreleased (preview verification status, 2026-10-24)
+
+- The Typography panel includes an independent `Projection titles` size control (default 11 px, range 7–40 px), passed separately from tick-label size to 1D and 2D plot renderers.
+- Latest preview workflow [`40016524070`](https://github.com/imasenHF/spinplot/actions/runs/40016524070) passes numerical/data regressions and production build, but Chromium regression fails at the existing manual-curves-to-Heatmap path while waiting for the `Export projection CSV` download (15 s timeout at `scripts/preview-browser-smoke.mjs:385`). Root cause and full browser acceptance remain unresolved; the static preview HTTP check [`40016524252`](https://github.com/imasenHF/spinplot/actions/runs/40016524252) passes. No change to formal `main` or `/spinplot/`.
+
 ## 0.9.2
 
 - Give button rows vertical clearance and place Auto Z in its own action row.
