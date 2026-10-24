@@ -10,8 +10,8 @@ Copyright © 2026 SpinPlot
 Contact: wuhaifeng@ustc.edu.cn
 -->
 <!-- SpinPlot V26: numeric validation, interaction fixes, vector export -->
-  <script type="module" crossorigin src="./assets/index-OKnF0mHN.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CgTGgJRg.css">
+  <script type="module" crossorigin src="./assets/index-DGDgK2WA.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Bprxu72X.css">
 </head>
 <body>
 <header class="titlebar"><div class="spinplot-brand"><a class="brand-icon-link" href="https://plastocyanin.org/" aria-label="返回 plastocyanin 主页"><img src="https://plastocyanin.org/assets/images/imasen_phi_logo/imasen-phi-32.png" width="24" height="24" alt=""></a><a class="brand-name" href="https://plastocyanin.org/">plast<span class="brand-gold">o</span>cyanin<span class="brand-gold">.</span></a><span class="brand-divider" aria-hidden="true">|</span><a class="brand-name" href="./" aria-current="page">SpinPl<span class="brand-gold">o</span>t</a><span class="brand-version">0.9.2</span></div><div class="window-buttons"><button class="window-button">—</button><button class="window-button">□</button><button class="window-button">×</button></div></header>
@@ -112,7 +112,8 @@ Contact: wuhaifeng@ustc.edu.cn
         <div class="field"><label>Plot font</label><select id="plotFont"></select></div>
         <div class="field hidden" id="customFontWrap"><label>Custom plot font</label><input id="customPlotFont" type="text" placeholder="Font family"></div>
         <div class="grid3"><div class="field"><label>Tick labels</label><input id="tickSize" type="number" value="11"></div><div class="field"><label>Axis titles</label><input id="axisTitleSize" type="number" value="14"></div><div class="field"><label>Legend / Direct</label><input id="legendSize" type="number" value="11"></div></div>
-        <div class="grid3"><div class="field"><label>Subplot title</label><input id="subplotTitleSize" type="number" value="15"></div><div class="field"><label>Figure title</label><input id="figureTitleSize" type="number" value="18"></div><div class="field"><label>Annotation</label><input id="annotationSize" type="number" min="1" step="1" value="8"></div></div>
+        <div class="grid2"><div class="field"><label>Subplot title</label><input id="subplotTitleSize" type="number" value="15"></div><div class="field"><label>Figure title</label><input id="figureTitleSize" type="number" value="18"></div></div>
+        <div class="grid2"><div class="field"><label>Annotation</label><input id="annotationSize" type="number" min="1" step="1" value="8"></div><div class="field"><label>Projection titles</label><input id="projectionTitleSize" type="number" min="7" max="40" step="1" value="11"></div></div>
       </div></section>
       <section class="card"><h3>Legend</h3><div class="body"><div class="grid2"><div class="field"><label>Background opacity</label><input id="legendOpacity" type="number" min="0" max="1" step="0.05" value="0"></div><div class="switch"><input id="legendBorder" type="checkbox"><label for="legendBorder">Show border</label></div></div></div></section>
       <section class="card"><h3>Canvas <button class="help-tip" data-help="Design size is independent of the on-screen workspace. SpinPlot only shrinks oversized previews to fit the workspace; smaller previews keep their design size and are centered. Auto uses the current workspace size.">?</button></h3><div class="body">
