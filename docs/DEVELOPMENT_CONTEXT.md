@@ -140,11 +140,12 @@ npm run build
 
 ## 最新状态核查（2026-10-24，追加复测）
 
-- 本轮复测发现先前 Chromium 下载超时的直接前置错误为 `Display range contains no samples`。日志顺序显示：创建手动 Heatmap、创建 Variable scan、切回 1D、调整曲线顺序，再次创建 Heatmap 后，二维显示范围仍受一维子图旧范围影响，导致投影 CSV 导出没有下载事件。
-- 修复提交：`757a7b263a6ee5eb52c6737ef2f8785930f47e95`（`fix: reset shared axis controls when returning to manual 1D`）。切回一维时保存二维设置，并将运行时标记 `sharedControls` 重置为 `false`，使再次创建 Heatmap 时重新从二维设置恢复子图坐标范围。
-- 浏览器测试脚本诊断提交：`6a82daa1136e10e424b81a762a954ea7414b1f5c`，下载失败时会附带状态栏、操作日志和页面异常信息，便于区分范围状态错误与下载机制错误。
-- 修复前复测运行 [40059460264](https://github.com/imasenHF/spinplot/actions/runs/40059460264) 已触发，正在执行浏览器回归；在该运行完成前，不将修复记为已通过。数值、CSV/插值、一维处理、项目兼容、手动曲线矩阵、二维回归、显示/坐标/导出测试、生产构建及测试脚本语法检查均通过。
-- 独立字号 `Projection titles`（默认 11 px，范围 7–40 px）尚未加入专门的浏览器交互断言；待手动曲线回归通过后补测顶部/右侧投影标题及刻度字号独立性。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
+- 本轮复测确认手动曲线转 Heatmap 后的投影 CSV 导出问题源自坐标范围状态：从派生二维图返回一维时，运行时标记 `sharedControls` 被保留，重新创建 Heatmap 时旧的一维坐标范围覆盖二维范围。提交 `757a7b263a6ee5eb52c6737ef2f8785930f47e95` 在切回一维时将缓存的二维设置 `sharedControls` 重置为 `false`。修复后浏览器日志确认投影 CSV 已导出。
+- 随后项目重载发现校验器只接受 `twoD.index` 指向原始二维矩阵，拒绝 `derivedFromCurves` 的手动 Heatmap / Variable scan。提交 `ab9b32c72fdf84e90ca388148e5e1f922252bb51` 修改 `src/project/project.js`：分别验证原始二维数据索引与派生二维曲线索引，并拒绝将已有二维矩阵当作派生曲线来源。提交 `02ae520bdbef1c7ff550aa12e002ff53f6a00d62` 为两种派生视图补充了项目重载及无效引用测试。
+- 浏览器回归现已通过手动 Heatmap 的 CSV 导出及项目保存/重载阶段；最新一次工作流 [40059792039](https://github.com/imasenHF/spinplot/actions/runs/40059792039) 正在重新执行完整基线对照。上一次 [40059692779](https://github.com/imasenHF/spinplot/actions/runs/40059692779) 已通过浏览器操作与重载，失败点为基线 JSON 对照未忽略新加的 `projectionTitleSize` 设置字段。提交 `eef00112d5c32b9c6a24786a3ce4118fb117fea9` 已在对照归一化时排除此新增控件字段；这只用于与旧版数据结构比较，不影响应用保存该设置。
+- 数值、CSV/插值、一维处理、项目版本兼容、手动曲线矩阵、现有二维回归、显示/坐标/导出测试、生产构建及浏览器测试脚本语法检查均通过。完整浏览器回归及迁移前对照尚未在最新 HEAD 上全部通过。
+- `Projection titles` 独立字号（默认 11 px，范围 7–40 px）仍缺少专门的浏览器交互断言；待当前基线回归通过后，补测顶部/右侧投影标题响应与刻度标签字号独立性。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
+
 
 ## 最新状态核查（2026-10-24）
 
