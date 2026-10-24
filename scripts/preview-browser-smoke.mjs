@@ -381,10 +381,21 @@ try {
     assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
     assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:10,1:30,2:80});
-    const [projectionDownload] = await Promise.all([
-      page.waitForEvent('download',{timeout:15000}),
-      page.getByRole('button',{name:'Export projection CSV',exact:true}).click()
-    ]);
+    let projectionDownload;
+    try {
+      [projectionDownload] = await Promise.all([
+        page.waitForEvent('download',{timeout:15000}),
+        page.getByRole('button',{name:'Export projection CSV',exact:true}).click()
+      ]);
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => ({
+        status: document.querySelector('#statusMain')?.textContent || '',
+        log: document.querySelector('#log')?.textContent || '',
+        exportButtonCount: [...document.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Export projection CSV').length,
+        exportButtonDisabled: [...document.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Export projection CSV').map(button => button.disabled)
+      }));
+      throw new Error('Projection CSV download failed: ' + error.message + '; diagnostics=' + JSON.stringify({...diagnostics, pageErrors: errors.slice(-10)}));
+    }
     await projectionDownload.saveAs('browser-preview/manual-curve-projections.csv');
     const projectionRows=fs.readFileSync('browser-preview/manual-curve-projections.csv','utf8').trim().split(/\r?\n/).map(line=>line.split(','));
     const yRows=projectionRows.filter(row=>row[0]==='Y');
