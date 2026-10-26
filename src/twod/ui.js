@@ -564,7 +564,6 @@ export function controls(card, sp, d, onChange) {
     const orderedValues = curveIds.map((id, i) => Number.isFinite(Number(variable.valuesByCurve[id])) ? Number(variable.valuesByCurve[id]) : i);
     const {box: variableBox, body: variableBody} = section('Scan variable · Heatmap Y axis', false);
     variableBox.classList.add('manual-scan-variable');
-    mode.closest('.grid2').after(variableBox);
     function manualField(title, key, type, value) {
       const label = document.createElement('label'); label.className = 'control-label'; label.textContent = title;
       const input = document.createElement('input'); input.type = type; input.dataset.manualScan = key; input.value = value ?? '';
