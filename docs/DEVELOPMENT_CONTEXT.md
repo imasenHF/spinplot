@@ -162,16 +162,10 @@ npm run build
 - 正式功能状态以当前代码和实际检查结果为准。对用户汇报时，明确区分已修改、已提交、CI 通过、预览已同步、浏览器已验收和正式发布。
 
 
-## 最新状态核查（2026-10-26，手动曲线二维操作）
+## 最新状态核查（2026-10-26，扫描变量与作图模式简化）
 
-- 手动曲线组的 Plot mode 已包含 Heatmap 与 Variable scan。扫描变量编辑器默认 `Subplot index`，从 1 开始、步长 1、单位留空；支持自定义变量名/单位、等间距 Start/Step 和按当前曲线顺序输入的显式数组。数组映射按曲线 ID 保存，重排后不会错配；空单位不显示单位括号。
-- 完整 Chromium 回归、手动 1D 曲线转二维矩阵回归、现有二维回归、显示/坐标/导出回归、生产等效构建和浏览器脚本语法检查通过，见 [Actions 40322030149](https://github.com/imasenHF/spinplot/actions/runs/40322030149)。
-- 预览静态快照 `previews/spinplot-modularization/` 已从该分支最新 `preview-site/` 同步，主站 Pages 部署成功，见 [Actions 40325568001](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40325568001)。正式 `/spinplot/` 和 `main` 未修改；Draft PR #1 保持未合并。
-
-
-## 最新状态核查（2026-10-26，扫描变量面板合并）
-
-- 用户实际预览截图显示手动 Heatmap 子图内出现两套扫描变量面板。原因是 `src/twod/ui.js` 已有完整的 `Scan variable` 编辑器，而 `src/main.js` 又追加了一套独立编辑器，二者写入同一个 `sp.scanVariable`，造成控件重复与交互不一致。
-- 已删除 `src/main.js` 中重复的编辑器、Apply 按钮、事件处理器及无用状态；保留 `src/twod/ui.js` 的统一控件，将标题明确为 `Scan variable · Heatmap Y axis`。变量名、单位、等间距 Start/Step 或自定义数组仅保留一份，沿用现有即时应用逻辑。默认值统一为 `Subplot index`、单位空白、起始值 1、步长 1。
-- 浏览器回归已增加断言：手动 Heatmap 只出现一个 `.manual-scan-variable` 面板，并验证等间距/自定义数组、变量扫描子图、曲线重排、项目保存/重载和投影 CSV。
-- 当前提交 `c184658` 的完整回归仍在执行；此前相同功能修改提交 `aee412a` 的完整模块化回归及公开预览浏览器检查均通过。静态快照需在当前 HEAD 回归通过后重新同步。正式 `main` 与 `/spinplot/` 未修改。
+- 手动曲线生成的 Heatmap 与 Variable scan 共用唯一的扫描变量设置。面板位于 Plot mode 下方，默认折叠，在 Heatmap 与 Variable scan 模式间切换时仍可展开使用。
+- 作图模式菜单仅显示 Stack、Overlap、Heatmap、Variable scan 四项；移除 Overlay (1D) 和 Stack (1D) 返回选项，转换需要撤销时使用 Undo。
+- 手动曲线 Heatmap 默认显示 Y 轴标题，标题取扫描变量名，默认值为 `Subplot index`。此规则仅覆盖手动曲线 Heatmap，不更改普通 1D 图的全局 Y 标题偏好。
+- 浏览器回归新增可见模式列表、面板折叠/位置、默认 Y 标题、曲线顺序映射、项目保存/重载及投影 CSV 检查。代码修改后需以当前 HEAD 的完整模块化回归与静态预览浏览器检查结果为最终验收依据。
+- 当前仍只修改 `preview/modularization-phase1-20261009` 及主站的独立静态预览目录；正式 SpinPlot `main` 与 `/spinplot/` 不得修改或合并。
