@@ -58,7 +58,7 @@ Top and right projections each have independent visibility, range-label, and tit
 
 ## Manual 1D curve groups as 2D data
 
-When a subplot contains at least two 1D curves, the Subplots panel exposes a scan-variable editor. Heatmap converts the selected curves into a 2D matrix; Variable scan creates a separate scan-correlation subplot while retaining the source plot. The scan variable defaults to `Subplot index` with blank unit and values 1, 2, 3, … . Users may edit the name/unit and select equal spacing (`Start`, `Step`) or enter an explicit array. Array values are mapped in the current curve order and then stored by curve ID; matrix rows are sorted numerically by scan-variable value. A blank unit omits the unit parentheses from the axis label.
+When a subplot contains at least two 1D curves, choose `Heatmap` to convert the selected curves into a 2D matrix, or `Variable scan (new subplot)` to create a separate scan-correlation subplot while retaining the source plot. For a curve-derived Heatmap, one `Scan variable · Heatmap Y axis` panel defines the variable used by both the heatmap and derived scan plot. It contains the variable name, optional unit, and either equal spacing (`Start`, `Step`) or an explicit array; fields apply changes directly without a second Apply button. Defaults are `Subplot index`, blank unit, start 1, step 1. Array values are entered in current curve order, stored by curve ID, and remain attached to their source curves when reordered; heatmap rows are sorted numerically by scan-variable value. A blank unit omits unit parentheses from the axis label.
 
 ## Interface organization
 
