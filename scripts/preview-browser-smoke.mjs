@@ -370,9 +370,6 @@ try {
     assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>el.closest('.grid2').nextElementSibling?.classList.contains('manual-scan-variable')),true,'Scan-variable editor must sit directly under Plot mode');
     await page.evaluate(() => {window.__spinplotDrawnText=[];const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){window.__spinplotDrawnText.push(String(text));return original.call(this,text,...args);};});
     assert.equal(await sourceCard.locator('[data-manual-scan="name"]').inputValue(),'Subplot index','Default manual scan variable name');
-    await sourceCard.locator('[data-manual-scan="name"]').press('Tab');
-    await page.waitForTimeout(150);
-    assert.ok(await page.evaluate(() => window.__spinplotDrawnText.includes('Subplot index')),'Curve-derived Heatmap must display its Y-axis title by default');
     assert.equal(await sourceCard.locator('[data-manual-scan="unit"]').inputValue(),'','Scan variable unit defaults to blank');
     assert.equal(await sourceCard.locator('[data-manual-scan="mode"]').inputValue(),'linear','Equal spacing is the default');
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor, not duplicate panels');
@@ -382,6 +379,8 @@ try {
     await sourceCard.locator('[data-manual-scan="start"]').press('Tab');
     await sourceCard.locator('[data-manual-scan="step"]').fill('2');
     await sourceCard.locator('[data-manual-scan="step"]').press('Tab');
+    await page.waitForTimeout(150);
+    assert.ok(await page.evaluate(() => window.__spinplotDrawnText.includes('Subplot index')),'Curve-derived Heatmap must display its Y-axis title by default');
     await sourceCard.locator('[data-manual-scan="mode"]').selectOption('array');
     assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 4, 6','Equal spacing values must follow Current order');
     await sourceCard.locator('[data-manual-scan="name"]').fill('Temperature');
