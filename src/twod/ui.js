@@ -557,11 +557,11 @@ export function controls(card, sp, d, onChange) {
   const modeLabel = ({overlay:'Heatmap',heatmap:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
   summary.textContent = (manualDerived ? sp.twoD.curveIndices.length + ' curves' : '1 dataset') + ' · ' + modeLabel + ' · ' + d.x.values.length + ' × ' + d.y.values.length;
   if (manualDerived) {
-    const variable = sp.scanVariable || (sp.scanVariable = {name:'Curve index',unit:'',mode:'linear',start:0,step:1,valuesByCurve:{}});
+    const variable = sp.scanVariable || (sp.scanVariable = {name:'Subplot index',unit:'',mode:'linear',start:1,step:1,valuesByCurve:{}});
     if (!variable.valuesByCurve || typeof variable.valuesByCurve !== 'object') variable.valuesByCurve = {};
     const curveIds = sp.twoD.curveIndices || [];
     const orderedValues = curveIds.map((id, i) => Number.isFinite(Number(variable.valuesByCurve[id])) ? Number(variable.valuesByCurve[id]) : i);
-    const {box: variableBox, body: variableBody} = section('Scan variable', true);
+    const {box: variableBox, body: variableBody} = section('Scan variable · Heatmap Y axis', true);
     variableBox.classList.add('manual-scan-variable');
     function manualField(title, key, type, value) {
       const label = document.createElement('label'); label.className = 'control-label'; label.textContent = title;
@@ -569,17 +569,17 @@ export function controls(card, sp, d, onChange) {
       if (type === 'number') input.step = 'any';
       label.append(input); variableBody.append(label); return {label, input};
     }
-    const nameField = manualField('Variable name', 'name', 'text', variable.name || 'Curve index');
+    const nameField = manualField('Variable name', 'name', 'text', variable.name || 'Subplot index');
     const unitField = manualField('Unit', 'unit', 'text', variable.unit || '');
     const modeLabelEl = document.createElement('label'); modeLabelEl.className = 'control-label'; modeLabelEl.textContent = 'Value mode';
     const modeSelect = document.createElement('select'); modeSelect.dataset.manualScan = 'mode';
     for (const [value, text] of [['linear','Equally spaced'],['array','Custom array']]) {const option = document.createElement('option'); option.value = value; option.textContent = text; modeSelect.append(option);}
     modeSelect.value = variable.mode === 'array' ? 'array' : 'linear'; modeLabelEl.append(modeSelect); variableBody.append(modeLabelEl);
-    const startField = manualField('Start value', 'start', 'number', variable.start ?? 0);
-    const stepField = manualField('Interval', 'step', 'number', variable.step ?? 1);
+    const startField = manualField('Start value', 'start', 'number', variable.start ?? 1);
+    const stepField = manualField('Step', 'step', 'number', variable.step ?? 1);
     const arrayField = manualField('Values in current curve order', 'values', 'text', orderedValues.join(', '));
-    arrayField.label.style.gridColumn = '1 / -1'; arrayField.input.placeholder = '0, 2, 5';
-    const note = document.createElement('div'); note.className = 'small manual-scan-note'; note.textContent = 'Custom values must match the selected curve count. Values remain attached to their source curves when the curve order changes.'; variableBody.append(note);
+    arrayField.label.style.gridColumn = '1 / -1'; arrayField.input.placeholder = '1, 2, 3';
+    const note = document.createElement('div'); note.className = 'small manual-scan-note'; note.textContent = 'Each curve gets one Y-axis value. Custom values must match the curve count and follow Current order; values stay attached to their source curves when reordered. The same settings are used by Heatmap and Variable scan.'; variableBody.append(note);
     const updateVariableMode = () => {const arrayMode = modeSelect.value === 'array'; startField.label.hidden = arrayMode; stepField.label.hidden = arrayMode; arrayField.label.hidden = !arrayMode;};
     const writeLinearValues = () => {
       const start = Number(variable.start), step = Number(variable.step);
