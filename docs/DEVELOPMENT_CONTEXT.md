@@ -160,3 +160,10 @@ npm run build
 - 每次任务结束后，仅在代码、测试、部署状态或已确认决定实际变化时更新相关记录。
 - 若本文与用户最新指令冲突，执行用户最新明确要求；若本文与远程代码或 CI 状态冲突，先核查远程事实，再修正文档。
 - 正式功能状态以当前代码和实际检查结果为准。对用户汇报时，明确区分已修改、已提交、CI 通过、预览已同步、浏览器已验收和正式发布。
+
+
+## 最新状态核查（2026-10-26，手动曲线二维操作）
+
+- 手动曲线组的 Plot mode 已包含 Heatmap 与 Variable scan。扫描变量编辑器默认 `Subplot index`，从 1 开始、步长 1、单位留空；支持自定义变量名/单位、等间距 Start/Step 和按当前曲线顺序输入的显式数组。数组映射按曲线 ID 保存，重排后不会错配；空单位不显示单位括号。
+- 完整 Chromium 回归、手动 1D 曲线转二维矩阵回归、现有二维回归、显示/坐标/导出回归、生产等效构建和浏览器脚本语法检查通过，见 [Actions 40322030149](https://github.com/imasenHF/spinplot/actions/runs/40322030149)。
+- 预览静态快照 `previews/spinplot-modularization/` 已从该分支最新 `preview-site/` 同步，主站 Pages 部署成功，见 [Actions 40325568001](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40325568001)。正式 `/spinplot/` 和 `main` 未修改；Draft PR #1 保持未合并。
