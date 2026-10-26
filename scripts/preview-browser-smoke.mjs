@@ -361,6 +361,15 @@ try {
     await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
     await page.waitForTimeout(200);
     assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
+    assert.equal(await sourceCard.locator('[data-scanvar="name"]').inputValue(),'Subplot index','Default manual scan variable name');
+    assert.equal(await sourceCard.locator('[data-scanvar="unit"]').inputValue(),'','Scan variable unit defaults to blank');
+    assert.equal(await sourceCard.locator('[data-scanvar="mode"]').inputValue(),'linear','Equal spacing is the default');
+    assert.equal(await sourceCard.locator('[data-scanvar="start"]').inputValue(),'1','Default scan variable starts at subplot index 1');
+    assert.equal(await sourceCard.locator('[data-scanvar="step"]').inputValue(),'1','Default scan variable step is 1');
+    await sourceCard.locator('[data-scanvar="start"]').fill('2');
+    await sourceCard.locator('[data-scanvar="step"]').fill('2');
+    await sourceCard.locator('[data-action="applyScanVariable"]').click();
+    assert.equal(await sourceCard.locator('[data-scanvar="array"]').inputValue(),'2, 4, 6','Equal spacing values must follow Current order');
     await sourceCard.locator('[data-scanvar="name"]').fill('Temperature');
     await sourceCard.locator('[data-scanvar="name"]').press('Tab');
     await sourceCard.locator('[data-scanvar="unit"]').fill('K');
