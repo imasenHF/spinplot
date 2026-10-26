@@ -358,10 +358,21 @@ try {
     assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="scan"]').count(),1,'Manual 1D subplots must offer Variable scan');
+    await sourceCard.locator('.order-item[data-curve="2"]').click();
+    await sourceCard.locator('[data-action="moveTop"]').click();
+    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1]);
     await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
     await page.waitForTimeout(200);
     assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
+    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose only the four supported plot modes');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
+    assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>el.closest('.grid2').nextElementSibling?.classList.contains('manual-scan-variable')),true,'Scan-variable editor must sit directly under Plot mode');
+    await page.evaluate(() => {window.__spinplotDrawnText=[];const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){window.__spinplotDrawnText.push(String(text));return original.call(this,text,...args);};});
     assert.equal(await sourceCard.locator('[data-manual-scan="name"]').inputValue(),'Subplot index','Default manual scan variable name');
+    await sourceCard.locator('[data-manual-scan="name"]').press('Tab');
+    await page.waitForTimeout(150);
+    assert.ok(await page.evaluate(() => window.__spinplotDrawnText.includes('Subplot index')),'Curve-derived Heatmap must display its Y-axis title by default');
     assert.equal(await sourceCard.locator('[data-manual-scan="unit"]').inputValue(),'','Scan variable unit defaults to blank');
     assert.equal(await sourceCard.locator('[data-manual-scan="mode"]').inputValue(),'linear','Equal spacing is the default');
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor, not duplicate panels');
@@ -388,24 +399,19 @@ try {
     const scanCard = page.locator('.subplot').nth(1);
     assert.equal(await scanCard.locator('[data-manual-scan="name"]').inputValue(),'Temperature');
     assert.equal(await scanCard.locator('[data-manual-scan="unit"]').inputValue(),'K');
-    await sourceCard.locator('[data-field="mode"]').selectOption('overlay1d');
-    await sourceCard.locator('.order-item[data-curve="2"]').click();
-    await sourceCard.locator('[data-action="moveTop"]').click();
-    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1]);
-    await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
-    await page.waitForTimeout(200);
-    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'80, 10, 30','Variable values must follow source curves after reordering');
+    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'10, 30, 80','Custom scan values must follow the selected curve order');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must remain collapsed in Heatmap mode');
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const saved=await save('browser-preview/manual-curves.spinplot.json');
     assert.equal(saved.rawCurves.length,3,'Derived heatmap must not append duplicate matrix data to the source data list');
     assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
     assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
-    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:10,1:30,2:80});
+    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:30,1:80,2:10});
     assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
     assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
     assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
-    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:10,1:30,2:80});
+    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:30,1:80,2:10});
     let projectionDownload;
     try {
       [projectionDownload] = await Promise.all([
@@ -426,13 +432,12 @@ try {
     const yRows=projectionRows.filter(row=>row[0]==='Y');
     assert.deepEqual(yRows.map(row=>Number(row[1])),[10,30,80],'Heatmap must use the custom non-uniform variable values');
     const projected=yRows.map(row=>Number(row[2]));
-    assert.ok(projected[0]!==0 && Math.abs(projected[1]/projected[0]-2)<1e-8 && Math.abs(projected[2]/projected[0]-3)<1e-8,
-      'Signal rows must remain mapped to their original curves after reordering');
+    assert.deepEqual(projected,[3,1,2],'Signal rows must remain mapped to the selected source curves after reordering');
     await load(saved,'manual-curves-reload.spinplot.json');
     assert.equal(await page.locator('.subplot').count(),2,'Manual heatmap and Variable scan must survive project reload');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="mode"]').inputValue(),'heatmap');
     assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan');
-    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'80, 10, 30');
+    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'10, 30, 80');
   }
 
   // A legacy single-trace CSV can still be opened after a multi-curve project.
