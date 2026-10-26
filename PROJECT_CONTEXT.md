@@ -63,9 +63,9 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板已增加独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px），由 `src/main.js` 采集并传递给 `src/plotting/oned.js` 与 `src/twod/ui.js`。
+预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
-2026-10-24 最新预览分支 HEAD 为 `ddfc5473adbf9be173929e01ced9bbc43ac59c58`。工作流 [40016524070](https://github.com/imasenHF/spinplot/actions/runs/40016524070) 中数值/数据回归与生产构建通过，但 Chromium 回归在手动曲线转 Heatmap 后等待 `Export projection CSV` 下载时 15 秒超时（`scripts/preview-browser-smoke.mjs:385`），根因尚未确认，完整浏览器验收未通过。临时预览 HTTP 检查 [40016524252](https://github.com/imasenHF/spinplot/actions/runs/40016524252) 成功，但最新静态预览未由失败工作流更新。此前的公开浏览器成功结果仅适用于当时已发布的旧快照，不应视为当前 HEAD 的验收。真实 CIQTEK 样本验收仍待重新取得 `exp(1).zip`；正式 `main` 尚未合并。详细状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+2026-10-26 当前界面调整已写入预览分支：手动曲线 Plot mode 仅显示 Stack、Overlap、Heatmap、Variable scan 四项；扫描变量编辑器移入 Plot mode 区域并默认折叠；手动曲线 Heatmap 默认显示 Y 轴标题。数值/数据回归、生产等效构建与脚本语法检查通过。最新完整 Chromium 回归尚未结束，当前 GitHub Actions 在浏览器运行时安装步骤停滞；此前一轮完整回归因投影 CSV 导出时 `Display range contains no samples` 失败，已将回归用的非等距自定义变量值调整到当前显示范围内，需以最新运行结果确认。最新静态预览尚未同步，正式 `main` 与 `/spinplot/` 未修改。详细状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。
