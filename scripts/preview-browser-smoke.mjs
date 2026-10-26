@@ -367,7 +367,7 @@ try {
     assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose only the four supported plot modes');
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
-    assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>el.closest('.grid2').nextElementSibling?.classList.contains('manual-scan-variable')),true,'Scan-variable editor must sit directly under Plot mode');
+    assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>{const panel=el.closest('.subplot-body')?.querySelector('.manual-scan-variable');return !!panel&&(el.compareDocumentPosition(panel)&Node.DOCUMENT_POSITION_FOLLOWING)!==0;}),true,'Scan-variable editor must appear after Plot mode');
     await page.evaluate(() => {window.__spinplotDrawnText=[];const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){window.__spinplotDrawnText.push(String(text));return original.call(this,text,...args);};});
     assert.equal(await sourceCard.locator('[data-manual-scan="name"]').inputValue(),'Subplot index','Default manual scan variable name');
     assert.equal(await sourceCard.locator('[data-manual-scan="unit"]').inputValue(),'','Scan variable unit defaults to blank');
