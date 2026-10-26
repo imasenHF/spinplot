@@ -503,7 +503,8 @@ export function controls(card, sp, d, onChange) {
   overlayOption.textContent = 'Heatmap';
   if (manualDerived) {
     overlayOption.hidden = true;
-    for (const [value, label] of [['heatmap', 'Heatmap'], ['overlay1d', 'Overlay (1D)'], ['stack1d', 'Stack (1D)']]) {
+    if (['overlay1d', 'stack1d'].includes(sp.mode)) sp.mode = sp.mode === 'stack1d' ? 'stack' : 'heatmap';
+    for (const [value, label] of [['heatmap', 'Heatmap']]) {
       if (!mode.querySelector('[value=' + value + ']')) {
         const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
       }
@@ -561,8 +562,9 @@ export function controls(card, sp, d, onChange) {
     if (!variable.valuesByCurve || typeof variable.valuesByCurve !== 'object') variable.valuesByCurve = {};
     const curveIds = sp.twoD.curveIndices || [];
     const orderedValues = curveIds.map((id, i) => Number.isFinite(Number(variable.valuesByCurve[id])) ? Number(variable.valuesByCurve[id]) : i);
-    const {box: variableBox, body: variableBody} = section('Scan variable · Heatmap Y axis', true);
+    const {box: variableBox, body: variableBody} = section('Scan variable · Heatmap Y axis', false);
     variableBox.classList.add('manual-scan-variable');
+    mode.closest('.grid2').after(variableBox);
     function manualField(title, key, type, value) {
       const label = document.createElement('label'); label.className = 'control-label'; label.textContent = title;
       const input = document.createElement('input'); input.type = type; input.dataset.manualScan = key; input.value = value ?? '';
