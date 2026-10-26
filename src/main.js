@@ -68,17 +68,41 @@ const manualMatrixCache=new WeakMap();
 function processedSubplot(sp){if(sp.twoD)return [];const key=JSON.stringify([state.dataVersion||0,sp.curves,sp.mode,sp.offsetMode,sp.offsetScale,sp.manualOffsets,sp.offsetDirection,sp.freqMode,sp.localFreqMode,sp.localFreqTarget,sp.noiseRegions,$('globalFreqMode').value,$('targetFreq').value,$('baselineMode').value,$('baselineBref').value,$('baselineRegions').value,$('scaleMode').value,$('noiseReference').value,state.manualScales]);const cached=processingCache.get(sp);if(cached?.key===key)return cached.curves;const ids=sp.curves.filter(i=>i>=0&&i<state.rawCurves.length&&!state.rawCurves[i]?.matrix);const result=processSubplot(state.rawCurves,sp,subplotTargetFrequency(sp,ids),collectControls(),state.manualScales);processingCache.set(sp,{key,curves:result});return result;}
 
 function ensureManualScanVariable(sp,curveIndices=sp.curves||[]){
- if(!sp.scanVariable||typeof sp.scanVariable!=='object')sp.scanVariable={name:'Curve index',unit:'',mode:'linear',start:0,step:1,valuesByCurve:{}};
+ if(!sp.scanVariable||typeof sp.scanVariable!=='object')sp.scanVariable={name:'Subplot index',unit:'',mode:'linear',start:1,step:1,valuesByCurve:{}};
  const v=sp.scanVariable;
- if(!v.name)v.name='Curve index';if(v.unit===undefined||v.unit===null)v.unit='';
+ if(!v.name)v.name='Subplot index';if(v.unit===undefined||v.unit===null)v.unit='';
  if(!['linear','array'].includes(v.mode))v.mode='linear';
- if(!Number.isFinite(Number(v.start)))v.start=0;if(!Number.isFinite(Number(v.step))||Number(v.step)===0)v.step=1;
+ if(!Number.isFinite(Number(v.start)))v.start=1;if(!Number.isFinite(Number(v.step))||Number(v.step)===0)v.step=1;
  if(!v.valuesByCurve||typeof v.valuesByCurve!=='object'||Array.isArray(v.valuesByCurve))v.valuesByCurve={};
  const map=v.valuesByCurve,used=new Set();
  for(const id of curveIndices){const value=Number(map[id]);if(map[id]!==undefined&&map[id]!==null&&String(map[id]).trim()!==''&&Number.isFinite(value)){map[id]=value;used.add(value);}}
  if(!Object.keys(map).length){curveIndices.forEach((id,i)=>{const value=v.mode==='linear'?Number(v.start)+i*Number(v.step):i;map[id]=value;used.add(value);});}
  else for(let i=0;i<curveIndices.length;i++){const id=curveIndices[i];if(map[id]!==undefined&&map[id]!==null&&String(map[id]).trim()!==''&&Number.isFinite(Number(map[id])))continue;let value=Number(v.start)+i*Number(v.step),delta=Number(v.step)||1,tries=0;while(used.has(value)&&tries++<curveIndices.length+5)value+=delta;if(used.has(value))value=Math.max(-Infinity,...used)+1;map[id]=value;used.add(value);}
  return v;
+}
+function applyManualScanVariable(sp,card,curveIndices){
+ const name=card.querySelector('[data-scanvar="name"]').value.trim()||'Subplot index';
+ const unit=card.querySelector('[data-scanvar="unit"]').value.trim();
+ const mode=card.querySelector('[data-scanvar="mode"]').value;
+ const start=Number(card.querySelector('[data-scanvar="start"]').value);
+ const step=Number(card.querySelector('[data-scanvar="step"]').value);
+ let values;
+ if(mode==='linear'){
+  if(!Number.isFinite(start)||!Number.isFinite(step)||step===0)throw new Error('Equal spacing requires a finite start and a non-zero step.');
+  values=curveIndices.map((_,i)=>start+i*step);
+ }else{
+  const raw=card.querySelector('[data-scanvar="array"]').value.trim();
+  values=raw?raw.split(/[\s,;]+/).filter(Boolean).map(Number):[];
+  if(values.length!==curveIndices.length)throw new Error('Enter exactly '+curveIndices.length+' scan-variable values, one for each curve in Current order.');
+  if(values.some(v=>!Number.isFinite(v)))throw new Error('Scan-variable array values must all be finite numbers.');
+ }
+ if(values.some(v=>!Number.isFinite(v)))throw new Error('Scan-variable values must all be finite numbers.');
+ if(new Set(values).size!==values.length)throw new Error('Scan-variable values must be unique.');
+ const valuesByCurve={...(sp.scanVariable?.valuesByCurve||{})};
+ curveIndices.forEach((id,i)=>{valuesByCurve[id]=values[i];});
+ sp.scanVariable={name,unit,mode,start:Number.isFinite(start)?start:1,step:Number.isFinite(step)&&step!==0?step:1,valuesByCurve};
+ manualMatrixCache.delete(sp);
+ renderSubplotUI();recordHistory('Manual scan variable');scheduleDraw();logAction('Updated scan variable: '+name+(unit?' ('+unit+')':''));
 }
 function manualCurveMatrix(sp,curveIndices=sp.twoD?.curveIndices||sp.curves||[],scanVariable=sp.scanVariable){
  const ids=curveIndices.filter(id=>Number.isInteger(Number(id))&&Number(id)>=0&&state.rawCurves[Number(id)]&&!state.rawCurves[Number(id)].matrix).map(Number);
@@ -145,7 +169,7 @@ function selectedAvailable(el){return [...el.selectedOptions].map(o=>Number(o.va
 function orderSelectedIds(card){return [...card.querySelectorAll('.order-item.selected')].map(e=>Number(e.dataset.curve))}
 function moveCurveOrder(sp,ids,dir){if(!ids.length)return;if(dir==='top'){const a=sp.curves.filter(i=>ids.includes(i)),b=sp.curves.filter(i=>!ids.includes(i));sp.curves=[...a,...b];return}if(dir<0){for(let i=1;i<sp.curves.length;i++)if(ids.includes(sp.curves[i])&&!ids.includes(sp.curves[i-1]))[sp.curves[i-1],sp.curves[i]]=[sp.curves[i],sp.curves[i-1]]}else for(let i=sp.curves.length-2;i>=0;i--)if(ids.includes(sp.curves[i])&&!ids.includes(sp.curves[i+1]))[sp.curves[i],sp.curves[i+1]]=[sp.curves[i+1],sp.curves[i]]}
 function subplotSummary(sp){const parts=[];if(sp.title.trim())parts.push(sp.title.trim());const mode=sp.twoD?({overlay:'Heatmap',heatmap:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'}[sp.mode]||'Heatmap'):(sp.mode==='stack'?'Stack':'Overlay');parts.push(sp.twoD?(sp.twoD.derivedFromCurves?sp.twoD.curveIndices.length+' curves':'1 dataset'):`${sp.curves.length} curves`,mode,sp.labelMode==='direct'?'Direct':sp.labelMode==='legend'?'Legend':sp.labelMode);return parts.join(' · ')}
-function renderSubplotUI(){const box=$('subplotContainer');box.innerHTML='';state.subplots.forEach((sp,si)=>{const card=document.createElement('div');card.className='subplot'+(sp.collapsed?' collapsed':'');const available=state.rawCurves.map((c,i)=>({c,i})).filter(x=>!sp.curves.includes(x.i)&&(sp.twoD||!x.c.matrix)),aHeight=Math.min(10,Math.max(1,available.length))*22+8,oHeight=Math.min(10,Math.max(1,sp.curves.length))*22+8;card.innerHTML=`
+function renderSubplotUI(){const box=$('subplotContainer');box.innerHTML='';state.subplots.forEach((sp,si)=>{const card=document.createElement('div');card.className='subplot'+(sp.collapsed?' collapsed':'');const available=state.rawCurves.map((c,i)=>({c,i})).filter(x=>!sp.curves.includes(x.i)&&(sp.twoD||!x.c.matrix)),aHeight=Math.min(10,Math.max(1,available.length))*22+8,oHeight=Math.min(10,Math.max(1,sp.curves.length))*22+8;const manualCurveIds=(sp.twoD?.derivedFromCurves?sp.twoD.curveIndices:!sp.twoD?sp.curves:[]).filter(i=>Number.isInteger(i)&&i>=0&&state.rawCurves[i]&&!state.rawCurves[i].matrix);const scanVar=manualCurveIds.length>=2?ensureManualScanVariable(sp,manualCurveIds):null;const scanValues=scanVar?manualCurveIds.map(id=>scanVar.valuesByCurve[id]):[];card.innerHTML=`
 <div class="subplot-head"><button class="subplot-collapse" data-action="collapse" data-icon="${sp.collapsed?'expand':'collapse'}" title="Expand / collapse"></button><input type="text" class="subplot-title-edit" data-field="title" value="${escapeHtml(sp.title)}" placeholder="SUBPLOT ${si+1}" title="Subplot title; empty means no plotted title"><div class="subplot-actions"><button class="icon-btn" data-action="spUp" data-icon="up" title="Move subplot up"></button><button class="icon-btn" data-action="spDown" data-icon="down" title="Move subplot down"></button><button class="icon-btn" data-action="spTop" data-icon="top" title="Move subplot to top"></button><button class="icon-btn" data-action="dup" data-icon="copy" title="Duplicate subplot"></button><button class="icon-btn danger" data-action="remove" data-icon="trash" title="Delete subplot"></button></div></div>
 <div class="subplot-body"><div class="subplot-summary">${escapeHtml(subplotSummary(sp))}</div>
 <div class="curve-manager"><div><div class="curve-box-label"><span>Available curves</span><span>${available.length}</span></div><select multiple data-action="available" style="height:${aHeight}px">${available.map(x=>`<option value="${x.i}" title="${escapeHtml(x.c.name)}">${x.i}. ${escapeHtml(x.c.name)}</option>`).join('')}</select></div>
