@@ -455,7 +455,7 @@ export function renderFigure(
             lineWidth: lineW,
             frame,
             showYTicks: sp.showYTicks && !$("hideYTicks").checked,
-            showYTitle: !$("hideYTitle").checked,
+            showYTitle: (sp.twoD?.derivedFromCurves && sp.mode === "heatmap") || !$("hideYTitle").checked,
             xTitleDistance: Number($("xTitleDistance").value),
             yTitleDistance: Number($("yTitleDistance").value),
             grid: $("showGrid").checked,
