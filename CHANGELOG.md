@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add scan-variable editor for manually grouped 1D curves: default subplot index values, optional variable name/unit, equal spacing or an explicit array assigned in current curve order; values remain associated with curve IDs after reordering.
+- Consolidate manually derived Heatmap scan-variable settings into one `Scan variable · Heatmap Y axis` section. Remove the duplicate editor and its separate Apply button; the existing 2D controls now provide the single source of truth and apply field changes directly. Defaults are `Subplot index`, blank unit, start 1, step 1. Browser regression asserts that only one editor is rendered.
 - Reset runtime `sharedControls` state when returning a curve-derived Heatmap to 1D so recreating the Heatmap restores its 2D axis ranges; add regression coverage through projection CSV export.
 - Validate project references for curve-derived Heatmap and Variable scan subplots separately from original 2D matrix references; add save/load and invalid-reference tests.
 - Add browser verification that projection titles use 23 px while tick labels remain 9 px, and normalize the new typography control only in old-version baseline comparisons.
