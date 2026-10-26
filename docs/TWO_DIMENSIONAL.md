@@ -56,6 +56,10 @@ Subplots with equal grid spans share the maximum required left/right/top/bottom 
 
 Top and right projections each have independent visibility, range-label, and title controls. Hiding a projection removes its accessory space. Mixed columns allocate the required projection/colorbar space per column while keeping all main axes the same size. The 2D data section shows the current dataset; narrow sidebar rows truncate long names with a full-name tooltip.
 
+## Manual 1D curve groups as 2D data
+
+When a subplot contains at least two 1D curves, the Subplots panel exposes a scan-variable editor. Heatmap converts the selected curves into a 2D matrix; Variable scan creates a separate scan-correlation subplot while retaining the source plot. The scan variable defaults to `Subplot index` with blank unit and values 1, 2, 3, … . Users may edit the name/unit and select equal spacing (`Start`, `Step`) or enter an explicit array. Array values are mapped in the current curve order and then stored by curve ID; matrix rows are sorted numerically by scan-variable value. A blank unit omits the unit parentheses from the axis label.
+
 ## Interface organization
 
 The six tabs remain Data, Processing, Subplots, Axes, Style and Export. Figure title and canvas controls are part of the Subplots layout area. File owns project/config operations; existing toolbar shortcuts and file formats remain supported.
