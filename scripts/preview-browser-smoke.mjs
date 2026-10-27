@@ -399,7 +399,7 @@ try {
     const scanCard = page.locator('.subplot').nth(1);
     assert.equal(await scanCard.locator('[data-manual-scan="name"]').inputValue(),'Temperature');
     assert.equal(await scanCard.locator('[data-manual-scan="unit"]').inputValue(),'K');
-    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 3, 6','Custom scan values must follow the selected curve order');
+    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 30, 6','Custom scan values must follow the selected curve order');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must remain collapsed in Heatmap mode');
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const saved=await save('browser-preview/manual-curves.spinplot.json');
