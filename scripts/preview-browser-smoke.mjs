@@ -408,8 +408,8 @@ try {
     assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
     assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:30,1:6,2:2});
-    assert.equal(saved.config.subplots[0].twoD.settings.yMin,2,'Heatmap Y minimum must follow edited custom scan values');
-    assert.equal(saved.config.subplots[0].twoD.settings.yMax,30,'Heatmap Y maximum must follow edited custom scan values');
+    assert.equal(saved.config.subplots[0].yMin,2,'Heatmap Y minimum must follow edited custom scan values');
+    assert.equal(saved.config.subplots[0].yMax,30,'Heatmap Y maximum must follow edited custom scan values');
     assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
     assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
     assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
