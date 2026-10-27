@@ -173,6 +173,7 @@ npm run build
 
 ## 最新验收记录（2026-10-27）
 
-- 对照用户最新截图复查：手动曲线 Heatmap 的绘图模式菜单应仅显示 Stack、Heatmap、Overlap、Variable scan 四项；`Overlay (1D)` 与 `Stack (1D)` 不作为独立选项。扫描变量面板由 `organizeSubplot` 放入 Plot mode 分组，并默认折叠；手动曲线 Heatmap 的 Y 轴标题默认显示为扫描变量名（默认 `Subplot index`）。
-- 对应浏览器回归在提交 `207144573f8c3512ac527926488fb13910560484` 已执行通过，包含四项模式、面板折叠与位置、默认 Y 标题、变量数组/曲线重排、项目保存重载及投影 CSV 检查。
-- 该次 CI 仅在提交 `preview-site/` 静态构建快照时因并发提交造成非 fast-forward 被拒，未涉及构建或浏览器断言失败。需在当前分支最新 HEAD 重新生成并同步静态预览，随后再次核对主站预览路径；正式 `main` 与 `/spinplot/` 保持不变。
+- 手动曲线派生图的 Plot mode 仅显示 Stack、Heatmap、Overlap、Variable scan 四项；扫描变量面板位于 Plot mode 分组内并默认折叠；Heatmap 默认显示扫描变量名称作为 Y 轴标题。
+- 修复自定义扫描变量变化后 Y 轴范围仍保留旧值的问题。修改等间距起始值/步长或自定义数组时，Heatmap 的 Y 轴范围与 Y 投影范围同步更新为当前扫描值的最小值和最大值；变量仍按源曲线 ID 保存，曲线重排后对应关系不变。
+- 完整 Chromium 回归与迁移前对照在提交 `ac6551faf400cf2bb15d6ca75b36a779f590897c` 通过 [40531478449](https://github.com/imasenHF/spinplot/actions/runs/40531478449)。新增回归将扫描值从 `1, 2, 3` 改为非均匀的 `2, 30, 6`，检查子图 Y 轴范围为 2–30、投影 CSV 数值和曲线映射，以及保存/重载结果。
+- 当前预览分支静态构建已成功；需将最新生成的静态资源同步到主站独立预览目录并核查部署。正式 SpinPlot `main` 与 `/spinplot/` 不得修改或合并。
