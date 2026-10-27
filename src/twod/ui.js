@@ -561,6 +561,13 @@ export function controls(card, sp, d, onChange) {
     const variable = sp.scanVariable || (sp.scanVariable = {name:'Subplot index',unit:'',mode:'linear',start:1,step:1,valuesByCurve:{}});
     if (!variable.valuesByCurve || typeof variable.valuesByCurve !== 'object') variable.valuesByCurve = {};
     const curveIds = sp.twoD.curveIndices || [];
+    const refreshManualScanRange = () => {
+      const values = curveIds.map((id) => Number(variable.valuesByCurve[id]));
+      if (!values.length || values.some((value) => !Number.isFinite(value))) return;
+      const min = Math.min(...values), max = Math.max(...values);
+      s.yMin = min; s.yMax = max; s.projectionYMin = min; s.projectionYMax = max;
+      sp.twoD.scanAxisRange = { min, max };
+    };
     const orderedValues = curveIds.map((id, i) => Number.isFinite(Number(variable.valuesByCurve[id])) ? Number(variable.valuesByCurve[id]) : i);
     const {box: variableBox, body: variableBody} = section('Scan variable · Heatmap Y axis', false);
     variableBox.classList.add('manual-scan-variable');
@@ -594,21 +601,21 @@ export function controls(card, sp, d, onChange) {
       variable.mode = modeSelect.value;
       try {if (variable.mode === 'linear') writeLinearValues(); else arrayField.input.value = curveIds.map(id => variable.valuesByCurve[id]).join(', ');}
       catch (error) {modeSelect.setCustomValidity(error.message);modeSelect.reportValidity();modeSelect.value = 'array';variable.mode = 'array';}
-      updateVariableMode(); onChange({scanVariableChanged:true});
+      updateVariableMode(); refreshManualScanRange(); onChange({scanVariableChanged:true});
     };
     startField.input.onchange = () => {
       const value = Number(startField.input.value); if (!Number.isFinite(value)) {startField.input.setCustomValidity('Enter a finite start value.');startField.input.reportValidity();return;}
-      variable.start = value; try {writeLinearValues();startField.input.setCustomValidity('');onChange({scanVariableChanged:true});} catch (error) {startField.input.setCustomValidity(error.message);startField.input.reportValidity();}
+      variable.start = value; try {writeLinearValues();startField.input.setCustomValidity('');refreshManualScanRange();onChange({scanVariableChanged:true});} catch (error) {startField.input.setCustomValidity(error.message);startField.input.reportValidity();}
     };
     stepField.input.onchange = () => {
       const value = Number(stepField.input.value); if (!Number.isFinite(value) || value === 0) {stepField.input.setCustomValidity('Interval must be finite and non-zero.');stepField.input.reportValidity();return;}
-      variable.step = value; try {writeLinearValues();stepField.input.setCustomValidity('');onChange({scanVariableChanged:true});} catch (error) {stepField.input.setCustomValidity(error.message);stepField.input.reportValidity();}
+      variable.step = value; try {writeLinearValues();stepField.input.setCustomValidity('');refreshManualScanRange();onChange({scanVariableChanged:true});} catch (error) {stepField.input.setCustomValidity(error.message);stepField.input.reportValidity();}
     };
     arrayField.input.onchange = () => {
       const tokens = arrayField.input.value.trim().split(/[,;\s]+/).filter(Boolean), values = tokens.map(Number);
       if (values.length !== curveIds.length || values.some(value => !Number.isFinite(value))) {arrayField.input.setCustomValidity('Enter exactly ' + curveIds.length + ' finite values.');arrayField.input.reportValidity();return;}
       if (new Set(values).size !== values.length) {arrayField.input.setCustomValidity('Scan-variable values must be unique.');arrayField.input.reportValidity();return;}
-      variable.valuesByCurve = Object.fromEntries(curveIds.map((id, i) => [id, values[i]])); variable.mode = 'array'; arrayField.input.setCustomValidity(''); onChange({scanVariableChanged:true});
+      variable.valuesByCurve = Object.fromEntries(curveIds.map((id, i) => [id, values[i]])); variable.mode = 'array'; arrayField.input.setCustomValidity(''); refreshManualScanRange(); onChange({scanVariableChanged:true});
     };
     updateVariableMode();
   }
