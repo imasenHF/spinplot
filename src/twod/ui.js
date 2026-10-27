@@ -567,6 +567,7 @@ export function controls(card, sp, d, onChange) {
       const min = Math.min(...values), max = Math.max(...values);
       sp.twoD.settings.yMin = min; sp.twoD.settings.yMax = max;
       sp.twoD.settings.projectionYMin = min; sp.twoD.settings.projectionYMax = max;
+      sp.yUseGlobal = false; sp.yMin = min; sp.yMax = max;
       s.yMin = min; s.yMax = max; s.projectionYMin = min; s.projectionYMax = max;
       sp.twoD.scanAxisRange = { min, max };
     };
