@@ -169,3 +169,10 @@ npm run build
 - 手动曲线 Heatmap 默认显示 Y 轴标题，标题取扫描变量名，默认值为 `Subplot index`。此规则仅覆盖手动曲线 Heatmap，不更改普通 1D 图的全局 Y 标题偏好。
 - 浏览器回归新增可见模式列表、面板折叠/位置、默认 Y 标题、曲线顺序映射、项目保存/重载及投影 CSV 检查。代码修改后需以当前 HEAD 的完整模块化回归与静态预览浏览器检查结果为最终验收依据。
 - 当前仍只修改 `preview/modularization-phase1-20261009` 及主站的独立静态预览目录；正式 SpinPlot `main` 与 `/spinplot/` 不得修改或合并。
+
+
+## 最新验收记录（2026-10-27）
+
+- 对照用户最新截图复查：手动曲线 Heatmap 的绘图模式菜单应仅显示 Stack、Heatmap、Overlap、Variable scan 四项；`Overlay (1D)` 与 `Stack (1D)` 不作为独立选项。扫描变量面板由 `organizeSubplot` 放入 Plot mode 分组，并默认折叠；手动曲线 Heatmap 的 Y 轴标题默认显示为扫描变量名（默认 `Subplot index`）。
+- 对应浏览器回归在提交 `207144573f8c3512ac527926488fb13910560484` 已执行通过，包含四项模式、面板折叠与位置、默认 Y 标题、变量数组/曲线重排、项目保存重载及投影 CSV 检查。
+- 该次 CI 仅在提交 `preview-site/` 静态构建快照时因并发提交造成非 fast-forward 被拒，未涉及构建或浏览器断言失败。需在当前分支最新 HEAD 重新生成并同步静态预览，随后再次核对主站预览路径；正式 `main` 与 `/spinplot/` 保持不变。
