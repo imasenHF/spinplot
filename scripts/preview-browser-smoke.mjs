@@ -389,7 +389,7 @@ try {
     await sourceCard.locator('[data-manual-scan="unit"]').fill('K');
     await sourceCard.locator('[data-manual-scan="unit"]').press('Tab');
     await sourceCard.locator('[data-manual-scan="mode"]').selectOption('array');
-    await sourceCard.locator('[data-manual-scan="values"]').fill('2, 3, 6');
+    await sourceCard.locator('[data-manual-scan="values"]').fill('2, 30, 6');
     await sourceCard.locator('[data-manual-scan="values"]').press('Tab');
     await sourceCard.locator('[data-field="mode"]').selectOption('scan');
     await page.waitForTimeout(200);
@@ -407,11 +407,13 @@ try {
     assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
     assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
-    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:3,1:6,2:2});
+    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:30,1:6,2:2});
+    assert.equal(saved.config.subplots[0].twoD.settings.yMin,2,'Heatmap Y minimum must follow edited custom scan values');
+    assert.equal(saved.config.subplots[0].twoD.settings.yMax,30,'Heatmap Y maximum must follow edited custom scan values');
     assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
     assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
     assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
-    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:3,1:6,2:2});
+    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:30,1:6,2:2});
     let projectionDownload;
     try {
       [projectionDownload] = await Promise.all([
@@ -430,14 +432,14 @@ try {
     await projectionDownload.saveAs('browser-preview/manual-curve-projections.csv');
     const projectionRows=fs.readFileSync('browser-preview/manual-curve-projections.csv','utf8').trim().split(/\r?\n/).map(line=>line.split(','));
     const yRows=projectionRows.filter(row=>row[0]==='Y');
-    assert.deepEqual(yRows.map(row=>Number(row[1])),[2,3,6],'Heatmap must use the custom non-uniform variable values');
+    assert.deepEqual(yRows.map(row=>Number(row[1])),[2,6,30],'Heatmap must use the custom non-uniform variable values');
     const projected=yRows.map(row=>Number(row[2]));
-    assert.deepEqual(projected,[3,1,2],'Signal rows must remain mapped to the selected source curves after reordering');
+    assert.deepEqual(projected,[3,2,1],'Signal rows must remain mapped to the selected source curves after reordering');
     await load(saved,'manual-curves-reload.spinplot.json');
     assert.equal(await page.locator('.subplot').count(),2,'Manual heatmap and Variable scan must survive project reload');
     assert.equal(await page.locator('.subplot').first().locator('[data-field="mode"]').inputValue(),'heatmap');
     assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan');
-    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'2, 3, 6');
+    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'2, 30, 6');
   }
 
   // A legacy single-trace CSV can still be opened after a multi-curve project.
