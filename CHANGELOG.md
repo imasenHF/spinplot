@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Simplify curve-derived 2D plotting modes to `Stack`, `Overlap`, `Heatmap` and `Variable scan`; remove `Overlay (1D)` / `Stack (1D)` menu options. Move the single scan-variable editor directly below Plot mode, collapse it by default, and show the Y-axis title by default on Heatmaps.
+- When scan-variable values change, automatically update the curve-derived Heatmap Y-axis range and its Y-projection range to the new minimum and maximum; preserve curve-index mapping for non-uniform custom arrays.
 - Reset runtime `sharedControls` state when returning a curve-derived Heatmap to 1D so recreating the Heatmap restores its 2D axis ranges; add regression coverage through projection CSV export.
 - Validate project references for curve-derived Heatmap and Variable scan subplots separately from original 2D matrix references; add save/load and invalid-reference tests.
 - Add browser verification that projection titles use 23 px while tick labels remain 9 px, and normalize the new typography control only in old-version baseline comparisons.
