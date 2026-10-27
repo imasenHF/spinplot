@@ -565,6 +565,8 @@ export function controls(card, sp, d, onChange) {
       const values = curveIds.map((id) => Number(variable.valuesByCurve[id]));
       if (!values.length || values.some((value) => !Number.isFinite(value))) return;
       const min = Math.min(...values), max = Math.max(...values);
+      sp.twoD.settings.yMin = min; sp.twoD.settings.yMax = max;
+      sp.twoD.settings.projectionYMin = min; sp.twoD.settings.projectionYMax = max;
       s.yMin = min; s.yMax = max; s.projectionYMin = min; s.projectionYMax = max;
       sp.twoD.scanAxisRange = { min, max };
     };
