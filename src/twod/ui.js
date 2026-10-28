@@ -156,7 +156,7 @@ export function model(d, s) {
     if (r.some((x) => !Number.isFinite(x)) || r[0] >= r[1])
       throw Error('Invalid 2D or projection ranges');
   if(s.yScale==='log') {
-    const bounds=positiveAxisDomain(v.y.values,yr[0],yr[1],'log',{label:'Y'});
+    const bounds=positiveAxisDomain(v.y.values,yr[0],yr[1],'log',{label:'Y',signed:true});
     yr[0]=bounds[0];yr[1]=bounds[1];
   }
   if (
