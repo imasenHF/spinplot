@@ -413,7 +413,7 @@ try {
       await page.waitForTimeout(170);
       await mode.selectOption('surface3d');
       assert.equal(await mode.inputValue(),'surface3d','3D surface mode must be selectable');
-      assert.equal(await sourceCard.locator('[data-twod="zScale"]').locator('xpath=ancestor::label[1] .//button[contains(@class,"help-tip")]').count(),1,'Logarithmic Z explanation should use a question-mark help control');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>!!el.closest('label')?.querySelector('.help-tip')),true,'Logarithmic Z explanation should use a question-mark help control');
       const view=sourceCard.locator('.subplot-section[data-section="plot"] .surface-view-controls');
       assert.equal(await view.count(),1,'3D camera must appear inside Plot mode');
       assert.equal(await view.evaluate(el=>el.open),false,'3D camera controls must default to collapsed');
