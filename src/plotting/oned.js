@@ -90,6 +90,41 @@ export function renderFigure(
   const curveColor = (i, n, sp) =>
     preparedModel.find((m) => m.sp === sp).colors[i];
   const subplotIndex = (sp) => preparedModel.findIndex((m) => m.sp === sp);
+  function curveStyle(sp, index) {
+    const value = sp.curveStyles?.[index] || {};
+    return {
+      mode: ["line", "symbols", "both"].includes(value.mode) ? value.mode : "line",
+      symbol: ["circle", "square", "triangle", "diamond"].includes(value.symbol)
+        ? value.symbol
+        : "circle",
+    };
+  }
+  function drawMarker(ctx, x, y, radius, shape, color, background) {
+    const vertices = shape === "square"
+      ? [[-1,-1],[1,-1],[1,1],[-1,1]]
+      : shape === "triangle"
+        ? [[0,-1.15],[1,0.9],[-1,0.9]]
+        : shape === "diamond"
+          ? [[0,-1.2],[0.9,0],[0,1.2],[-0.9,0]]
+          : Array.from({ length: 12 }, (_, i) => {
+              const angle = (2 * Math.PI * i) / 12;
+              return [Math.cos(angle), Math.sin(angle)];
+            });
+    ctx.save();
+    ctx.beginPath();
+    vertices.forEach(([dx, dy], i) => {
+      const px = x + dx * radius, py = y + dy * radius;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.lineTo(x + vertices[0][0] * radius, y + vertices[0][1] * radius);
+    ctx.fillStyle = background;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    ctx.restore();
+  }
   function drawAxisLine(ctx, x1, y1, x2, y2, color, width = 1.2) {
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
@@ -173,15 +208,21 @@ export function renderFigure(
     ctx.font = `${size}px ${font}`;
     curves.forEach((c, i) => {
       const yy = by + b.pad + b.rowH * (i + 0.5),
-        col = curveColor(i, curves.length, sp);
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 2;
-      ctx.setLineDash(theme.dashes[i % theme.dashes.length] || []);
-      ctx.beginPath();
-      ctx.moveTo(bx + b.pad, yy);
-      ctx.lineTo(bx + b.pad + b.lineLen, yy);
-      ctx.stroke();
-      ctx.setLineDash([]);
+        col = curveColor(i, curves.length, sp),
+        display = curveStyle(sp, c.index ?? i),
+        midX = bx + b.pad + b.lineLen / 2;
+      if (display.mode !== "symbols") {
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(theme.dashes[i % theme.dashes.length] || []);
+        ctx.beginPath();
+        ctx.moveTo(bx + b.pad, yy);
+        ctx.lineTo(bx + b.pad + b.lineLen, yy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      if (display.mode !== "line")
+        drawMarker(ctx, midX, yy, 3.2, display.symbol, col, theme.bg);
       ctx.fillStyle = theme.text;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
@@ -768,40 +809,54 @@ export function renderFigure(
       }
       drawAnnotations(ctx, sp, nu, X, { x0, y0, pw, ph }, font, theme);
       curves.forEach((c, ci) => {
+        const display = curveStyle(sp, c.index ?? ci),
+          color = curveColor(ci, curves.length, sp),
+          points = [],
+          segments = [];
+        let segment = [];
         ctx.save();
         ctx.beginPath();
         ctx.rect(x0, y0, pw, ph);
         ctx.clip();
-        ctx.beginPath();
-        ctx.strokeStyle = curveColor(ci, curves.length, sp);
-        ctx.lineWidth = lineW;
-        ctx.setLineDash(theme.dashes[ci % theme.dashes.length] || []);
-        ctx.beginPath();
-        let started = false;
         for (let i = 0; i < Math.min(c.B.length, c.yd.length); i++) {
-          const xx = Number(c.B[i]),
-            yy = Number(c.yd[i]);
-          if (
-            !Number.isFinite(xx) ||
-            !Number.isFinite(yy) ||
-            xx < m.xmin ||
-            xx > m.xmax
-          ) {
-            started = false;
+          const xx = Number(c.B[i]), yy = Number(c.yd[i]);
+          if (!Number.isFinite(xx) || !Number.isFinite(yy) || xx < m.xmin || xx > m.xmax) {
+            if (segment.length) segments.push(segment);
+            segment = [];
             continue;
           }
-          const px = X(xx),
-            py = Y(yy);
+          const px = X(xx), py = Y(yy);
           if (!Number.isFinite(px) || !Number.isFinite(py)) {
-            started = false;
+            if (segment.length) segments.push(segment);
+            segment = [];
             continue;
           }
-          if (!started) {
-            ctx.moveTo(px, py);
-            started = true;
-          } else ctx.lineTo(px, py);
+          const point = { x: px, y: py };
+          points.push(point);
+          segment.push(point);
         }
-        ctx.stroke();
+        if (segment.length) segments.push(segment);
+        if (display.mode !== "symbols") {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = lineW;
+          ctx.setLineDash(theme.dashes[ci % theme.dashes.length] || []);
+          segments.forEach((part) => {
+            if (!part.length) return;
+            ctx.beginPath();
+            ctx.moveTo(part[0].x, part[0].y);
+            for (let i = 1; i < part.length; i++) ctx.lineTo(part[i].x, part[i].y);
+            ctx.stroke();
+          });
+          ctx.setLineDash([]);
+        }
+        if (display.mode !== "line" && points.length) {
+          const stride = Math.max(1, Math.ceil(points.length / 80));
+          for (let i = 0; i < points.length; i += stride)
+            drawMarker(ctx, points[i].x, points[i].y, 3.2, display.symbol, color, theme.bg);
+          const last = points.length - 1;
+          if (last % stride !== 0)
+            drawMarker(ctx, points[last].x, points[last].y, 3.2, display.symbol, color, theme.bg);
+        }
         ctx.restore();
       });
       if (sp.renderNotice) {
