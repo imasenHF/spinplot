@@ -457,6 +457,39 @@ try {
         await sourceCard.locator('[data-twod="yProjectionNotation"]').evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
       }
     }
+    if(process.env.SPINPLOT_TEST_AXIS_DISPLAY==='1'){
+      const readZ=()=>sourceCard.locator('[data-twod="zMin"],[data-twod="zMax"]').evaluateAll(els=>els.map(e=>Number(e.value)));
+      const setTwoD=async(key,value)=>sourceCard.locator('[data-twod="'+key+'"]').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));},value);
+      await setTwoD('zScale','scientific');
+      assert.deepEqual(await readZ(),(await readZ()).filter(Number.isFinite),'Scientific Z auto-fit should show both numeric limits');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').inputValue(),'scientific','Scientific must be a peer of Linear and Log');
+      await setTwoD('zScale','log');
+      const logBounds=await readZ();
+      assert.ok(logBounds.every(Number.isFinite)&&logBounds[1]>logBounds[0],'Log/SymLog Z needs visible physical bounds');
+      await sourceCard.locator('button').filter({hasText:/^Auto Z$/}).evaluate(el=>el.click());
+      const fittedZ=await readZ();
+      assert.ok(fittedZ.every(Number.isFinite)&&fittedZ[1]>fittedZ[0],'Auto Z must populate the actual numeric range instead of empty fields');
+      const axisY=sourceCard.locator('[data-field="yScale"]');
+      await axisY.evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      const yLimits=await sourceCard.locator('[data-field="yMin"],[data-field="yMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      assert.ok(yLimits.every(Number.isFinite)&&yLimits[1]>yLimits[0],'Scientific Y must fit and fill subplot limits');
+      await setTwoD('xProjectionScale','scientific');
+      await setTwoD('yProjectionScale','scientific');
+      const topLimits=await sourceCard.locator('[data-twod="xProjectionMin"],[data-twod="xProjectionMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      const sideLimits=await sourceCard.locator('[data-twod="yProjectionMin"],[data-twod="yProjectionMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      assert.ok(topLimits.every(Number.isFinite)&&topLimits[1]>topLimits[0],'Top projection Scientific fills range');
+      assert.ok(sideLimits.every(Number.isFinite)&&sideLimits[1]>sideLimits[0],'Side projection Scientific fills range');
+      const snapshot=await save('browser-preview/three-way-axis-display.json');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.zScale,'log');
+      assert.equal(snapshot.config.subplots[0].yScale,'scientific');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.xProjectionScale,'scientific');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.yProjectionScale,'scientific');
+      assert.ok(Number.isFinite(snapshot.config.subplots[0].twoD.settings.zMin));
+      await axisY.evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await setTwoD('zScale','linear');
+      await setTwoD('xProjectionScale','linear');
+      await setTwoD('yProjectionScale','linear');
+    }
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
     assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>{const panel=el.closest('.subplot-body')?.querySelector('.manual-scan-variable');return !!panel&&(el.compareDocumentPosition(panel)&Node.DOCUMENT_POSITION_FOLLOWING)!==0;}),true,'Scan-variable editor must appear after Plot mode');
