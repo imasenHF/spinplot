@@ -261,6 +261,7 @@ export function controls(card, sp, d, onChange) {
     s.open = box.open;
   };
   const projectionSection = section('Projections');
+  if (sp.mode === 'heatmap') projectionSection.box.open = false;
   const projection = projectionSection.body;
   const scanSection = section('Variable scan settings', sp.mode === 'scan');
   const scanSettings = scanSection.body;
