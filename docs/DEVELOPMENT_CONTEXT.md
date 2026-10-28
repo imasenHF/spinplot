@@ -173,6 +173,9 @@ npm run build
 
 ## 当前修改与验收（2026-10-28）
 
+- 当前界面调整：`Current order` 左侧独立滚动列表和右侧独立样式选择列采用真正并列 Grid，不再通过绝对定位覆盖文件列表；两列同行对齐、滚动同步。样式下拉选项的可见文字使用实线、虚线、点线与空心/实心几何符号的组合，保留内部 style 值、旧项目兼容和 aria-label。实现见 `src/main.js`、`src/styles/app.css`；通过局部浏览器回归检查列间距、DOM 分离和符号选项，主站预览同步后再进行公开浏览器验证。
+
+
 - 新建子图的频率对齐默认固定为 `freqMode: local`、`localFreqMode: mean`；全局频率下拉菜单原有默认值已是 `local_mean`，不改变用户显式选择全局模式时的传播逻辑，也不覆盖载入的旧项目设置。
 - 1D 曲线派生的 Heatmap 保留原 Data 面板的 Available curves、Current order、逐曲线样式菜单和管理工具栏，不再替换为 `Current data: N manual 1D curves` 单项；直接导入的二维数据仍使用矩阵数据摘要。相关代码位于 `src/main.js`、`src/twod/ui.js`；新增 Chromium 检查验证切换后控件数量、曲线排序与样式选项。
 - 完整数值、构建、Chromium 回归与迁移前对照通过 [Actions 40695773639](https://github.com/imasenHF/spinplot/actions/runs/40695773639)；新版静态预览已同步主站，Pages 部署通过 [40696290984](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40696290984)，公开预览浏览器回归在部署后复测通过 [40696141839（第 2 次运行）](https://github.com/imasenHF/spinplot/actions/runs/40696141839)。正式 SpinPlot `main`、`/spinplot/` 和 Draft PR #1 的未合并状态均保持不变。
