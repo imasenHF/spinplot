@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDisplayCurves,rangeY,autoRangeX} from './oned.js';
+import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices} from './oned.js';
 import {processSubplot} from '../processing/oned.js';
 const curves=Object.freeze([Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([1,2,3])}),Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([2,4,6])})]);
 test('Overlay/Stack preserve frozen source; automatic/manual offsets and both directions',()=>{
@@ -14,3 +14,18 @@ test('processing order: frequency alignment, baseline, scale, display offset',()
  assert.deepEqual(out[0].B,[6600,6620,6640]);assert.deepEqual(out[0].y,[-2,0,2]);assert.deepEqual(out[1].yd,[-1,5,11]);assert.deepEqual(raw[1].y,[2,4,6]);
 });
 test('large-array ranges ignore missing samples without spreading data',()=>{const n=200000,curve={B:Array.from({length:n},(_,i)=>i),yd:Array.from({length:n},(_,i)=>i===0?NaN:i)};assert.deepEqual(autoRangeX([curve]),[0,n-1]);assert.deepEqual(rangeY([curve],10,20),[9,21]);});
+
+test('per-curve display styles default safely and preserve selected marker shape',()=>{
+ assert.deepEqual(resolveCurveStyle({},0),{mode:'line',symbol:'circle'});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'symbols',symbol:'triangle'}}},2),{mode:'symbols',symbol:'triangle'});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'unknown',symbol:'star'}}},2),{mode:'line',symbol:'circle'});
+});
+test('marker sampling remains bounded and includes both ends',()=>{
+ assert.deepEqual(markerSampleIndices(0),[]);
+ assert.deepEqual(markerSampleIndices(4),[0,1,2,3]);
+ assert.deepEqual(markerSampleIndices(10,4),[0,3,6,9]);
+ const sampled=markerSampleIndices(10000);
+ assert.ok(sampled.length<=81);
+ assert.equal(sampled[0],0);
+ assert.equal(sampled.at(-1),9999);
+});
