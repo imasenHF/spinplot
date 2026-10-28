@@ -432,6 +432,7 @@ try {
     assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
     assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
     assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
+    assert.equal(saved.config.subplots[1].scanCurveStyle,'filled-circle','Variable scan style must be persisted independently');
     assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:30,1:6,2:2});
     let projectionDownload;
     try {
