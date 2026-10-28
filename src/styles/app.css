@@ -143,3 +143,10 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .label-settings-row>.legend-position-field[open]>summary::before{content:'▾'}
 .label-settings-row>.legend-position-field>.field{margin:0 0 7px!important;min-width:0}
 .label-settings-row select{box-sizing:border-box}
+
+
+/* Compact single-selector line/marker styles and subplot-level visual overrides. */
+.curve-style{width:92px;min-width:92px;max-width:92px;padding:2px 1px;font-size:10px;}
+.order-item .curve-style{flex:0 0 92px;}
+.subplot-line-style{margin-top:6px;}
+.subplot-line-style input{min-width:0;width:100%;}
