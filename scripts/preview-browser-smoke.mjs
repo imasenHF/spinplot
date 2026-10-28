@@ -240,6 +240,9 @@ try {
     const modes=await page.locator('[data-field="mode"]').evaluateAll(els=>els.map(e=>e.value));
     assert.deepEqual(modes,['overlay','scan','overlap'],'The source Heatmap remains alongside Variable scan and Overlap');
     const scanCard=page.locator('.subplot').nth(1);
+    assert.equal(await scanCard.locator('[data-field="scanCurveStyle"]').count(),1,'Variable scan must expose a separate style selector');
+    await scanCard.locator('[data-field="scanCurveStyle"]').selectOption('filled-square');
+    await scanCard.locator('[data-field="scanCurveStyle"]').press('Tab');
     for(const key of ['xMode','yMode','projectionXMin','projectionXMax','projectionYMin','projectionYMax','showXProjection','showYProjection'])
       assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),false,'Variable scan must not expose 2D projection control '+key);
     for(const key of ['scanAxisMode','scanStatistic','scanStatisticMin','scanStatisticMax'])
