@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Keep new subplots on Local mean frequency alignment by default, even when the global frequency mode has previously been edited; explicit global-mode changes still apply through their existing propagation mechanism.
+- Preserve the Available curves, Current order, curve-style selectors, and curve-management toolbar when converting selected 1D curves from Overlap to a curve-derived Heatmap; native 2D matrices continue to use the compact data display.
+
 - Simplify curve-derived 2D plotting modes to `Stack`, `Overlap`, `Heatmap` and `Variable scan`; remove `Overlay (1D)` / `Stack (1D)` menu options. Move the single scan-variable editor directly below Plot mode, collapse it by default, and show the Y-axis title by default on Heatmaps.
 - When scan-variable values change, automatically update the curve-derived Heatmap Y-axis range and its Y-projection range to the new minimum and maximum; preserve curve-index mapping for non-uniform custom arrays.
 - When switching to Heatmap, keep the 2D axis/projection settings panel collapsed by default, including when converting selected 1D curves into a Heatmap.
