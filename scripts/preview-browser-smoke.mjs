@@ -14,7 +14,19 @@ try {
   assert.equal(response.status(),200,'Preview HTML must be served');
   assert.match(await page.title(),/SpinPlot 0\.9\.2/);
   assert.equal(await page.locator('.tab-btn').count(),6,'Six tabs are required');
-  await page.waitForFunction(() => document.querySelector('#statusMain')?.textContent?.includes('Waiting for data'),null,{timeout:15000});
+  try {
+    await page.waitForFunction(() => document.querySelector('#statusMain')?.textContent?.includes('Waiting for data'),null,{timeout:15000});
+  } catch (error) {
+    const details=await page.evaluate(()=>({
+      status:document.querySelector('#statusMain')?.textContent,
+      ready:document.readyState,
+      scripts:[...document.querySelectorAll('script[src]')].map(x=>x.src),
+      element:!!document.querySelector('#statusMain'),
+      pageContent:document.body?.innerText?.slice(0,900),
+    })).catch(e=>({captureError:e.message}));
+    const request=await page.evaluate(async()=>{let url=document.querySelector('script[type=module]')?.src; if(!url)return null;try{const res=await fetch(url,{cache:'no-store'});return {url,status:res.status,type:res.headers.get('content-type'),length:(await res.text()).length}}catch(err){return String(err)}}).catch(e=>({fetchError:e.message}));
+    throw new Error('Public preview initialization failed: '+JSON.stringify({details,request,errors:errors.slice(-8)}),{cause:error});
+  }
   await page.locator('#dataFiles').setInputFiles({name:'synthetic-cw.csv',mimeType:'text/csv',
     buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n3340,1,2\n3350,0,0\n')});
   await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim()==='2',null,{timeout:20000});
