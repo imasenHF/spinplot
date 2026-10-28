@@ -519,6 +519,8 @@ export function controls(card, sp, d, onChange) {
   mode.value = sp.mode;
   s.mode = sp.mode === 'stack' ? 'stack' : sp.mode === 'overlap' ? 'overlap' : sp.mode === 'scan' ? 'scan' : 'heatmap';
   for (const manager of card.querySelectorAll('.curve-manager')) {
+    // Keep the original curve inventory and ordering controls for 1D-derived heatmaps.
+    if (sp.twoD.derivedFromCurves) continue;
     manager.classList.add('matrix-data');
     manager.children[0].hidden = true;
     manager.querySelector('.curve-tools').hidden = true;
