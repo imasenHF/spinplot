@@ -361,10 +361,12 @@ try {
     assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose one combined line/symbol style selector');
     assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),0,'Line and marker choices must use a single selector');
     await page.evaluate(() => {window.__markerFillCount=0;const original=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){window.__markerFillCount++;return original.apply(this,args);};});
-    await sourceCard.locator('[data-curve-style="1"]').selectOption('symbols');
-    await sourceCard.locator('[data-curve-symbol="1"]').selectOption('triangle');
-    await sourceCard.locator('[data-curve-style="2"]').selectOption('both');
-    await sourceCard.locator('[data-curve-symbol="2"]').selectOption('diamond');
+    await sourceCard.locator('[data-curve-style="1"]').selectOption('filled-triangle');
+    await sourceCard.locator('[data-curve-style="2"]').selectOption('dashed-filled-diamond');
+    await sourceCard.locator('[data-field="lineWidth"]').fill('2.8');
+    await sourceCard.locator('[data-field="lineWidth"]').press('Tab');
+    await sourceCard.locator('[data-field="symbolSize"]').fill('5.5');
+    await sourceCard.locator('[data-field="symbolSize"]').press('Tab');
     await page.waitForTimeout(250);
     assert.ok(await page.evaluate(()=>window.__markerFillCount>0),'Symbols must be drawn on the interactive canvas');
     await sourceCard.locator('.order-item[data-curve="2"]').click();
