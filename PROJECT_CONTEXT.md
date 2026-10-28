@@ -63,6 +63,11 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
+**2026-10-29 独立预览状态（非正式 `main`）：** 现有模块化预览已增加 Contour 等高线模式、基于三角网格/WebGL 的可旋转 3D 曲面和默认折叠的视角控件。Heatmap、Contour、3D 均支持线性/Log10 Z 轴；一维和派生二维的 Y 轴可设置全局或子图 Linear/Log10；顶部与右侧投影分别支持 Linear/Log10 强度轴和 Auto/Decimal/Scientific 刻度。对数模式仅保留正值，原始数据不改写；不满足正值约束时提供错误提示。Current order 与样式下拉为独立并列组件，符号列为 34 px；长说明改为 `?` 帮助提示。项目格式 11、配置格式 10 不变，新增字段按默认值兼容旧项目。
+
+核心源码：`src/twod/zscale.js`、`src/twod/contours.js`、`src/twod/surface3d.js`、`src/twod/ui.js`、`src/plotting/axis-scale.js`、`src/plotting/oned.js`、`src/main.js` 及 `src/interface.js`。完整本地等效 CI 数值、生产构建、Chromium 交互和旧版对照成功：[40737957861](https://github.com/imasenHF/spinplot/actions/runs/40737957861)。独立预览静态资源已同步至主站，Pages 工作流 [40738422130](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40738422130) 成功；公开页面的新增功能浏览器验收须以新工作流检查结果为准。正式 `/spinplot/` 未更新、Draft PR #1 未合并。
+
+
 预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
 2026-10-26 当前界面调整已写入预览分支：手动曲线 Plot mode 仅显示 Stack、Overlap、Heatmap、Variable scan 四项；扫描变量编辑器移入 Plot mode 区域并默认折叠；手动曲线 Heatmap 默认显示 Y 轴标题。数值/数据回归、生产等效构建与脚本语法检查通过。最新完整 Chromium 回归尚未结束，当前 GitHub Actions 在浏览器运行时安装步骤停滞；此前一轮完整回归因投影 CSV 导出时 `Display range contains no samples` 失败，已将回归用的非等距自定义变量值调整到当前显示范围内，需以最新运行结果确认。最新静态预览尚未同步，正式 `main` 与 `/spinplot/` 未修改。详细状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。

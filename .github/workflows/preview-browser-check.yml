@@ -30,6 +30,8 @@ jobs:
           SPINPLOT_TEST_MANUAL_CURVE_HEATMAP: '1'
           SPINPLOT_TEST_HEATMAP_DATA_PANEL: '1'
           SPINPLOT_TEST_ADJACENT_SYMBOL_COLUMN: '1'
+          SPINPLOT_TEST_SURFACE_CONTOUR: '1'
+          SPINPLOT_TEST_AXIS_LOG: '1'
         run: node scripts/preview-browser-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()

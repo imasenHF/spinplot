@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Preview: add contour (marching-squares) and rotatable triangulated 3D surface modes; 3D camera controls are collapsed by default under Plot and allow azimuth, elevation, Z exaggeration and zoom. Retain original matrix coordinates, project settings and SVG/PNG export behavior.
+- Preview: support Log10 Z for Heatmap, Contour and 3D, plus Linear/Log10 Y axis with global/subplot overrides and independent Top/Side projection intensity-axis scales and scientific tick notation. Nonpositive samples are excluded rather than shifted; saved projects preserve axis styles.
+- Preview: compress the independent Current order symbol column to 34 px, shorten line/marker glyphs and section labels, and replace the verbose scan-variable explanation with a `?` help tooltip. Dynamically inserted help icons now work.
+- Regression: add logarithmic axis and triangulated surface unit checks, Chromium save/reload and feature-mode tests, and repair references to renamed sections; run the existing project-format and pre-migration comparison suite.
+
 - Put the Current order names and glyph-only line/marker style selectors into two genuinely separate side-by-side columns with synchronized scrolling; no menu overlays the data-list component. The style choices retain their existing semantic values for saved projects.
 
 - Keep new subplots on Local mean frequency alignment by default, even when the global frequency mode has previously been edited; explicit global-mode changes still apply through their existing propagation mechanism.

@@ -19,6 +19,14 @@
 
 具体实验类型、二维轴单位和异常输入限制见 [二维数据说明](docs/TWO_DIMENSIONAL.md)。当前并未声明支持所有 EPR 厂商或序列；其他来源的谱图需先验证解析结果。
 
+## 模块化预览（未合并正式版）
+
+[独立预览入口](https://plastocyanin.org/previews/spinplot-modularization/) 含以下尚未合并到 `main` 的功能：Heatmap、Contour 和可旋转 3D surface；三种模式的线性/Log10 Z 强度映射；主图 Y 轴及顶部/右侧投影强度轴的 Log10 显示，顶部和右侧投影分别设置普通或科学计数法；精简的侧栏标题、问号帮助以及 34 px 独立符号选择列。
+
+Log10 只接受**严格正值**；零值和负值被屏蔽，不进行绝对值变换或人为平移。等高线采用原始 X/Y 坐标的 marching squares；3D 使用三角网格与可旋转视角，`Plot → View` 视角面板默认折叠。旧项目配置仍默认线性轴。
+
+完整数值测试、构建、Chromium 交互和迁移前对照通过 [Actions #40737957861](https://github.com/imasenHF/spinplot/actions/runs/40737957861)；正式入口仍只代表 `main` 已发布功能。
+
 ## 使用与科研限制
 
 1. 使用 **Open Data** 导入数据；CSV、CIQTEK 和 BES3T 文件的具体匹配关系由解析器检查。后续导入的数据可追加为新的子图。
