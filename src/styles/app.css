@@ -154,7 +154,7 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 
 /* Keep curve style selectors aligned with Current order while outside its scroll box. */
 .current-order-box{position:relative;min-width:0;}
-.current-order-box .order-item{padding-right:98px;}
+.current-order-box .order-item{padding-right:98px;min-height:24px;box-sizing:border-box;}
 .curve-style-list{position:absolute;top:15px;right:2px;width:94px;box-sizing:border-box;padding:2px 0;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;z-index:2;background:transparent;}
 .curve-style-list::-webkit-scrollbar{display:none;}
 .curve-style-row{height:24px;min-height:24px;display:flex;align-items:center;justify-content:flex-end;}
