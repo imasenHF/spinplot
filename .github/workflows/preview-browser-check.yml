@@ -27,6 +27,7 @@ jobs:
           SPINPLOT_TEST_COLORBAR_DBLCLICK: '1'
           SPINPLOT_TEST_FREQUENCY_ALIGNMENT: '1'
           SPINPLOT_TEST_TWOD_VIEW_MODES: '1'
+          SPINPLOT_TEST_MANUAL_CURVE_HEATMAP: '1'
         run: node scripts/preview-browser-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
