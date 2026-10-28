@@ -410,6 +410,9 @@ try {
     assert.equal(await page.locator('.subplot').nth(0).locator('[data-field="mode"]').inputValue(),'heatmap','Source heatmap must remain unchanged');
     assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan','New subplot must use Variable scan mode');
     const scanCard = page.locator('.subplot').nth(1);
+    assert.equal(await scanCard.locator('[data-field="scanCurveStyle"]').count(),1,'Variable scan must expose its own curve style');
+    await scanCard.locator('[data-field="scanCurveStyle"]').selectOption('filled-circle');
+    await scanCard.locator('[data-field="scanCurveStyle"]').press('Tab');
     assert.equal(await scanCard.locator('[data-manual-scan="name"]').inputValue(),'Temperature');
     assert.equal(await scanCard.locator('[data-manual-scan="unit"]').inputValue(),'K');
     assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 30, 6','Custom scan values must follow the selected curve order');
