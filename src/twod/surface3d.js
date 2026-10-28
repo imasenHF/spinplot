@@ -68,7 +68,7 @@ void main(){
  vec3 q=vec3(ca*p.x-sa*p.y,sa*p.x+ca*p.y,p.z);
  vec3 v=vec3(q.x,ce*q.y+se*q.z,-se*q.y+ce*q.z);
  float perspective=2.6/(2.6-v.z);
- gl_Position=vec4(v.x*perspective*1.25*u_zoom/u_aspect,v.y*perspective*1.25*u_zoom,v.z/3.0,1.0);
+ gl_Position=vec4(v.x*perspective*1.25*u_zoom/u_aspect,v.y*perspective*1.25*u_zoom,-v.z/3.0,1.0);
  float illumination=0.76+0.24*abs(dot(normalize(a_normal),normalize(vec3(-0.4,-0.4,0.8))));
  v_color=a_color*illumination;
 }`;

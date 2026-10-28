@@ -366,6 +366,10 @@ try {
       assert.equal(await sourceCard.locator('.current-order-columns > .curve-style-list').count(),1,'Symbol controls must occupy a separate column');
       const columns=await sourceCard.locator('.current-order-columns').evaluate(el=>{const names=el.querySelector('.order-list').getBoundingClientRect(),styles=el.querySelector('.curve-style-list').getBoundingClientRect();return {namesRight:names.right,stylesLeft:styles.left,gap:styles.left-names.right};});
       assert.ok(columns.gap>=3,'Curve style column must be visually separated from the data list');
+      const compact=await sourceCard.locator('.current-order-columns > .curve-style-list').evaluate(el=>({w:el.getBoundingClientRect().width,labels:[...el.querySelectorAll('option')].map(x=>x.textContent.trim()),groups:el.querySelectorAll('optgroup').length}));
+      assert.ok(compact.w<=40,'Symbol selector column should be less than half of the previous 76 px width');
+      assert.equal(compact.groups,0,'Symbol-only menu should not show text group headings');
+      assert.ok(compact.labels.every(v=>/^[━┄┈○●□■△▲◇◆]+$/u.test(v)),'Style menu should use glyphs only');
       const selected=await sourceCard.locator('[data-curve-style="1"] option:checked').textContent();
       assert.match(selected.trim(),/^[━┄┈○●□■△▲◇◆]+$/u,'Styles must use glyphs rather than descriptive text');
     }
@@ -393,10 +397,12 @@ try {
     }
     const heatmapCard = page.locator('.subplot').filter({has:page.locator('.manual-scan-variable')}).first();
     assert.equal(await heatmapCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
-    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'?['Stack','Heatmap','Overlap','Contour','3D surface','Variable scan (new subplot)']:['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose the supported plot modes');
+    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'?['Stack','Heatmap','Overlap','Contour','3D surface','Variable scan']:['Stack','Heatmap','Overlap','Variable scan'],'Curve-derived Heatmap must expose the supported plot modes');
     if(process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'){
       const mode=sourceCard.locator('[data-field="mode"]');
       assert.equal(await sourceCard.locator('[data-twod="zScale"]').inputValue(),'linear','Z should default to a linear scale');
+      assert.equal(await sourceCard.locator('.subplot-section[data-section="plot"] > summary').textContent(),'Plot','Sidebar headings should be concise');
+      assert.equal(await sourceCard.locator('.processing-summary:visible').count(),0,'Explanatory processing text should move out of the sidebar');
       await mode.selectOption('contour');
       assert.equal(await mode.inputValue(),'contour','Contour must be a separate plotting mode');
       const count=sourceCard.locator('[data-twod="contourLevels"]');
@@ -406,6 +412,7 @@ try {
       await page.waitForTimeout(170);
       await mode.selectOption('surface3d');
       assert.equal(await mode.inputValue(),'surface3d','3D surface mode must be selectable');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').locator('xpath=ancestor::label[1] .//button[contains(@class,"help-tip")]').count(),1,'Logarithmic Z explanation should use a question-mark help control');
       const view=sourceCard.locator('.subplot-section[data-section="plot"] .surface-view-controls');
       assert.equal(await view.count(),1,'3D camera must appear inside Plot mode');
       assert.equal(await view.evaluate(el=>el.open),false,'3D camera controls must default to collapsed');

@@ -254,7 +254,7 @@ export function controls(card, sp, d, onChange) {
   const projectionSection = section('Projections');
   if (['heatmap','contour','surface3d'].includes(sp.mode)) projectionSection.box.open = false;
   const projection = projectionSection.body;
-  const scanSection = section('Variable scan settings', sp.mode === 'scan');
+  const scanSection = section('Scan', sp.mode === 'scan');
   const scanSettings = scanSection.body;
   function input(parent, key, title, type = 'text') {
     const l = document.createElement('label');
@@ -444,7 +444,7 @@ export function controls(card, sp, d, onChange) {
   ])
     input(positionBody, key, title, 'number');
   check(axes, 'zUseGlobal', 'Use global Z defaults');
-  const zScaleControl=select(axes,'zScale','Z axis scale',[['linear','Linear'],['log','Log10 (positive Z only)']]);
+  const zScaleControl=select(axes,'zScale','Z axis scale',[['linear','Linear'],['log','Log10']]);
   zScaleControl.title='Log10 only shows strictly positive Z samples. Zero and negative values are masked.';
   const zRow = document.createElement('div');
   zRow.className = 'grid2 control-pair';
@@ -485,24 +485,25 @@ export function controls(card, sp, d, onChange) {
     ['inherit', 'Inherit subplot / global'],
     ...Object.entries(COLOR_SCHEMES).map(([k, v]) => [k, v.label]),
   ]);
-  input(body,'contourLevels','Contour levels','number');
+  input(body,'contourLevels','Levels','number');
   const levelInput=body.querySelector('[data-twod=contourLevels]');
   levelInput.min=3;levelInput.max=40;levelInput.step=1;
   levelInput.closest('label').hidden=sp.mode!=='contour';
   const view3d=document.createElement('details');view3d.className='advanced-layout surface-view-controls';
   view3d.open=!!s.viewOpen;
-  const viewSummary=document.createElement('summary');viewSummary.textContent='3D viewing angle';
+  const viewSummary=document.createElement('summary');viewSummary.textContent='View';viewSummary.title='Rotate the surface by dragging. Use sliders for precise camera settings.';
   const viewBody=document.createElement('div');viewBody.className='local-block surface-view-fields';
   view3d.append(viewSummary,viewBody);
-  for(const [key,label,min,max,step] of [['viewAzimuth','Azimuth / °',0,360,1],['viewElevation','Elevation / °',5,85,1],['viewZStretch','Z exaggeration',0.2,3,0.1],['viewZoom','Camera zoom',0.6,2,0.1]]){
+  for(const [key,label,min,max,step] of [['viewAzimuth','Azimuth',0,360,1],['viewElevation','Elevation',5,85,1],['viewZStretch','Z stretch',0.2,3,0.1],['viewZoom','Zoom',0.6,2,0.1]]){
     const field=document.createElement('label');field.className='field';field.textContent=label;
     const row=document.createElement('div');row.className='surface-view-input';
     const slider=document.createElement('input');slider.type='range';slider.min=min;slider.max=max;slider.step=step;slider.value=s[key];slider.dataset.view3d=key;
     const value=document.createElement('output');value.textContent=String(s[key]);
-    slider.oninput=()=>{s[key]=Number(slider.value);value.textContent=slider.value;onChange();};
+    slider.oninput=()=>{s[key]=Number(slider.value);value.textContent=slider.value;onChange({preview:true});};
+    slider.onchange=()=>onChange();
     row.append(slider,value);field.append(row);viewBody.append(field);
   }
-  const hint=document.createElement('div');hint.className='small';hint.textContent='Drag the 3D surface to rotate; sliders set exact angles.';viewBody.append(hint);
+  
   view3d.addEventListener('toggle',()=>{if(view3d.isConnected)s.viewOpen=view3d.open;});
   root.prepend(view3d);view3d.hidden=sp.mode!=='surface3d';
   const gaps = document.createElement('div');
@@ -524,7 +525,7 @@ export function controls(card, sp, d, onChange) {
       }
     }
   }
-  for (const [value, label] of [['overlap', 'Overlap'], ['contour','Contour'],['surface3d','3D surface'], ['scan', 'Variable scan (new subplot)']]) {
+  for (const [value, label] of [['overlap', 'Overlap'], ['contour','Contour'],['surface3d','3D surface'], ['scan', 'Variable scan']]) {
     if (!mode.querySelector('[value=' + value + ']')) {
       const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
     }
