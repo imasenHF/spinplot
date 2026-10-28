@@ -1,6 +1,6 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-10-22（Asia/Shanghai）
+更新日期：2026-10-28（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
