@@ -376,6 +376,11 @@ try {
     await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
     await page.waitForTimeout(200);
     assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
+    assert.equal(await sourceCard.locator('[data-action="available"]').count(),1,'Derived Heatmap must retain Available curves');
+    assert.equal(await sourceCard.locator('.curve-tools button').count(),9,'Derived Heatmap must retain curve-management buttons');
+    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1],'Derived Heatmap must preserve Current order rows');
+    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Derived Heatmap must preserve per-curve style controls');
+    assert.equal(await sourceCard.locator('.curve-manager.matrix-data').count(),0,'Curve-derived Heatmap must not switch to the matrix-only data panel');
     const heatmapCard = page.locator('.subplot').filter({has:page.locator('.manual-scan-variable')}).first();
     assert.equal(await heatmapCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
     assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose only the four supported plot modes');
