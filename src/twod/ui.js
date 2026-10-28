@@ -2,6 +2,9 @@ import { gFromCoordinate, coordinateFromG } from '../processing/axis.js';
 import { orient, projections, reduce, validate, axisKind, fieldToGauss } from './core.js';
 import { tickFormatter } from './ticks.js';
 import { COLOR_SCHEMES } from './palettes.js';
+import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
+import { contourSegments } from './contours.js';
+import { renderSurface } from './surface3d.js';
 export function defaults(d) {
   const setting = d.metadata?.setting || {},
     settingPower = Number(setting.lineEdit_MB_Power),
@@ -52,6 +55,13 @@ export function defaults(d) {
     yRangeLabelY: 4,
     zMin: '',
     zMax: '',
+    zScale: 'linear',
+    contourLevels: 12,
+    viewAzimuth: 35,
+    viewElevation: 35,
+    viewZStretch: 1,
+    viewZoom: 1,
+    viewOpen: false,
     xProjectionMin: '',
     xProjectionMax: '',
     yProjectionMin: '',
@@ -150,28 +160,9 @@ export function model(d, s) {
     xi = v.x.values.map((z, i) => (z >= xr[0] && z <= xr[1] ? i : -1)).filter((i) => i >= 0),
     yi = v.y.values.map((z, i) => (z >= yr[0] && z <= yr[1] ? i : -1)).filter((i) => i >= 0);
   if (!xi.length || !yi.length) throw Error('Display range contains no samples');
-  let lo = Infinity,
-    hi = -Infinity;
-  for (const j of yi)
-    for (const i of xi) {
-      const z = v.z[j][i];
-      if (Number.isFinite(z)) {
-        lo = Math.min(lo, z);
-        hi = Math.max(hi, z);
-      }
-    }
-  if (!Number.isFinite(lo)) {
-    lo = 0;
-    hi = 1;
-  }
-  if (lo === hi) {
-    lo -= 0.5;
-    hi += 0.5;
-  }
-  const zmin = s.zMin === '' ? lo : Number(s.zMin),
-    zmax = s.zMax === '' ? hi : Number(s.zMax);
-  if (!Number.isFinite(zmin) || !Number.isFinite(zmax) || zmin >= zmax)
-    throw Error('Z min must be less than Z max');
+  const range = zRange(v.z, xi, yi, s);
+  const {min:zmin,max:zmax} = range;
+  const lo=range.dataMin,hi=range.dataMax;
   const value = {
     v,
     p,
@@ -192,7 +183,7 @@ export function controls(card, sp, d, onChange) {
   const s = migrate(d, sp.twoD.settings),
     root = card.querySelector('.subplot-body');
   if (!s.sharedControls) {
-    if (!['overlay', 'heatmap', 'stack', 'overlap', 'scan'].includes(sp.mode))
+    if (!['overlay','heatmap','contour','surface3d','stack','overlap','scan'].includes(sp.mode))
       sp.mode = s.mode === 'stack' ? 'stack' : 'overlay';
     sp.offsetScale = s.offset;
     for (const a of ['x', 'y']) {
@@ -261,7 +252,7 @@ export function controls(card, sp, d, onChange) {
     s.open = box.open;
   };
   const projectionSection = section('Projections');
-  if (sp.mode === 'heatmap') projectionSection.box.open = false;
+  if (['heatmap','contour','surface3d'].includes(sp.mode)) projectionSection.box.open = false;
   const projection = projectionSection.body;
   const scanSection = section('Variable scan settings', sp.mode === 'scan');
   const scanSettings = scanSection.body;
@@ -453,6 +444,8 @@ export function controls(card, sp, d, onChange) {
   ])
     input(positionBody, key, title, 'number');
   check(axes, 'zUseGlobal', 'Use global Z defaults');
+  const zScaleControl=select(axes,'zScale','Z axis scale',[['linear','Linear'],['log','Log10 (positive Z only)']]);
+  zScaleControl.title='Log10 only shows strictly positive Z samples. Zero and negative values are masked.';
   const zRow = document.createElement('div');
   zRow.className = 'grid2 control-pair';
   axes.append(zRow);
@@ -492,6 +485,26 @@ export function controls(card, sp, d, onChange) {
     ['inherit', 'Inherit subplot / global'],
     ...Object.entries(COLOR_SCHEMES).map(([k, v]) => [k, v.label]),
   ]);
+  input(body,'contourLevels','Contour levels','number');
+  const levelInput=body.querySelector('[data-twod=contourLevels]');
+  levelInput.min=3;levelInput.max=40;levelInput.step=1;
+  levelInput.closest('label').hidden=sp.mode!=='contour';
+  const view3d=document.createElement('details');view3d.className='advanced-layout surface-view-controls';
+  view3d.open=!!s.viewOpen;
+  const viewSummary=document.createElement('summary');viewSummary.textContent='3D viewing angle';
+  const viewBody=document.createElement('div');viewBody.className='local-block surface-view-fields';
+  view3d.append(viewSummary,viewBody);
+  for(const [key,label,min,max,step] of [['viewAzimuth','Azimuth / °',0,360,1],['viewElevation','Elevation / °',5,85,1],['viewZStretch','Z exaggeration',0.2,3,0.1],['viewZoom','Camera zoom',0.6,2,0.1]]){
+    const field=document.createElement('label');field.className='field';field.textContent=label;
+    const row=document.createElement('div');row.className='surface-view-input';
+    const slider=document.createElement('input');slider.type='range';slider.min=min;slider.max=max;slider.step=step;slider.value=s[key];slider.dataset.view3d=key;
+    const value=document.createElement('output');value.textContent=String(s[key]);
+    slider.oninput=()=>{s[key]=Number(slider.value);value.textContent=slider.value;onChange();};
+    row.append(slider,value);field.append(row);viewBody.append(field);
+  }
+  const hint=document.createElement('div');hint.className='small';hint.textContent='Drag the 3D surface to rotate; sliders set exact angles.';viewBody.append(hint);
+  view3d.addEventListener('toggle',()=>{if(view3d.isConnected)s.viewOpen=view3d.open;});
+  root.prepend(view3d);view3d.hidden=sp.mode!=='surface3d';
   const gaps = document.createElement('div');
   gaps.className = 'grid2 projection-gaps';
   gaps.style.gridColumn = '1 / -1';
@@ -511,13 +524,13 @@ export function controls(card, sp, d, onChange) {
       }
     }
   }
-  for (const [value, label] of [['overlap', 'Overlap'], ['scan', 'Variable scan (new subplot)']]) {
+  for (const [value, label] of [['overlap', 'Overlap'], ['contour','Contour'],['surface3d','3D surface'], ['scan', 'Variable scan (new subplot)']]) {
     if (!mode.querySelector('[value=' + value + ']')) {
       const option = document.createElement('option'); option.value = value; option.textContent = label; mode.append(option);
     }
   }
   mode.value = sp.mode;
-  s.mode = sp.mode === 'stack' ? 'stack' : sp.mode === 'overlap' ? 'overlap' : sp.mode === 'scan' ? 'scan' : 'heatmap';
+  s.mode = ['stack','overlap','scan','contour','surface3d'].includes(sp.mode) ? sp.mode : 'heatmap';
   for (const manager of card.querySelectorAll('.curve-manager')) {
     // Keep the original curve inventory and ordering controls for 1D-derived heatmaps.
     if (sp.twoD.derivedFromCurves) continue;
@@ -539,7 +552,7 @@ export function controls(card, sp, d, onChange) {
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
   projectionSection.box.querySelector('summary').textContent = 'Projections';
-  projectionSection.box.hidden = sp.mode === 'overlap' || sp.mode === 'scan';
+  projectionSection.box.hidden = ['overlap','scan','surface3d'].includes(sp.mode);
   scanSection.box.hidden = sp.mode !== 'scan';
   powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
   stackInput.closest('label').hidden = sp.mode === 'scan';
@@ -558,7 +571,7 @@ export function controls(card, sp, d, onChange) {
   }
   colors.closest('details').hidden = derivedView;
   const summary = card.querySelector('.subplot-summary');
-  const modeLabel = ({overlay:'Heatmap',heatmap:'Heatmap',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
+  const modeLabel = ({overlay:'Heatmap',heatmap:'Heatmap',contour:'Contour',surface3d:'3D surface',stack:'Stack',overlap:'Overlap',scan:'Variable scan'})[sp.mode] || 'Heatmap';
   summary.textContent = (manualDerived ? sp.twoD.curveIndices.length + ' curves' : '1 dataset') + ' · ' + modeLabel + ' · ' + d.x.values.length + ' × ' + d.y.values.length;
   if (manualDerived) {
     const variable = sp.scanVariable || (sp.scanVariable = {name:'Subplot index',unit:'',mode:'linear',start:1,step:1,valuesByCurve:{}});
@@ -768,7 +781,7 @@ export function colorStops(s, options = {}) {
   const key = s.scheme !== 'inherit' ? s.scheme : options.scheme;
   return COLOR_SCHEMES[key]?.gradient || COLOR_SCHEMES.turbo.gradient;
 }
-export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient) {
+export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient, zScale = 'linear') {
   const { v, xr, yr, zmin, zmax } = m,
     canvas = document.createElement('canvas');
   canvas.width = width;
@@ -785,8 +798,8 @@ export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient) {
     for (let i = 0; i < width; i++) {
       const z = v.z[ys[j]][xs[i]],
         k = (j * width + i) * 4;
-      if (!Number.isFinite(z)) continue;
-      const c = color(stops, (z - zmin) / (zmax - zmin));
+      if (!Number.isFinite(z) || (zScale==='log' && z<=0)) continue;
+      const c = color(stops, zFraction(z,zmin,zmax,zScale));
       image.data.set(c, k);
       image.data[k + 3] = 255;
     }
@@ -794,13 +807,10 @@ export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient) {
   return canvas;
 }
 export function adjustZ(s, m, delta) {
-  const factor = delta > 0 ? 1.15 : 1 / 1.15,
-    center = (m.zmin + m.zmax) / 2,
-    half = ((m.zmax - m.zmin) * factor) / 2;
-  if (!Number.isFinite(half) || half <= Number.EPSILON * Math.max(1, Math.abs(center))) return;
-  s.zUseGlobal = false;
-  s.zMin = center - half;
-  s.zMax = center + half;
+  const bounds=zoomZ(m.zmin,m.zmax,delta,s.zScale);
+  if(!bounds)return;
+  s.zUseGlobal=false;
+  [s.zMin,s.zMax]=bounds;
 }
 export function stackRows(m, s) {
   return m.yi.filter((_, k) => k % Number(s.step) === 0);
@@ -809,14 +819,14 @@ export function plotInsets(d, s, box, title = '', options = {}) {
   const v = orient(d, s.component, s.swap),
     w = box.cellW,
     h = box.cellH,
-    hasTop = s.showProjections && s.showXProjection !== false,
-    hasSide = s.showProjections && s.showYProjection !== false,
+    hasTop = s.mode !== 'surface3d' && s.showProjections && s.showXProjection !== false,
+    hasSide = s.mode !== 'surface3d' && s.showProjections && s.showYProjection !== false,
     proj = hasTop || hasSide,
-    cb = s.showColorbar && s.mode === 'heatmap',
+    cb = s.showColorbar && ['heatmap','contour','surface3d'].includes(s.mode),
     axisSize = options.axisSize || 14,
     projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || 11);
-  const gX = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.x),
-    gY = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.y),
+  const gX = s.mode !== 'surface3d' && options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.x),
+    gY = s.mode !== 'surface3d' && options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.y),
     gapX = Math.max(gY ? 80 : 0, Number(s.projectionGapX) || 0),
     gapY = Math.max(0, Number(s.projectionGapY) || 0),
     topH = hasTop ? Math.max(25, h * 0.17) : 0,
@@ -884,18 +894,18 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
   const m = model(d, effective),
     { v, p, xr, yr, pxr, pyr, xi, yi, zmin, zmax, max } = m,
     { cellX: cx, cellY: cy, cellW: w, cellH: h } = box,
-    hasTop = s.showProjections && s.showXProjection !== false,
-    hasSide = s.showProjections && s.showYProjection !== false,
+    hasTop = s.mode !== 'surface3d' && s.showProjections && s.showXProjection !== false,
+    hasSide = s.mode !== 'surface3d' && s.showProjections && s.showYProjection !== false,
     proj = hasTop || hasSide,
-    cb = s.showColorbar && s.mode === 'heatmap',
+    cb = s.showColorbar && ['heatmap','contour','surface3d'].includes(s.mode),
     stops = colorStops(s, options),
     tick = options.tickSize || 11,
     projectionTitleSize = Math.max(7, Number(options.projectionTitleSize) || 11),
     axisSize = options.axisSize || 14,
     titleSize = options.titleSize || 15,
     lineWidth = options.lineWidth || 1.4;
-  const gX = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.x),
-    gY = options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.y),
+  const gX = s.mode !== 'surface3d' && options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.x),
+    gY = s.mode !== 'surface3d' && options.g?.show && Number.isFinite(options.frequency) && fieldToGauss(v.y),
     natural = plotInsets(d, s, box, title, options),
     insets = options.mainInsets || natural,
     { gapX, gapY, topH, gSpace } = natural,
@@ -964,6 +974,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
             Math.max(1, Math.ceil(pw * scale)),
             Math.max(1, Math.ceil(ph * scale)),
             stops,
+            s.zScale,
           );
         ctx.drawImage(image, x, y, pw, ph);
       } else
@@ -971,9 +982,9 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           const ye = edge(v.y.values, j).map(Y);
           for (const i of xi) {
             const z = v.z[j][i];
-            if (!Number.isFinite(z)) continue;
+            if (!Number.isFinite(z) || (s.zScale==='log'&&z<=0)) continue;
             const xe = edge(v.x.values, i).map(X);
-            ctx.fillStyle = css(color(stops, (z - zmin) / (zmax - zmin)));
+            ctx.fillStyle = css(color(stops, zFraction(z,zmin,zmax,s.zScale)));
             ctx.fillRect(
               Math.min(...xe),
               Math.min(...ye),
@@ -982,6 +993,22 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
             );
           }
         }
+    } else if (s.mode === 'contour') {
+      const count=Math.max(3,Math.min(40,Math.round(Number(s.contourLevels)||12)));
+      const levels=zTicks(zmin,zmax,s.zScale,count+2).slice(1,-1);
+      const segments=contourSegments(m,levels,s.zScale);
+      ctx.lineWidth=Math.max(0.65,lineWidth);
+      for (const level of levels) {
+        ctx.strokeStyle=css(color(stops,zFraction(level,zmin,zmax,s.zScale)));
+        ctx.beginPath();
+        for (const segment of segments) if (segment.level===level) {
+          ctx.moveTo(X(segment.x0),Y(segment.y0));
+          ctx.lineTo(X(segment.x1),Y(segment.y1));
+        }
+        ctx.stroke();
+      }
+    } else if (s.mode === 'surface3d') {
+      renderSurface(ctx,m,(t)=>color(stops,t),s,mapBox,theme,Math.min(2,typeof window==='undefined'?1:window.devicePixelRatio||1));
     } else {
       const rows = stackRows(m, s);
       rows.forEach((j, k) => {
@@ -998,7 +1025,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           text(v.y.values[j].toPrecision(4) + ' ' + v.y.unit, x + pw - 4, base, tick, 'right');
       });
     }
-    if (options.grid) {
+    if (options.grid && s.mode!=='surface3d') {
       ctx.strokeStyle = theme.majorGrid;
       ctx.lineWidth = 0.5;
       for (let k = 1; k < 4; k++) {
@@ -1021,7 +1048,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       : Array.from({ length: 5 }, (_, k) => yr[0] + ((yr[1] - yr[0]) * k) / 4);
   const xf = tickFormatter(xt, options.xTickFormat),
     yf = tickFormatter(yt, options.yTickFormat);
-  for (const a of xt)
+  for (const a of (s.mode==='surface3d'?[]:xt))
     text(
       xf.format(a),
       X(a),
@@ -1030,9 +1057,9 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       a === xt[0] ? 'left' : a === xt.at(-1) ? 'right' : 'center',
     );
   if (options.showYTicks !== false)
-    for (const b of yt) text(yf.format(b), x - 6, Y(b), tick, 'right');
-  if (xf.exponent) text(xf.multiplier, x + pw, y + ph + tick * 2 + 7, tick, 'right');
-  if (yf.exponent && options.showYTicks !== false)
+    for (const b of (s.mode==='surface3d'?[]:yt)) text(yf.format(b), x - 6, Y(b), tick, 'right');
+  if (s.mode!=='surface3d'&&xf.exponent) text(xf.multiplier, x + pw, y + ph + tick * 2 + 7, tick, 'right');
+  if (s.mode!=='surface3d'&&yf.exponent && options.showYTicks !== false)
     text(yf.multiplier, x - 6, y - 10, tick, 'right');
   text(
     s.xLabel || v.x.name + (v.x.unit ? ' (' + v.x.unit + ')' : ''),
@@ -1254,16 +1281,16 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     border(bar);
     for (const z of options.z?.hideTicks
       ? []
-      : options.z?.step > 0 && options.yTicks
+      : s.zScale!=='log' && options.z?.step > 0 && options.yTicks
         ? options.yTicks(zmin, zmax, options.z.step)
-        : Array.from({ length: 5 }, (_, k) => zmin + ((zmax - zmin) * k) / 4)) {
-      const py = y + ph - (ph * (z - zmin)) / (zmax - zmin);
+        : zTicks(zmin,zmax,s.zScale)) {
+      const py = y + ph - ph*zFraction(z,zmin,zmax,s.zScale);
       ctx.strokeStyle = theme.axis;
       ctx.beginPath();
       ctx.moveTo(bar.x + bar.w, py);
       ctx.lineTo(bar.x + bar.w + 4, py);
       ctx.stroke();
-      text(z.toPrecision(4), bar.x + bar.w + 6, py, tick, 'left');
+      text(s.zScale==='log'?z.toExponential(1):z.toPrecision(4), bar.x + bar.w + 6, py, tick, 'left');
     }
     const zTitle = s.colorbarLabel || options.z?.label;
     if (
@@ -1294,5 +1321,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     colorbar: cb ? bar : null,
     zmin,
     zmax,
+    zScale:s.zScale,
+    surface3d:s.mode==='surface3d',
   };
 }

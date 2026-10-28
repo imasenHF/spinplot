@@ -393,7 +393,32 @@ try {
     }
     const heatmapCard = page.locator('.subplot').filter({has:page.locator('.manual-scan-variable')}).first();
     assert.equal(await heatmapCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
-    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose only the four supported plot modes');
+    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'?['Stack','Heatmap','Overlap','Contour','3D surface','Variable scan (new subplot)']:['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose the supported plot modes');
+    if(process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'){
+      const mode=sourceCard.locator('[data-field="mode"]');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').inputValue(),'linear','Z should default to a linear scale');
+      await mode.selectOption('contour');
+      assert.equal(await mode.inputValue(),'contour','Contour must be a separate plotting mode');
+      const count=sourceCard.locator('[data-twod="contourLevels"]');
+      assert.equal(await count.inputValue(),'12','Contour must default to 12 levels');
+      await count.evaluate(el=>{el.value='8';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>{el.value='log';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await page.waitForTimeout(170);
+      await mode.selectOption('surface3d');
+      assert.equal(await mode.inputValue(),'surface3d','3D surface mode must be selectable');
+      const view=sourceCard.locator('.subplot-section[data-section="plot"] .surface-view-controls');
+      assert.equal(await view.count(),1,'3D camera must appear inside Plot mode');
+      assert.equal(await view.evaluate(el=>el.open),false,'3D camera controls must default to collapsed');
+      await sourceCard.locator('[data-view3d="viewAzimuth"]').evaluate(el=>{el.value='85';el.dispatchEvent(new Event('input',{bubbles:true}));});
+      await page.waitForTimeout(250);
+      await page.locator('#plotCanvas').screenshot({path:'browser-preview/surface3d.png'});
+      const settings=await save('browser-preview/surface3d-settings.json');
+      assert.equal(settings.config.subplots[0].twoD.settings.viewAzimuth,85,'3D camera azimuth must persist');
+      assert.equal(settings.config.subplots[0].twoD.settings.zScale,'log','Log10 Z scale must persist in the project');
+      assert.equal(settings.config.subplots[0].twoD.settings.contourLevels,8,'Contour count must persist');
+      await mode.selectOption('heatmap');
+      await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>{el.value='linear';el.dispatchEvent(new Event('change',{bubbles:true}));});
+    }
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
     assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>{const panel=el.closest('.subplot-body')?.querySelector('.manual-scan-variable');return !!panel&&(el.compareDocumentPosition(panel)&Node.DOCUMENT_POSITION_FOLLOWING)!==0;}),true,'Scan-variable editor must appear after Plot mode');

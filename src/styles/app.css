@@ -154,10 +154,17 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 
 /* Current order names and curve styles are two separate, aligned scroll columns. */
 .current-order-box{min-width:0}
-.current-order-columns{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:5px;min-width:0;align-items:start}
+.current-order-columns{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:4px;min-width:0;align-items:start}
 .current-order-columns .order-list{min-width:0;width:100%;box-sizing:border-box;overflow:auto}
 .current-order-columns .order-item{min-height:24px;height:24px;box-sizing:border-box;padding:2px 3px}
-.current-order-columns .curve-style-list{min-width:0;width:76px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;border:1px solid transparent}
+.current-order-columns .curve-style-list{min-width:0;width:34px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;border:1px solid transparent}
 .current-order-columns .curve-style-list::-webkit-scrollbar{display:none}
 .current-order-columns .curve-style-row{height:24px;min-height:24px;display:flex;align-items:center}
-.current-order-columns .curve-style{display:block;width:100%;min-width:0;max-width:none;height:21px;min-height:21px;max-height:21px;padding:0 1px;text-align:center;font-size:13px;line-height:19px;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif;box-sizing:border-box}
+.current-order-columns .curve-style{display:block;width:100%;min-width:0;max-width:none;height:21px;min-height:21px;max-height:21px;padding:0 1px;text-align:center;font-size:9px;line-height:19px;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif;box-sizing:border-box}
+
+/* 3D camera controls appear only in Surface mode; the details panel is closed by default. */
+.surface-view-controls{margin:4px 0 8px;}
+.surface-view-controls .surface-view-fields{display:grid;gap:6px;}
+.surface-view-input{display:flex;align-items:center;gap:6px;min-width:0;}
+.surface-view-input input[type=range]{flex:1;min-width:0;width:100%;}
+.surface-view-input output{font-variant-numeric:tabular-nums;min-width:27px;text-align:right;font-size:11px;}

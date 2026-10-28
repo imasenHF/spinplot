@@ -38,6 +38,7 @@ jobs:
           node src/twod/bes3t.test.js
           node src/twod/large.test.js
           node src/twod/integration.test.js
+          node src/twod/visualization.test.js
           node src/twod/ticks.test.js
       - name: Display, axis and export regression
         run: node --test src/plotting/oned.test.js src/processing/axis.test.js src/export/export.test.js

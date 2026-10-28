@@ -517,7 +517,7 @@ export function renderFigure(
             lineWidth: lineW,
             frame,
             showYTicks: sp.showYTicks && !$("hideYTicks").checked,
-            showYTitle: (sp.twoD && sp.mode === "heatmap") || !$("hideYTitle").checked,
+            showYTitle: (sp.twoD && ["heatmap","contour","surface3d"].includes(sp.mode)) || !$("hideYTitle").checked,
             xTitleDistance: Number($("xTitleDistance").value),
             yTitleDistance: Number($("yTitleDistance").value),
             grid: $("showGrid").checked,
