@@ -43,13 +43,18 @@ export function createDisplayCurves(curves, sp) {
 export const applyStackOffsets = createDisplayCurves;
 
 export function resolveCurveStyle(sp, index) {
-  const value = sp?.curveStyles?.[index] || {};
-  return {
-    mode: ["line", "symbols", "both"].includes(value.mode) ? value.mode : "line",
-    symbol: ["circle", "square", "triangle", "diamond"].includes(value.symbol)
-      ? value.symbol
-      : "circle",
-  };
+  const value = sp?.derivedFromTwoD && sp.scanCurveStyle ? { style: sp.scanCurveStyle } : sp?.curveStyles?.[index] || {};
+  const style = value.style;
+  if (typeof style === "string") {
+    const lineOnly = { line: [], "dashed-line": [6, 3], "dotted-line": [1.5, 2.5] };
+    if (Object.hasOwn(lineOnly, style)) return { mode: "line", symbol: "circle", filled: false, lineDash: lineOnly[style], style };
+    const shapeOnly = style.match(/^(filled-)?(circle|square|triangle|diamond)$/);
+    const combined = style.match(/^(solid|dashed|dotted)-(filled-)?(circle|square|triangle|diamond)$/);
+    if (shapeOnly) return { mode: "symbols", symbol: shapeOnly[2], filled: !!shapeOnly[1], lineDash: [], style };
+    if (combined) return { mode: "both", symbol: combined[3], filled: !!combined[2], lineDash: combined[1] === "dashed" ? [6, 3] : combined[1] === "dotted" ? [1.5, 2.5] : [], style };
+  }
+  const mode = ["line", "symbols", "both"].includes(value.mode) ? value.mode : "line";
+  return { mode, symbol: ["circle", "square", "triangle", "diamond"].includes(value.symbol) ? value.symbol : "circle", filled: !!value.filled, lineDash: null, style: null };
 }
 
 export function markerSampleIndices(length, maxMarkers = 80) {
@@ -112,7 +117,7 @@ export function renderFigure(
     preparedModel.find((m) => m.sp === sp).colors[i];
   const subplotIndex = (sp) => preparedModel.findIndex((m) => m.sp === sp);
   const curveStyle = resolveCurveStyle;
-  function drawMarker(ctx, x, y, radius, shape, color, background) {
+  function drawMarker(ctx, x, y, radius, shape, color, background, filled = false) {
     const vertices = shape === "square"
       ? [[-1,-1],[1,-1],[1,1],[-1,1]]
       : shape === "triangle"
@@ -131,7 +136,7 @@ export function renderFigure(
       else ctx.lineTo(px, py);
     });
     ctx.lineTo(x + vertices[0][0] * radius, y + vertices[0][1] * radius);
-    ctx.fillStyle = background;
+    ctx.fillStyle = filled ? color : background;
     ctx.fill();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.1;
@@ -226,8 +231,8 @@ export function renderFigure(
         midX = bx + b.pad + b.lineLen / 2;
       if (display.mode !== "symbols") {
         ctx.strokeStyle = col;
-        ctx.lineWidth = 2;
-        ctx.setLineDash(theme.dashes[i % theme.dashes.length] || []);
+        ctx.lineWidth = Number(sp.lineWidth) > 0 ? Number(sp.lineWidth) : 2;
+        ctx.setLineDash(display.lineDash ?? theme.dashes[i % theme.dashes.length] ?? []);
         ctx.beginPath();
         ctx.moveTo(bx + b.pad, yy);
         ctx.lineTo(bx + b.pad + b.lineLen, yy);
@@ -235,7 +240,7 @@ export function renderFigure(
         ctx.setLineDash([]);
       }
       if (display.mode !== "line")
-        drawMarker(ctx, midX, yy, 3.2, display.symbol, col, theme.bg);
+        drawMarker(ctx, midX, yy, Number(sp.symbolSize) > 0 ? Number(sp.symbolSize) : 3.2, display.symbol, col, theme.bg, display.filled);
       ctx.fillStyle = theme.text;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
@@ -851,8 +856,8 @@ export function renderFigure(
         if (segment.length) segments.push(segment);
         if (display.mode !== "symbols") {
           ctx.strokeStyle = color;
-          ctx.lineWidth = lineW;
-          ctx.setLineDash(theme.dashes[ci % theme.dashes.length] || []);
+          ctx.lineWidth = Number(sp.lineWidth) > 0 ? Number(sp.lineWidth) : lineW;
+          ctx.setLineDash(display.lineDash ?? theme.dashes[ci % theme.dashes.length] ?? []);
           segments.forEach((part) => {
             if (!part.length) return;
             ctx.beginPath();
@@ -864,7 +869,7 @@ export function renderFigure(
         }
         if (display.mode !== "line" && points.length) {
           for (const index of markerSampleIndices(points.length))
-            drawMarker(ctx, points[index].x, points[index].y, 3.2, display.symbol, color, theme.bg);
+            drawMarker(ctx, points[index].x, points[index].y, Number(sp.symbolSize) > 0 ? Number(sp.symbolSize) : 3.2, display.symbol, color, theme.bg, display.filled);
         }
         ctx.restore();
       });
