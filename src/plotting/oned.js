@@ -41,6 +41,27 @@ export function createDisplayCurves(curves, sp) {
 }
 
 export const applyStackOffsets = createDisplayCurves;
+
+export function resolveCurveStyle(sp, index) {
+  const value = sp?.curveStyles?.[index] || {};
+  return {
+    mode: ["line", "symbols", "both"].includes(value.mode) ? value.mode : "line",
+    symbol: ["circle", "square", "triangle", "diamond"].includes(value.symbol)
+      ? value.symbol
+      : "circle",
+  };
+}
+
+export function markerSampleIndices(length, maxMarkers = 80) {
+  const count = Math.max(0, Math.floor(Number(length) || 0));
+  if (!count) return [];
+  const limit = Math.max(1, Math.floor(Number(maxMarkers) || 80));
+  const stride = Math.max(1, Math.ceil(count / limit));
+  const indices = [];
+  for (let i = 0; i < count; i += stride) indices.push(i);
+  if (indices[indices.length - 1] !== count - 1) indices.push(count - 1);
+  return indices;
+}
 export function autoRangeX(curves) {
   let lo = Infinity,
     hi = -Infinity;
@@ -90,15 +111,7 @@ export function renderFigure(
   const curveColor = (i, n, sp) =>
     preparedModel.find((m) => m.sp === sp).colors[i];
   const subplotIndex = (sp) => preparedModel.findIndex((m) => m.sp === sp);
-  function curveStyle(sp, index) {
-    const value = sp.curveStyles?.[index] || {};
-    return {
-      mode: ["line", "symbols", "both"].includes(value.mode) ? value.mode : "line",
-      symbol: ["circle", "square", "triangle", "diamond"].includes(value.symbol)
-        ? value.symbol
-        : "circle",
-    };
-  }
+  const curveStyle = resolveCurveStyle;
   function drawMarker(ctx, x, y, radius, shape, color, background) {
     const vertices = shape === "square"
       ? [[-1,-1],[1,-1],[1,1],[-1,1]]
@@ -850,12 +863,8 @@ export function renderFigure(
           ctx.setLineDash([]);
         }
         if (display.mode !== "line" && points.length) {
-          const stride = Math.max(1, Math.ceil(points.length / 80));
-          for (let i = 0; i < points.length; i += stride)
-            drawMarker(ctx, points[i].x, points[i].y, 3.2, display.symbol, color, theme.bg);
-          const last = points.length - 1;
-          if (last % stride !== 0)
-            drawMarker(ctx, points[last].x, points[last].y, 3.2, display.symbol, color, theme.bg);
+          for (const index of markerSampleIndices(points.length))
+            drawMarker(ctx, points[index].x, points[index].y, 3.2, display.symbol, color, theme.bg);
         }
         ctx.restore();
       });
