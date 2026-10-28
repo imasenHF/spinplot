@@ -75,6 +75,13 @@ test("SVG serializes vector paths, clipping, transformed Unicode and escaping", 
   assert.match(svg, /中文 A&amp;B &lt;g&gt;/);
   assert.match(svg, /width="500"/);
 });
+test("SVG serializes filled marker paths", () => {
+  const svg = svgFromScene({
+    design: { width: 20, height: 20 },
+    scene: [{ type: "path", d: "M 2 2 L 8 2 L 8 8 Z", fill: "#fff" }],
+  });
+  assert.match(svg, /d="M 2 2 L 8 2 L 8 8 Z" fill="#fff"/);
+});
 test("project v11/config v10 roundtrip preserves source arrays", () => {
   const raw = [
       { name: "s", source: "s", freq: 9.5, B: [3300, 3400], y: [1, 2] },
