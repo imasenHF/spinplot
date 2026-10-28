@@ -330,9 +330,10 @@ try {
     await page.waitForTimeout(150);
     const zReset=await save('browser-preview/colorbar-auto-z.json');
     const zSettings=zReset.config.subplots[0].twoD.settings;
-    assert.equal(zSettings.zMin,'','Colorbar double-click must clear the local Z minimum');
-    assert.equal(zSettings.zMax,'','Colorbar double-click must clear the local Z maximum');
-    assert.equal(zSettings.zUseGlobal,false,'Auto Z must retain the existing Auto Z semantics');
+    assert.ok(Number.isFinite(zSettings.zMin)&&Number.isFinite(zSettings.zMax)&&zSettings.zMax>zSettings.zMin,'Colorbar double-click must fill the fitted Z bounds numerically');
+    assert.equal(zSettings.zMin,2,'Colorbar auto-fit minimum must reflect the visible synthetic 2D sample range');
+    assert.equal(zSettings.zMax,6,'Colorbar auto-fit maximum must reflect the visible synthetic 2D sample range');
+    assert.equal(zSettings.zUseGlobal,false,'Auto Z must store locally fitted numerical bounds');
     assert.equal(zSettings.xMin,3305,'Colorbar double-click must not reset X');
     assert.equal(zSettings.xMax,3345,'Colorbar double-click must not reset X');
     assert.equal(zSettings.yMin,-2,'Colorbar double-click must not reset Y');
