@@ -16,9 +16,12 @@ test('processing order: frequency alignment, baseline, scale, display offset',()
 test('large-array ranges ignore missing samples without spreading data',()=>{const n=200000,curve={B:Array.from({length:n},(_,i)=>i),yd:Array.from({length:n},(_,i)=>i===0?NaN:i)};assert.deepEqual(autoRangeX([curve]),[0,n-1]);assert.deepEqual(rangeY([curve],10,20),[9,21]);});
 
 test('per-curve display styles default safely and preserve selected marker shape',()=>{
- assert.deepEqual(resolveCurveStyle({},0),{mode:'line',symbol:'circle'});
- assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'symbols',symbol:'triangle'}}},2),{mode:'symbols',symbol:'triangle'});
- assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'unknown',symbol:'star'}}},2),{mode:'line',symbol:'circle'});
+ assert.deepEqual(resolveCurveStyle({},0),{mode:'line',symbol:'circle',filled:false,lineDash:null,style:null});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'symbols',symbol:'triangle'}}},2),{mode:'symbols',symbol:'triangle',filled:false,lineDash:null,style:null});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{mode:'unknown',symbol:'star'}}},2),{mode:'line',symbol:'circle',filled:false,lineDash:null,style:null});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{style:'filled-triangle'}}},2),{mode:'symbols',symbol:'triangle',filled:true,lineDash:[],style:'filled-triangle'});
+ assert.deepEqual(resolveCurveStyle({curveStyles:{2:{style:'dotted-filled-diamond'}}},2),{mode:'both',symbol:'diamond',filled:true,lineDash:[1.5,2.5],style:'dotted-filled-diamond'});
+ assert.deepEqual(resolveCurveStyle({derivedFromTwoD:true,scanCurveStyle:'filled-square',curveStyles:{0:{style:'line'}}},0),{mode:'symbols',symbol:'square',filled:true,lineDash:[],style:'filled-square'});
 });
 test('marker sampling remains bounded and includes both ends',()=>{
  assert.deepEqual(markerSampleIndices(0),[]);
