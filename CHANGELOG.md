@@ -2,8 +2,9 @@
 
 ## Unreleased
 
+- Preview: three peer axis modes, Linear / Log10 (signed data auto-SymLog) / Scientific, for main Y, Heatmap/Contour/3D Z and projection intensities. Switching modes auto-fits and writes numerical limits; Auto Z and colorbar double-click populate visible Z bounds and X/Y reset leaves Z unchanged. Scientific labels do not warp linear data coordinates; bipolar signal is not shifted or discarded. Existing 2D baseline handling is unchanged. Numerical, build and Chromium regression passed in [Actions 40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984).
+
 - Preview: add contour (marching-squares) and rotatable triangulated 3D surface modes; 3D camera controls are collapsed by default under Plot and allow azimuth, elevation, Z exaggeration and zoom. Retain original matrix coordinates, project settings and SVG/PNG export behavior.
-- Preview: support Log10 Z for Heatmap, Contour and 3D, plus Linear/Log10 Y axis with global/subplot overrides and independent Top/Side projection intensity-axis scales and scientific tick notation. Nonpositive samples are excluded rather than shifted; saved projects preserve axis styles.
 - Preview: compress the independent Current order symbol column to 34 px, shorten line/marker glyphs and section labels, and replace the verbose scan-variable explanation with a `?` help tooltip. Dynamically inserted help icons now work.
 - Regression: add logarithmic axis and triangulated surface unit checks, Chromium save/reload and feature-mode tests, and repair references to renamed sections; run the existing project-format and pre-migration comparison suite.
 

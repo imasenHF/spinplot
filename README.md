@@ -21,11 +21,14 @@
 
 ## 模块化预览（未合并正式版）
 
-[独立预览入口](https://plastocyanin.org/previews/spinplot-modularization/) 含以下尚未合并到 `main` 的功能：Heatmap、Contour 和可旋转 3D surface；三种模式的线性/Log10 Z 强度映射；主图 Y 轴及顶部/右侧投影强度轴的 Log10 显示，顶部和右侧投影分别设置普通或科学计数法；精简的侧栏标题、问号帮助以及 34 px 独立符号选择列。
+[SpinPlot 独立预览](https://plastocyanin.org/previews/spinplot-modularization/) 包含 Heatmap、Contour、可旋转 3D surface 等模块化功能；正式 `main` 和 `/spinplot/` 未合并这些变更。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
-Log10 只接受**严格正值**；零值和负值被屏蔽，不进行绝对值变换或人为平移。等高线采用原始 X/Y 坐标的 marching squares；3D 使用三角网格与可旋转视角，`Plot → View` 视角面板默认折叠。旧项目配置仍默认线性轴。
+- **Linear**：线性连续坐标；**Scientific**：仍是线性坐标，只把刻度标签改成科学计数法；**Log10 / SymLog**：全正值采用 Log10，含零或负信号使用保留零点与正负号的对称对数。三者不修改原始数组。
+- 选择一种模式时，应用按对应子图的实际数据自动拟合坐标范围，将数值写入子图 Y/Z、投影 min/max。**Auto Z** 按当前可见 X/Y 区域计算 Z min/max 并填写数值，双击色标同样处理；双击热图主体复原 X/Y 时不覆盖 Z。
+- 原有的一维 Region 等基线、二维源矩阵和二维投影统计不做隐式校正或全矩阵均值扣除；**此次没有修改任何二维基线处理**。
+- 等高线沿物理 X/Y 坐标插值；3D 使用可旋转三角网格。界面使用 34 px 的独立符号列、简短标题与问号帮助，3D 视角面板默认折叠。
 
-完整数值测试、生产构建、Chromium 交互与迁移前对照通过 [Actions #40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)；主站 Pages [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 发布成功，公开临时预览的完整 Chromium 复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。正式入口仍只代表 `main` 已发布功能。
+新功能的数值、构建、Chromium 与旧版对照通过 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
 
 ## 使用与科研限制
 

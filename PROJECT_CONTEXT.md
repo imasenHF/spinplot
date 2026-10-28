@@ -1,6 +1,6 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-10-28（Asia/Shanghai）
+更新日期：2026-10-29（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
@@ -63,7 +63,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-**2026-10-29 独立预览状态（非正式 `main`）：** 现有模块化预览已增加 Contour 等高线模式、基于三角网格/WebGL 的可旋转 3D 曲面和默认折叠的视角控件。Heatmap、Contour、3D 均支持线性/Log10 Z 轴；一维和派生二维的 Y 轴可设置全局或子图 Linear/Log10；顶部与右侧投影分别支持 Linear/Log10 强度轴和 Auto/Decimal/Scientific 刻度。对数模式仅保留正值，原始数据不改写；不满足正值约束时提供错误提示。Current order 与样式下拉为独立并列组件，符号列为 34 px；长说明改为 `?` 帮助提示。项目格式 11、配置格式 10 不变，新增字段按默认值兼容旧项目。
+**2026-10-29 独立预览状态（非正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。正式 `/spinplot/`、`main` 未修改，Draft PR #1 未合并。
 
 核心源码：`src/twod/zscale.js`、`src/twod/contours.js`、`src/twod/surface3d.js`、`src/twod/ui.js`、`src/plotting/axis-scale.js`、`src/plotting/oned.js`、`src/main.js` 及 `src/interface.js`。最新完整数值、生产构建、Chromium 交互和旧版对照成功：[40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)。主站独立预览 JS/CSS 与完整同版本 HTML 已同步，Pages 工作流 [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 成功；公开预览在同步 HTML 后 Chromium 复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。首次线上失败源自旧版 HTML 缺少新增全局 Y 轴控件，并非数值实现失败。正式 `/spinplot/` 未更新、Draft PR #1 未合并。
 

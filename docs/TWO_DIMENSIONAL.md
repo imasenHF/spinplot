@@ -14,15 +14,13 @@ Save Project includes matrices and 2D settings in SpinPlot project format 11. Ol
 
 Validation: npm run build; node src/twod/core.test.js; node src/twod/large.test.js. Synthetic tests cover 1,002,000 cells, full mean/RMS projections, caching, pixel-based preview and matrix restoration; axis transpose and endian decoding. Real instrument files and full browser interaction still require validation.
 
-## 独立预览：等高线、三维曲面与对数轴（2026-10-29）
+## 独立预览：等高线、三维曲面与三种坐标模式（2026-10-29）
 
-预览分支新增独立的 **Contour** 与 **3D surface** 模式，与 Heatmap、Overlap、Stack、Variable scan 共用源二维矩阵，不改写原始强度或坐标。Contour 采用 marching squares，在物理 X/Y 坐标中对强度数据插值；显示等值线数量由 `contourLevels` 控制，超大矩阵的绘制可抽样降低图形复杂度。3D surface 将矩阵采样点转为 X/Y/Z 三角网格，使用 WebGL 深度测试、颜色映射和视角旋转；不具备 WebGL 时可基于同一网格采用深度排序的投影绘制。视角可通过鼠标拖动或 Plot 中默认折叠的 View 面板调整 azimuth、elevation、Z stretch 和 zoom。
-
-Heatmap、Contour 和 3D 的 Z 使用独立 `zScale=linear|log`；Log10 只使用**严格正值**，零值和负值作为无效绘图点屏蔽，数据不做绝对值、平移或填补。若没有正值则拒绝对数 Z 图。色标刻度按相同变换计算，Log10 色标缩放在对数空间对称。原始二维数据仍参与真实统计，**显示屏蔽不等于修改原数据或投影统计**。
-
-主二维 Y 坐标可采用线性/Log10，并参与热图像素重采样、等高线坐标投影和 3D 网格坐标转换。顶部、右侧投影的**强度轴**分别有独立 Linear/Log10 与 Auto/Decimal/Scientific 显示设置；Top 强度轴为竖向，Side 强度轴为横向。只有正强度能在 Log10 强度轴上显示，不对零/负统计值做偏移。轴范围、科学计数法、曲线样式及相机视角保存在现有项目/配置结构中；缺省或旧项目仍使用线性轴。
-
-上述功能仍属 `preview/modularization-phase1-20261009` 预览分支；正式 SpinPlot `main` 未合并。测试包括 `src/twod/visualization.test.js`、`src/plotting/axis-scale.test.js`、浏览器回归与旧版对照；最新一次完整回归见 [40737957861](https://github.com/imasenHF/spinplot/actions/runs/40737957861)。
+- Contour 根据原始物理 X/Y 坐标以 marching squares 插值等值线；3D surface 根据同一矩阵构建三角网格，支持鼠标旋转及默认折叠的 Plot → View 视角设置。绘制/导出不改写源数组。
+- 主图 Y、二维 Heatmap / Contour / 3D 的 Z 及 Top/Right 投影强度轴，分别支持 **Linear / Log10（必要时 SymLog）/ Scientific**。Linear 按数值线性分布，Scientific 仍使用线性位置、以科学计数法显示刻度。Log 模式对正值采用 Log10；当显示域含零或负信号时，以符号保留的 SymLog 映射零点和正负强度，过渡尺度由显示范围动态决定（约为最大绝对值的 1%）。不得自动取绝对值、平移数据或偷偷删除负信号。
+- 切换坐标模式时按相应子图数据自动拟合并填写 min/max。Auto Z / 色标双击使用当前显示的 X/Y 范围内有效 Z 点计算 min/max，结果写入数值输入框；双击热图主体单独重置 X/Y，不覆盖 Z。
+- 二维数据本身不会因为选择坐标模式、Auto Z 或投影显示格式而执行基线减除。现有 1D Region 基线策略及原生二维矩阵处理边界**保持原样**，此次不引入“全矩阵 Z 均值”默认基线。二维投影统计仍基于源矩阵而非显示映射。
+- 保存项目和配置时记录轴模式、相机视角和实际界限；读取旧项目时未定义的新字段使用已有兼容默认值。测试：`src/twod/visualization.test.js`、`src/plotting/axis-scale.test.js` 和 Chromium 回归。最新完整通过 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。
 
 ## Layout and controls
 

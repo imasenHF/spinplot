@@ -34,10 +34,12 @@
 
 ## 当前预览交付与验收（2026-10-29）
 
-- **新绘图模式：** Contour 与可旋转的 3D surface 已在模块化预览分支实现。3D 为具备深度遮挡的三角网格/WebGL 曲面，支持鼠标旋转、相机角度、Z 拉伸和缩放；视角控件放在 Plot 中、默认折叠。无 WebGL 场景采用同一网格的深度排序绘制。Heatmap、Contour、3D 支持 `zScale=linear|log`，Log10 严格筛除非正值，不改写源矩阵。
-- **坐标轴与投影：** 新增一维/二维 Y 轴全局和子图 Linear/Log10，以及顶部和右侧投影分别设置对数强度轴、普通/科学计数法。Log10 的刻度与鼠标坐标采用同一对数映射，不能显示零或负强度；显式无效边界必须报错。项目版本 11、配置版本 10 不变。新轴控件需在主站 Axes 面板重组时迁移，不能被丢弃。
-- **界面约束：** Current order 左侧独立曲线列表、右侧 34 px 纯符号样式列；参数标题用简短术语，必要解释使用动态有效的 `?` 提示，移除 Scan variable 长篇说明。图例/投影/坐标仍保留正确物理量、单位与保存配置。
-- **验证：** 预览代码的数值、CSV、旧项目 9/10/11、配置 10、生产构建、Chromium 交互和迁移前对照均通过 [40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)。预览静态资源 `index-C4239H4u.js`、`index-B6BT7PR8.css` 与完整同次构建 HTML 已同步主站，Pages [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 发布成功；线上浏览器完整复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。第一次公开测试失败因为部署时只替换 JS/CSS，旧 HTML 不包含 `globalYScale`，已改为整份同步 `preview-site/index.html`。正式 `main` 与 `/spinplot/` 未修改，Draft PR #1 未合并。
+- **绘图模式：** Heatmap、Contour（物理坐标 marching squares）和可旋转的三角网格/WebGL 3D surface 位于独立预览分支，3D 视角默认折叠，支持鼠标旋转、方位角、俯仰角、Z 拉伸及缩放。
+- **坐标与色标：** 主图 Y、二维 Z 以及 Top/Right 投影强度轴以三个平行选项呈现：`linear` / `log` / `scientific`。纯正值在 `log` 下采用 Log10，跨零或含负值数据采用保留正负号和零点的对称对数（SymLog），连续且不人为平移；`scientific` 只改变刻度表达，不改变线性映射。Log 与 Scientific 模式切换均对对应可用数据拟合并回填数值 min/max，原始数据保持不变。
+- **Auto Z：** `TwoD.autoZBounds(d,s)` 以当前可见 X/Y 数据范围内的有效 Z 为依据。Auto Z 按钮及色标双击都将数值写回子图 `zMin/zMax`、禁用继承；热图主体双击复原 X/Y 不抹除已经拟合的 Z。轮滚色标仍可缩放 Z。
+- **基线边界：** 本轮不新增、修改或设定默认的二维基线扣除。已有一维 Region/其他基线方式及原始二维数据与投影统计保持不变，Auto Z 不是基线校正。
+- **界面：** Current order 左列和独立 34 px 符号列并排，标题简短，必要说明使用问号图标；模式及已计算范围随项目保存/恢复。
+- **测试与发布：** 源代码数值、项目兼容、生产构建、Chromium 和旧版对照通过 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。构建 HTML、JS 及现有 CSS 已同步主站隔离预览，Pages 部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。公开预览的最新三模式浏览器检查待最新 Actions 结果确认。正式 `main` 与 `/spinplot/` 不修改，Draft PR #1 不合并。
 
 ## 最近一次已核查的基线
 
@@ -59,38 +61,9 @@
 - 频率表中的 `ν raw / GHz` 对一维磁场曲线开放编辑。CSV 等缺少源频率元数据的数据，必须先填写源微波频率；缺少源频率时缩放栏显示 `—`，不会伪装成已完成校正。
 - 验收已通过：预览分支数值/二维测试、Vite 构建、Chromium 频率校正与迁移前输出对照，以及公开预览频率/二维交互测试均通过；具体 Actions 记录见 `docs/MODULARIZATION_PREVIEW.md`。
 
-## 当前任务 A：colorbar 双击恢复自动 Z 范围（已完成）
+## Auto Z 当前功能与维护约束
 
-状态：已实现、提交、构建、自动回归及公开预览浏览器验收均通过。正式 `main` 未合并。
-
-### 已核实的源码位置
-
-- 修改文件：`src/main.js`。
-- `canvas.addEventListener('wheel', ...)` 已使用 `state.plotRegions` 查找 `r.colorbar`，命中后调用 `TwoD.adjustZ(...)`，再执行界面更新、历史记录和重绘。
-- `canvas.ondblclick` 目前从 `const p=canvasPoint(e),r=regionAtPoint(p.x,p.y)` 开始，尚未优先检查 colorbar。
-- `src/twod/ui.js` 已提供 Auto Z 控件及相关二维设置处理。本任务不需要重写或覆盖 `src/twod/ui.js`。
-
-### 实施要求
-
-在 `canvas.ondblclick` 开头、现有 `regionAtPoint(p.x,p.y)` 判断之前，按 colorbar 的矩形范围检查双击位置。若命中：
-
-1. 获取 `state.subplots[cb.subplot].twoD.settings`。
-2. 按现有 Auto Z 语义设置 `zUseGlobal = false`，并将 `zMin`、`zMax` 清空。
-3. 调用 `renderSubplotUI()`、`draw()`、`recordHistory('Auto Z')`，随后立即 `return`，避免进入热图主体的 X/Y 轴复原逻辑。
-4. 保留现有滚轮 Z 缩放和热图主体双击恢复 X/Y 轴的行为。
-
-### 验收标准
-
-- colorbar 滚轮缩放后双击，可恢复自动 Z 范围。
-- 连续缩放和复原、切换数据后复原均正常。
-- 双击热图主体仍按原行为复原 X/Y 轴。
-- 滚轮缩放行为不变。
-- 检查 `git diff -- src/main.js` 或等价的精确文件差异；运行构建与相关二维回归测试；随后检查远程 Actions。
-- 已完成验收：`npm ci`、全部现有数值/二维回归、`npm run build`、当前分支 Chromium 交互回归和迁移前输出对照均通过，见 [Actions 39684319918](https://github.com/imasenHF/spinplot/actions/runs/39684319918)。
-- 已在公开临时预览执行同一交互回归，见 [Actions 39684871564](https://github.com/imasenHF/spinplot/actions/runs/39684871564)；静态资源 HTTP 检查通过，见 [Actions 39684871606](https://github.com/imasenHF/spinplot/actions/runs/39684871606)。
-- 新行为仅部署在临时预览；正式 `main` 和 `/spinplot/` 保持不变。
-
-代码提交说明：`2D: restore Z range on colorbar double click`。
+`Auto Z`、色标双击均基于 `TwoD.autoZBounds()` 计算当前可见 Z 数据范围，写入数值 `zMin`、`zMax` 并保持 `zUseGlobal=false`。该模式不再使用旧版的“清空 min/max”恢复机制。双击热图主体仅重置 X/Y，保留独立 Z。测试需要断言实际数值，不能继续以空字符串作为“自动范围”的期望值。二维基线不在此流程中执行，不能自动减全矩阵均值。
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合
 
