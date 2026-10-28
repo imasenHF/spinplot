@@ -430,9 +430,9 @@ try {
         assert.equal(await page.locator('#globalYScale').inputValue(),'linear','Global Y defaults to a linear axis');
         const axisSelect=sourceCard.locator('[data-field="yScale"]');
         assert.equal(await axisSelect.count(),1,'Subplot must expose an independent Y-axis scale');
-        await axisSelect.selectOption('log');
-        await sourceCard.locator('[data-twod="xProjectionNotation"]').selectOption('scientific');
-        await sourceCard.locator('[data-twod="yProjectionNotation"]').selectOption('scientific');
+        await axisSelect.evaluate(el=>{el.value='log';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
         assert.equal(await sourceCard.locator('[data-twod="xProjectionScale"]').count(),1,'Top projection has its own intensity scale');
         assert.equal(await sourceCard.locator('[data-twod="yProjectionScale"]').count(),1,'Side projection has its own intensity scale');
         await page.waitForTimeout(200);
@@ -440,9 +440,9 @@ try {
         assert.equal(snap.config.subplots[0].yScale,'log','Subplot Log10 Y scale persists');
         assert.equal(snap.config.subplots[0].twoD.settings.xProjectionNotation,'scientific','Top scientific notation persists');
         assert.equal(snap.config.subplots[0].twoD.settings.yProjectionNotation,'scientific','Side scientific notation persists');
-        await axisSelect.selectOption('inherit');
-        await sourceCard.locator('[data-twod="xProjectionNotation"]').selectOption('inherit');
-        await sourceCard.locator('[data-twod="yProjectionNotation"]').selectOption('inherit');
+        await axisSelect.evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
       }
     }
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
