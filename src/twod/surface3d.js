@@ -1,4 +1,5 @@
 import { zFraction } from './zscale.js';
+import { axisCoordinate } from '../plotting/axis-scale.js';
 
 const sessions = new WeakMap();
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -15,7 +16,7 @@ export function surfaceMesh(model, palette, mode = 'linear', sampleLimit = 140) 
     const t = zFraction(v.z[j][i], zmin, zmax, mode);
     if (!Number.isFinite(t)) return null;
     const xx = ((v.x.values[i] - xr[0]) / (xr[1] - xr[0])) - 0.5;
-    const yy = ((v.y.values[j] - yr[0]) / (yr[1] - yr[0])) - 0.5;
+    const yy = axisCoordinate(v.y.values[j],yr[0],yr[1],settings.yScale) - 0.5;
     const height = clamp(t, 0, 1) - 0.5;
     const rgb = palette(clamp(t, 0, 1)).map(k => k / 255);
     return { p: [xx, yy, height], rgb };

@@ -15,6 +15,7 @@ import {
 } from "../core/numeric.js";
 import { axisKind, gFromB, BFromG } from "../processing/axis.js";
 import { tickFormatter } from "../twod/ticks.js";
+import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js";
 import * as TwoD from "../twod/ui.js";
 
 export function createDisplayCurves(curves, sp) {
@@ -253,10 +254,12 @@ export function renderFigure(
   }
   function directLabelYs(curves, Y, sp, size) {
     const shift = sp.mode === "stack" ? Number(sp.directLabelYShift) || 0 : 0;
-    const height = Math.abs(Y(0) - Y(1));
-    return curves.map(
-      (c) => Y(median(c.yd)) - shift * (state.labelRange || 1) * height,
-    );
+    const step = Math.abs(Y(0) - Y(1));
+    const height = Number.isFinite(step) ? step : Math.abs(Y(10) - Y(1));
+    return curves.map((c) => {
+      const valid=c.yd.filter(v=>Number.isFinite(Y(v)));
+      return valid.length ? Y(median(valid)) - shift * (state.labelRange || 1) * (Number.isFinite(height)?height:0) : NaN;
+    });
   }
   function subplotTickFormat(sp, axis) {
     const notation = sp[axis + "TickNotation"];
@@ -559,6 +562,13 @@ export function renderFigure(
         showYTitle =
           !$("hideYTitle").checked &&
           String(sp.yAxisLabel || $("yLabel").value || "").trim();
+      const yScale = sp.yScale && sp.yScale !== 'inherit' ? sp.yScale : $('globalYScale').value;
+      const boundsSource = sp.yUseGlobal ? $('globalYMin').value : sp.yMin;
+      const upperSource = sp.yUseGlobal ? $('globalYMax').value : sp.yMax;
+      const yValues = function* () { for(const c of curves) for(const val of c.yd) yield val; };
+      const [yBottom,yTop] = positiveAxisDomain(yValues(),m.ymin,m.ymax,yScale,{
+        explicitMin:String(boundsSource??'').trim()!=='',explicitMax:String(upperSource??'').trim()!=='',label:'Y'
+      });
       const compactY = cellH < 180,
         gTitleDistance = Number.isFinite(gcfg.titleDistance)
           ? gcfg.titleDistance
@@ -620,7 +630,7 @@ export function renderFigure(
       if (!(pw > 40 && ph > 28))
         throw new Error(`Subplot ${si + 1}: plot area too small`);
       const X = (v) => x0 + ((v - m.xmin) / (m.xmax - m.xmin)) * pw,
-        Y = (v) => y0 + ph - ((v - m.ymin) / (m.ymax - m.ymin)) * ph;
+        Y = (v) => y0 + ph - axisCoordinate(v,yBottom,yTop,yScale) * ph;
       if (!isExport)
         state.plotRegions.push({
           subplot: si,
@@ -630,8 +640,9 @@ export function renderFigure(
           ph,
           xmin: m.xmin,
           xmax: m.xmax,
-          ymin: m.ymin,
-          ymax: m.ymax,
+          ymin: yBottom,
+          ymax: yTop,
+          yScale,
           xAxis: curves[0]?.xAxis,
           cellX,
           cellY,
@@ -668,9 +679,9 @@ export function renderFigure(
           }
         }
       const xt = ticksWithStep(m.xmin, m.xmax, m.xStep, 6),
-        yt = ticksWithStep(m.ymin, m.ymax, m.yStep, 5),
+        yt = yScale === "log" ? scaledTicks(yBottom,yTop,"log",5) : ticksWithStep(m.ymin, m.ymax, m.yStep, 5),
         xminor = minorTicks(m.xmin, m.xmax, xt),
-        yminor = minorTicks(m.ymin, m.ymax, yt);
+        yminor = yScale === "log" ? [] : minorTicks(m.ymin, m.ymax, yt);
       if ($("showMinorGrid").checked) {
         for (const t of xminor)
           drawAxisLine(ctx, X(t), y0, X(t), y0 + ph, theme.minorGrid, 0.55);

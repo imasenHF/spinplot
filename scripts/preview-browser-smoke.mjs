@@ -93,7 +93,7 @@ try {
       if(await card.evaluate(el=>el.classList.contains('collapsed')))await card.locator('[data-action="collapse"]').click();
       const processing=card.locator('details[data-section="processing"]');
       if(!await processing.evaluate(el=>el.open))await processing.locator('summary').first().click();
-      const details=processing.locator('details.advanced-layout').filter({hasText:'Frequency alignment / g frequency'});
+      const details=processing.locator('[data-field="freqMode"]').locator('xpath=ancestor::details[1]');
       if(!await details.evaluate(el=>el.open))await details.locator('summary').click();
     };
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
@@ -425,6 +425,24 @@ try {
       assert.equal(settings.config.subplots[0].twoD.settings.contourLevels,8,'Contour count must persist');
       await mode.selectOption('heatmap');
       await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>{el.value='linear';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      if(process.env.SPINPLOT_TEST_AXIS_LOG==='1'){
+        assert.equal(await page.locator('#globalYScale').inputValue(),'linear','Global Y defaults to a linear axis');
+        const axisSelect=sourceCard.locator('[data-field="yScale"]');
+        assert.equal(await axisSelect.count(),1,'Subplot must expose an independent Y-axis scale');
+        await axisSelect.selectOption('log');
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').selectOption('scientific');
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').selectOption('scientific');
+        assert.equal(await sourceCard.locator('[data-twod="xProjectionScale"]').count(),1,'Top projection has its own intensity scale');
+        assert.equal(await sourceCard.locator('[data-twod="yProjectionScale"]').count(),1,'Side projection has its own intensity scale');
+        await page.waitForTimeout(200);
+        const snap=await save('browser-preview/log-y-axes.json');
+        assert.equal(snap.config.subplots[0].yScale,'log','Subplot Log10 Y scale persists');
+        assert.equal(snap.config.subplots[0].twoD.settings.xProjectionNotation,'scientific','Top scientific notation persists');
+        assert.equal(snap.config.subplots[0].twoD.settings.yProjectionNotation,'scientific','Side scientific notation persists');
+        await axisSelect.selectOption('inherit');
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').selectOption('inherit');
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').selectOption('inherit');
+      }
     }
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');

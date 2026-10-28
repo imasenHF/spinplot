@@ -5,6 +5,7 @@ import { COLOR_SCHEMES } from './palettes.js';
 import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
 import { contourSegments } from './contours.js';
 import { renderSurface } from './surface3d.js';
+import { positiveAxisDomain, axisCoordinate, axisValue, scaledTicks } from '../plotting/axis-scale.js';
 export function defaults(d) {
   const setting = d.metadata?.setting || {},
     settingPower = Number(setting.lineEdit_MB_Power),
@@ -56,6 +57,11 @@ export function defaults(d) {
     zMin: '',
     zMax: '',
     zScale: 'linear',
+    yScale: 'linear',
+    xProjectionScale:'linear',
+    yProjectionScale:'linear',
+    xProjectionNotation:'inherit',
+    yProjectionNotation:'inherit',
     contourLevels: 12,
     viewAzimuth: 35,
     viewElevation: 35,
@@ -149,6 +155,10 @@ export function model(d, s) {
   for (const r of [xr, yr, pxr, pyr])
     if (r.some((x) => !Number.isFinite(x)) || r[0] >= r[1])
       throw Error('Invalid 2D or projection ranges');
+  if(s.yScale==='log') {
+    const bounds=positiveAxisDomain(v.y.values,yr[0],yr[1],'log',{label:'Y'});
+    yr[0]=bounds[0];yr[1]=bounds[1];
+  }
   if (
     !Number.isInteger(Number(s.step)) ||
     s.step < 1 ||
@@ -403,6 +413,10 @@ export function controls(card, sp, d, onChange) {
     input(projection, key, title, 'number');
     projectionCoordinateFields.set(key, projection.querySelector('[data-twod=' + key + ']').closest('label'));
   }
+  select(projection,'xProjectionScale','Top scale',[['linear','Linear'],['log','Log10']]);
+  select(projection,'yProjectionScale','Side scale',[['linear','Linear'],['log','Log10']]);
+  select(projection,'xProjectionNotation','Top notation',[['inherit','Global Y'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
+  select(projection,'yProjectionNotation','Side notation',[['inherit','Global X'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
   for (const [key, title] of [
     ['xProjectionMin', 'Intensity min (auto)'],
     ['xProjectionMax', 'Intensity max (auto)'],
@@ -782,7 +796,7 @@ export function colorStops(s, options = {}) {
   const key = s.scheme !== 'inherit' ? s.scheme : options.scheme;
   return COLOR_SCHEMES[key]?.gradient || COLOR_SCHEMES.turbo.gradient;
 }
-export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient, zScale = 'linear') {
+export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient, zScale = 'linear', yScale = 'linear') {
   const { v, xr, yr, zmin, zmax } = m,
     canvas = document.createElement('canvas');
   canvas.width = width;
@@ -793,7 +807,7 @@ export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient, z
       cellIndex(v.x.values, xr[0] + ((i + 0.5) / width) * (xr[1] - xr[0])),
     ),
     ys = Array.from({ length: height }, (_, j) =>
-      cellIndex(v.y.values, yr[1] - ((j + 0.5) / height) * (yr[1] - yr[0])),
+      cellIndex(v.y.values, axisValue(1-(j+0.5)/height,yr[0],yr[1],yScale)),
     );
   for (let j = 0; j < height; j++)
     for (let i = 0; i < width; i++) {
@@ -916,7 +930,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
     pw = w - insets.left - insets.right,
     ph = h - insets.top - insets.bottom,
     X = (a) => x + ((a - xr[0]) / (xr[1] - xr[0])) * pw,
-    Y = (a) => y + ph - ((a - yr[0]) / (yr[1] - yr[0])) * ph;
+    Y = (a) => y + ph - axisCoordinate(a,yr[0],yr[1],s.yScale) * ph;
   if (pw < 35 || ph < 35) throw Error('2D subplot too small for map and projections');
   const top = { x, y: topY, w: pw, h: topH },
     side = { x: x + pw + gapX, y, w: w * 0.14, h: ph },
@@ -976,6 +990,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
             Math.max(1, Math.ceil(ph * scale)),
             stops,
             s.zScale,
+            s.yScale,
           );
         ctx.drawImage(image, x, y, pw, ph);
       } else
@@ -1044,7 +1059,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
   const xt = options.xTicks
       ? options.xTicks(...xr, Number(s.xStep), 5)
       : Array.from({ length: 5 }, (_, k) => xr[0] + ((xr[1] - xr[0]) * k) / 4),
-    yt = options.yTicks
+    yt = s.yScale==='log' ? scaledTicks(yr[0],yr[1],'log',5) : options.yTicks
       ? options.yTicks(...yr, Number(s.yStep), 5)
       : Array.from({ length: 5 }, (_, k) => yr[0] + ((yr[1] - yr[0]) * k) / 4);
   const xf = tickFormatter(xt, options.xTickFormat),
@@ -1080,17 +1095,23 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       [c0, e0] = extent(p.y, yi),
       ap = (b0 - a0) * 0.08,
       cp = (e0 - c0) * 0.08,
-      a = s.xProjectionMin === '' ? a0 - ap : Number(s.xProjectionMin),
-      b = s.xProjectionMax === '' ? b0 + ap : Number(s.xProjectionMax),
-      c = s.yProjectionMin === '' ? c0 - cp : Number(s.yProjectionMin),
-      e = s.yProjectionMax === '' ? e0 + cp : Number(s.yProjectionMax);
+      xScale=s.xProjectionScale||'linear',yScale=s.yProjectionScale||'linear',
+      xBounds=hasTop?positiveAxisDomain(p.x,
+        s.xProjectionMin === '' ? a0 - ap : Number(s.xProjectionMin),
+        s.xProjectionMax === '' ? b0 + ap : Number(s.xProjectionMax),
+        xScale,{label:'Top projection',explicitMin:s.xProjectionMin!=='',explicitMax:s.xProjectionMax!==''}):[a0-ap,b0+ap],
+      yBounds=hasSide?positiveAxisDomain(p.y,
+        s.yProjectionMin === '' ? c0 - cp : Number(s.yProjectionMin),
+        s.yProjectionMax === '' ? e0 + cp : Number(s.yProjectionMax),
+        yScale,{label:'Side projection',explicitMin:s.yProjectionMin!=='',explicitMax:s.yProjectionMax!==''}):[c0-cp,e0+cp],
+      [a,b]=xBounds,[c,e]=yBounds;
     if (
       (hasTop && (!Number.isFinite(a + b) || a >= b)) ||
       (hasSide && (!Number.isFinite(c + e) || c >= e))
     )
       throw Error('Invalid projection intensity range');
-    const XP = (z) => top.y + top.h - ((z - a) / (b - a)) * top.h,
-      YP = (z) => side.x + ((z - c) / (e - c)) * side.w,
+    const XP = (z) => top.y + top.h - axisCoordinate(z,a,b,xScale) * top.h,
+      YP = (z) => side.x + axisCoordinate(z,c,e,yScale) * side.w,
       rangeText = (r, axis) => `${r[0].toPrecision(4)}–${r[1].toPrecision(4)} ${axis.unit}`;
     if (hasTop) {
       projectionRegions.push({
@@ -1102,16 +1123,15 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         xmax: xr[1],
         ymin: a,
         ymax: b,
+        yScale:xScale,
         projection: 'top',
       });
       clip(top, () => line(xi, (i) => [X(v.x.values[i]), XP(p.x[i])]));
       border(top);
-      const pf = tickFormatter(
-        Array.from({ length: 4 }, (_, k) => a + ((b - a) * k) / 3),
-        options.yTickFormat,
-      );
-      for (let k = 0; k <= 3; k++) {
-        const z = a + ((b - a) * k) / 3;
+      const topTicks=scaledTicks(a,b,xScale,4);
+      const topNotation=s.xProjectionNotation&&s.xProjectionNotation!=='inherit'?s.xProjectionNotation:options.yTickFormat?.notation;
+      const pf=tickFormatter(topTicks,{...options.yTickFormat,notation:topNotation});
+      for (const z of topTicks) {
         text(pf.format(z), top.x - 5, XP(z), tick, 'right');
       }
       if (pf.exponent) text(pf.multiplier, top.x - 5, top.y - 10, tick, 'right');
@@ -1148,20 +1168,21 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         ph: side.h,
         xmin: c,
         xmax: e,
+        xScale:yScale,
         ymin: yr[0],
         ymax: yr[1],
+        yScale:s.yScale,
         projection: 'side',
         axisHitWidth: gapX,
       });
       clip(side, () => line(yi, (j) => [YP(p.y[j]), Y(v.y.values[j])]));
       border(side);
       const n = Math.max(1, Math.min(3, Math.floor(side.w / (tick * 5))));
-      const pf = tickFormatter(
-        Array.from({ length: n + 1 }, (_, k) => c + ((e - c) * k) / n),
-        options.xTickFormat,
-      );
+      const sideTicks=scaledTicks(c,e,yScale,n+1);
+      const sideNotation=s.yProjectionNotation&&s.yProjectionNotation!=='inherit'?s.yProjectionNotation:options.xTickFormat?.notation;
+      const pf=tickFormatter(sideTicks,{...options.xTickFormat,notation:sideNotation});
       for (let k = 0; k <= n; k++) {
-        const q = c + ((e - c) * k) / n;
+        const q = sideTicks[k];
         text(
           pf.format(q),
           YP(q),
