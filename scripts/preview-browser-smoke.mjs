@@ -361,6 +361,14 @@ try {
     assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose one combined line/symbol style selector');
     if(process.env.SPINPLOT_TEST_EXTERNAL_CURVE_STYLE_LAYOUT==='1')assert.equal(await sourceCard.locator('.order-list [data-curve-style]').count(),0,'Curve style selectors must sit outside the scrollable order data box');
     assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),0,'Line and marker choices must use a single selector');
+    if(process.env.SPINPLOT_TEST_ADJACENT_SYMBOL_COLUMN==='1'){
+      assert.equal(await sourceCard.locator('.current-order-columns > .order-list').count(),1,'Curve names must remain in a standalone list');
+      assert.equal(await sourceCard.locator('.current-order-columns > .curve-style-list').count(),1,'Symbol controls must occupy a separate column');
+      const columns=await sourceCard.locator('.current-order-columns').evaluate(el=>{const names=el.querySelector('.order-list').getBoundingClientRect(),styles=el.querySelector('.curve-style-list').getBoundingClientRect();return {namesRight:names.right,stylesLeft:styles.left,gap:styles.left-names.right};});
+      assert.ok(columns.gap>=3,'Curve style column must be visually separated from the data list');
+      const selected=await sourceCard.locator('[data-curve-style="1"] option:checked').textContent();
+      assert.match(selected.trim(),/^[━┄┈○●□■△▲◇◆]+$/u,'Styles must use glyphs rather than descriptive text');
+    }
     await page.evaluate(() => {window.__markerFillCount=0;const original=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){window.__markerFillCount++;return original.apply(this,args);};});
     await sourceCard.locator('[data-curve-style="1"]').selectOption('filled-triangle');
     await sourceCard.locator('[data-curve-style="2"]').selectOption('dashed-filled-diamond');
