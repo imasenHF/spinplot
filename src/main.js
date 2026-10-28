@@ -285,7 +285,7 @@ function preparePlotModel(){
   if(sp.twoD){
    let d;try{d=subplotMatrix(sp)}catch(e){const invalidSp={...sp,twoD:null,curves:[],renderNotice:e.message};return{sp:invalidSp,index:i,curves:[],xmin:0,xmax:1,xStep:NaN,ymin:-1,ymax:1,yStep:NaN,matrix:null};}
    if(!d){const invalidSp={...sp,twoD:null,curves:[],renderNotice:'2D data are unavailable.'};return{sp:invalidSp,index:i,curves:[],xmin:0,xmax:1,xStep:NaN,ymin:-1,ymax:1,yStep:NaN,matrix:null};}
-   const t=sp.twoD.settings;t.mode=['stack','overlap','scan','contour','surface3d'].includes(sp.mode)?sp.mode:'heatmap';t.yScale=sp.yScale&&sp.yScale!=='inherit'?sp.yScale:$('globalYScale').value;t.offset=Number.isFinite(Number(sp.offsetScale))?Number(sp.offsetScale):1;TwoD.migrate(d,t);
+   const t=sp.twoD.settings;t.mode=['stack','overlap','scan','contour','surface3d'].includes(sp.mode)?sp.mode:'heatmap';t.yScale=sp.yScale&&sp.yScale!=='inherit'?sp.yScale:($('globalYScale')?.value||'linear');t.offset=Number.isFinite(Number(sp.offsetScale))?Number(sp.offsetScale):1;TwoD.migrate(d,t);
    if(sp.mode==='scan'||sp.mode==='overlap')return derivedTwoDPlotModel(sp,i,d);
    for(const a of ['x','y']){const cfg=axisConfig(sp,a);const ax=orient2DForFit(sp)[a].values;t[a+'Min']=Number.isFinite(cfg.min)?cfg.min:Math.min(ax[0],ax.at(-1));t[a+'Max']=Number.isFinite(cfg.max)?cfg.max:Math.max(ax[0],ax.at(-1));t[a+'Step']=cfg.step;}
    t.zMin=t.zUseGlobal!==false?$('globalZMin').value:t.zMin;t.zMax=t.zUseGlobal!==false?$('globalZMax').value:t.zMax;const {xr,yr}=TwoD.model(d,t);return{sp,index:i,curves:[],xmin:xr[0],xmax:xr[1],ymin:yr[0],ymax:yr[1],matrix:d};
