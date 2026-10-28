@@ -171,11 +171,11 @@ npm run build
 - 当前仍只修改 `preview/modularization-phase1-20261009` 及主站的独立静态预览目录；正式 SpinPlot `main` 与 `/spinplot/` 不得修改或合并。
 
 
-## 当前修改（2026-10-28，待最终验收）
+## 当前修改与验收（2026-10-28）
 
 - 新建子图的频率对齐默认固定为 `freqMode: local`、`localFreqMode: mean`；全局频率下拉菜单原有默认值已是 `local_mean`，不改变用户显式选择全局模式时的传播逻辑，也不覆盖载入的旧项目设置。
 - 1D 曲线派生的 Heatmap 保留原 Data 面板的 Available curves、Current order、逐曲线样式菜单和管理工具栏，不再替换为 `Current data: N manual 1D curves` 单项；直接导入的二维数据仍使用矩阵数据摘要。相关代码位于 `src/main.js`、`src/twod/ui.js`；新增 Chromium 检查验证切换后控件数量、曲线排序与样式选项。
-- 当前源码更改仅在 `preview/modularization-phase1-20261009`，正式 `main` 与 `/spinplot/` 未修改。最新 CI、临时预览发布及公开浏览器验证必须在任务完成时重新检查，不以先前运行结果替代。
+- 完整数值、构建、Chromium 回归与迁移前对照通过 [Actions 40695773639](https://github.com/imasenHF/spinplot/actions/runs/40695773639)；新版静态预览已同步主站，Pages 部署通过 [40696290984](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40696290984)，公开预览浏览器回归在部署后复测通过 [40696141839（第 2 次运行）](https://github.com/imasenHF/spinplot/actions/runs/40696141839)。正式 SpinPlot `main`、`/spinplot/` 和 Draft PR #1 的未合并状态均保持不变。
 
 ## 最新验收记录（2026-10-27）
 
