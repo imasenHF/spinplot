@@ -317,6 +317,8 @@ export function controls(card, sp, d, onChange) {
     e.value = s[key];
     e.onchange = () => {
       s[key] = e.value;
+      if (key === 'zScale') fitZ();
+      if (key === 'xProjectionScale' || key === 'yProjectionScale') fitProjection(key[0]);
       onChange();
     };
     l.append(e);
@@ -339,6 +341,35 @@ export function controls(card, sp, d, onChange) {
     text.textContent = title;
     l.append(e, text);
     parent.append(l);
+  }
+  // Fit from the current visible matrix and show real numerical limits.
+  function fitZ(){
+    const m=model(d,{...s,zMin:'',zMax:'',zUseGlobal:false});
+    s.zUseGlobal=false;
+    s.zMin=Number(m.zmin.toPrecision(10));
+    s.zMax=Number(m.zmax.toPrecision(10));
+    const toggle=axes.querySelector('[data-twod=zUseGlobal]');
+    if(toggle)toggle.checked=false;
+    for(const key of ['zMin','zMax']){
+      const el=axes.querySelector('[data-twod='+key+']');
+      if(el)el.value=String(s[key]);
+    }
+  }
+  function fitProjection(axis){
+    const m=model(d,{...s,zMin:'',zMax:'',zUseGlobal:false});
+    const vals=(axis==='x'?m.xi.map(i=>m.p.x[i]):m.yi.map(j=>m.p.y[j])).filter(Number.isFinite);
+    if(!vals.length)return;
+    let lo=Math.min(...vals),hi=Math.max(...vals);
+    if(lo===hi){const pad=Math.max(Math.abs(lo)*0.1,1e-10);lo-=pad;hi+=pad;}
+    if(s[axis+'ProjectionScale']==='log'&&lo>0){lo/=1.1;hi*=1.1;}
+    else{const pad=(hi-lo)*.05;lo-=pad;hi+=pad;}
+    const prefix=axis+'Projection';
+    s[prefix+'Min']=Number(lo.toPrecision(10));
+    s[prefix+'Max']=Number(hi.toPrecision(10));
+    for(const key of [prefix+'Min',prefix+'Max']){
+      const el=projection.querySelector('[data-twod='+key+']');
+      if(el)el.value=String(s[key]);
+    }
   }
   select(body, 'component', 'Signal', [
     ['real', 'Real'],
@@ -413,10 +444,13 @@ export function controls(card, sp, d, onChange) {
     input(projection, key, title, 'number');
     projectionCoordinateFields.set(key, projection.querySelector('[data-twod=' + key + ']').closest('label'));
   }
-  select(projection,'xProjectionScale','Top scale',[['linear','Linear'],['log','Log10']]);
-  select(projection,'yProjectionScale','Side scale',[['linear','Linear'],['log','Log10']]);
-  select(projection,'xProjectionNotation','Top notation',[['inherit','Global Y'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
-  select(projection,'yProjectionNotation','Side notation',[['inherit','Global X'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
+  select(projection,'xProjectionScale','Top scale',[['linear','Linear'],['log','Log10 / SymLog'],['scientific','Scientific']]);
+  select(projection,'yProjectionScale','Side scale',[['linear','Linear'],['log','Log10 / SymLog'],['scientific','Scientific']]);
+  // Compatibility-only legacy tick-notation selectors: display mode now owns it.
+  const legacyTop=select(projection,'xProjectionNotation','Top notation',[['inherit','Global Y'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
+  const legacySide=select(projection,'yProjectionNotation','Side notation',[['inherit','Global X'],['auto','Auto'],['decimal','Decimal'],['scientific','Scientific']]);
+  legacyTop.closest('label').hidden=true;
+  legacySide.closest('label').hidden=true;
   for (const [key, title] of [
     ['xProjectionMin', 'Intensity min (auto)'],
     ['xProjectionMax', 'Intensity max (auto)'],
@@ -458,8 +492,8 @@ export function controls(card, sp, d, onChange) {
   ])
     input(positionBody, key, title, 'number');
   check(axes, 'zUseGlobal', 'Use global Z defaults');
-  const zScaleControl=select(axes,'zScale','Z axis scale',[['linear','Linear'],['log','Log10']]);
-  zScaleControl.title='Log10 only shows strictly positive Z samples. Zero and negative values are masked.';
+  const zScaleControl=select(axes,'zScale','Z scale',[['linear','Linear'],['log','Log10 / SymLog'],['scientific','Scientific']]);
+  zScaleControl.title='Positive-only Z uses Log10; bipolar Z uses sign-preserving SymLog. Scientific keeps linear spacing.';
   const zRow = document.createElement('div');
   zRow.className = 'grid2 control-pair';
   axes.append(zRow);
@@ -480,14 +514,7 @@ export function controls(card, sp, d, onChange) {
   check(axes, 'showColorbar', 'Show colorbar');
   const auto = document.createElement('button');
   auto.textContent = 'Auto Z';
-  auto.onclick = () => {
-    s.zUseGlobal = false;
-    axes.querySelector('[data-twod=zUseGlobal]').checked = false;
-    s.zMin = '';
-    s.zMax = '';
-    for (const key of ['zMin', 'zMax']) axes.querySelector('[data-twod=' + key + ']').value = '';
-    onChange();
-  };
+  auto.onclick = () => { fitZ(); onChange(); };
   axes.append(auto);
   select(colors, 'scheme', 'Heatmap / stack palette', [
     ['inherit', 'Inherit subplot / global'],
@@ -817,7 +844,7 @@ export function raster(m, width, height, stops = COLOR_SCHEMES.turbo.gradient, z
     for (let i = 0; i < width; i++) {
       const z = v.z[ys[j]][xs[i]],
         k = (j * width + i) * 4;
-      if (!Number.isFinite(z) || (zScale==='log' && z<=0)) continue;
+      if (!Number.isFinite(z)) continue;
       const c = color(stops, zFraction(z,zmin,zmax,zScale));
       image.data.set(c, k);
       image.data[k + 3] = 255;
@@ -1002,7 +1029,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           const ye = edge(v.y.values, j).map(Y);
           for (const i of xi) {
             const z = v.z[j][i];
-            if (!Number.isFinite(z) || (s.zScale==='log'&&z<=0)) continue;
+            if (!Number.isFinite(z)) continue;
             const xe = edge(v.x.values, i).map(X);
             ctx.fillStyle = css(color(stops, zFraction(z,zmin,zmax,s.zScale)));
             ctx.fillRect(
@@ -1067,7 +1094,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ? options.yTicks(...yr, Number(s.yStep), 5)
       : Array.from({ length: 5 }, (_, k) => yr[0] + ((yr[1] - yr[0]) * k) / 4);
   const xf = tickFormatter(xt, options.xTickFormat),
-    yf = tickFormatter(yt, options.yTickFormat);
+    yf = tickFormatter(yt, s.yScale==='scientific'?{...options.yTickFormat,notation:'scientific'}:options.yTickFormat);
   for (const a of (s.mode==='surface3d'?[]:xt))
     text(
       xf.format(a),
@@ -1103,11 +1130,11 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       xBounds=hasTop?positiveAxisDomain(p.x,
         s.xProjectionMin === '' ? a0 - ap : Number(s.xProjectionMin),
         s.xProjectionMax === '' ? b0 + ap : Number(s.xProjectionMax),
-        xScale,{label:'Top projection',explicitMin:s.xProjectionMin!=='',explicitMax:s.xProjectionMax!==''}):[a0-ap,b0+ap],
+        xScale,{label:'Top projection',explicitMin:s.xProjectionMin!=='',explicitMax:s.xProjectionMax!=='',signed:true}):[a0-ap,b0+ap],
       yBounds=hasSide?positiveAxisDomain(p.y,
         s.yProjectionMin === '' ? c0 - cp : Number(s.yProjectionMin),
         s.yProjectionMax === '' ? e0 + cp : Number(s.yProjectionMax),
-        yScale,{label:'Side projection',explicitMin:s.yProjectionMin!=='',explicitMax:s.yProjectionMax!==''}):[c0-cp,e0+cp],
+        yScale,{label:'Side projection',explicitMin:s.yProjectionMin!=='',explicitMax:s.yProjectionMax!=='',signed:true}):[c0-cp,e0+cp],
       [a,b]=xBounds,[c,e]=yBounds;
     if (
       (hasTop && (!Number.isFinite(a + b) || a >= b)) ||
@@ -1133,7 +1160,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       clip(top, () => line(xi, (i) => [X(v.x.values[i]), XP(p.x[i])]));
       border(top);
       const topTicks=scaledTicks(a,b,xScale,4);
-      const topNotation=s.xProjectionNotation&&s.xProjectionNotation!=='inherit'?s.xProjectionNotation:options.yTickFormat?.notation;
+      const topNotation=xScale==='scientific'?'scientific':xScale==='log'?'auto':s.xProjectionNotation&&s.xProjectionNotation!=='inherit'?s.xProjectionNotation:options.yTickFormat?.notation;
       const pf=tickFormatter(topTicks,{...options.yTickFormat,notation:topNotation});
       for (const z of topTicks) {
         text(pf.format(z), top.x - 5, XP(z), tick, 'right');
@@ -1183,7 +1210,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       border(side);
       const n = Math.max(1, Math.min(3, Math.floor(side.w / (tick * 5))));
       const sideTicks=scaledTicks(c,e,yScale,n+1);
-      const sideNotation=s.yProjectionNotation&&s.yProjectionNotation!=='inherit'?s.yProjectionNotation:options.xTickFormat?.notation;
+      const sideNotation=yScale==='scientific'?'scientific':yScale==='log'?'auto':s.yProjectionNotation&&s.yProjectionNotation!=='inherit'?s.yProjectionNotation:options.xTickFormat?.notation;
       const pf=tickFormatter(sideTicks,{...options.xTickFormat,notation:sideNotation});
       for (let k = 0; k <= n; k++) {
         const q = sideTicks[k];
@@ -1316,7 +1343,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ctx.moveTo(bar.x + bar.w, py);
       ctx.lineTo(bar.x + bar.w + 4, py);
       ctx.stroke();
-      text(s.zScale==='log'?z.toExponential(1):z.toPrecision(4), bar.x + bar.w + 6, py, tick, 'left');
+      text(s.zScale==='scientific'?z.toExponential(2):s.zScale==='log'?Number(z.toPrecision(3)).toString():z.toPrecision(4), bar.x + bar.w + 6, py, tick, 'left');
     }
     const zTitle = s.colorbarLabel || options.z?.label;
     if (

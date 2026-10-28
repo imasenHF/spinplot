@@ -20,7 +20,7 @@ export function contourSegments(model, levels, scale = 'linear') {
           [X[i1], Y[j1], Z[j1][i1]],
           [X[i0], Y[j1], Z[j1][i0]],
         ];
-        if (corners.some(p => !Number.isFinite(p[2]) || (scale === 'log' && !(p[2] > 0)))) continue;
+        if (corners.some(p => !Number.isFinite(p[2]))) continue;
         const edges = [[0,1],[1,2],[2,3],[3,0]];
         const hits = [];
         for (let edge = 0; edge < 4; edge++) {

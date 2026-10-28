@@ -8,6 +8,13 @@ assert.deepEqual(positiveAxisDomain(values,.2,5,'log',{explicitMin:true,explicit
 assert.throws(()=>positiveAxisDomain(values,0,100,'log',{explicitMin:true}),/minimum must be positive/);
 assert.throws(()=>positiveAxisDomain([-1,0],-3,3,'log'),/positive data/);
 assert.throws(()=>positiveAxisDomain(values,5,1,'log',{explicitMin:true,explicitMax:true}),/increasing/);
+const bipolar=positiveAxisDomain([-100,0,10],-120,12,'log',{signed:true});
+assert.deepEqual(bipolar,[-120,12]);
+const u=axisCoordinate(-10,-100,100,'log');
+assert.ok(Number.isFinite(u) && u<.5);
+near(axisValue(u,-100,100,'log'),-10);
+near(axisCoordinate(0,-100,100,'log'),.5);
+near(axisCoordinate(10,-100,100,'scientific'),.55);
 const constant=positiveAxisDomain([10,10],10,10,'log');
 assert.ok(constant[0]>0 && constant[1]>constant[0]);
 near(axisCoordinate(10,1,100,'log'),.5);

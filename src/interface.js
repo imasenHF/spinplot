@@ -30,7 +30,7 @@ function compactSubplotLabels(card) {
   labelMode:['Labels'],legendPosition:['Legend'],
   directLabelX:['Direct X'],directLabelYShift:['Direct Y'],
   noiseRegions:['Noise','Noise reference coordinates for this subplot.'],
-  xUseGlobal:['Global X'],yUseGlobal:['Global Y'],yScale:['Y scale'],
+  xUseGlobal:['Global X'],yUseGlobal:['Global Y'],yScale:['Y scale','Log10 for positive Y; SymLog for bipolar intensity. Scientific only changes tick labels.'],
   xTickDigits:['X digits'],yTickDigits:['Y digits'],
   xTickNotation:['X notation'],yTickNotation:['Y notation'],
   xAxisLabel:['X title'],yAxisLabel:['Y title'],
@@ -39,7 +39,7 @@ function compactSubplotLabels(card) {
   gridRow:['Row'],gridCol:['Column'],rowSpan:['Row span'],colSpan:['Col span']
  };
  const twoD={
-  zScale:['Z scale','Log10 requires positive signal values. Nonpositive samples are masked, not shifted.'],
+  zScale:['Z scale','Log10 for all-positive signals, sign-preserving SymLog for bipolar data; Scientific uses linear spacing.'],
   zMin:['Z min'],zMax:['Z max'],zUseGlobal:['Global Z'],
   contourLevels:['Levels','Number of contour levels between Z min and max.'],
   viewAzimuth:['Azimuth'],viewElevation:['Elevation'],viewZStretch:['Z stretch'],viewZoom:['Zoom'],
@@ -94,7 +94,7 @@ export function organizeSubplot(card,sp,{axisInfo,frequency,onChange,onProcessin
  // Split the axes into matching nested sections; range inheritance has an explicit scope.
  const axesBody=oldAxes.querySelector('.local-block');for(const axis of ['x','y']){const A=axis.toUpperCase(),part=section(A+' axis','axis'+A);for(const k of [axis+'UseGlobal',...(axis==='y'?['yScale']:[]),axis+'Min',axis+'TickDigits',axis==='x'?'linkX':'linkY',...(axis==='y'?['showYTicks']:[])])move(field(k),part.body,axesBody);field(axis+'UseGlobal').nextElementSibling.textContent='Global '+A;const title=two(axis+'Label');if(title)move(title,part.body,axesBody);if(!title){const wrap=document.createElement('div');wrap.className='field';const label=document.createElement('label');label.textContent=A+' title';const input=document.createElement('input');input.value=sp[axis+'AxisLabel']||'';input.placeholder='Inherit global / coordinate name';input.dataset.field=axis+'AxisLabel';input.onchange=()=>{sp[axis+'AxisLabel']=input.value;onChange();};wrap.append(label,input);part.body.append(wrap);}axesBody.append(part.box);}
  // Match X/Y field ordering and row widths to the colorbar controls.
- for(const axis of ['x','y']){const b=axesBody.querySelector('[data-section=axis'+axis.toUpperCase()+'] .local-block'),title=two(axis+'Label')?.parentElement||field(axis+'AxisLabel')?.closest('.field');if(title)b.prepend(title);const ranges=field(axis+'Min').closest('.grid3');ranges.classList.add('control-triple');field(axis+'TickDigits').closest('.grid2').classList.add('control-pair');}
+ for(const axis of ['x','y']){const b=axesBody.querySelector('[data-section=axis'+axis.toUpperCase()+'] .local-block'),title=two(axis+'Label')?.parentElement||field(axis+'AxisLabel')?.closest('.field');if(title)b.prepend(title);const ranges=field(axis+'Min').closest('.grid3');ranges.classList.add('control-triple');field(axis+'TickDigits').closest('.grid2').classList.add('control-pair');if(axis==='y')field('yTickNotation').closest('.field').hidden=true;}
  if(sp.twoD){const z=section('Z / colorbar','axisZ');for(const k of ['zUseGlobal','zScale','zMin','colorbarLabel','hideColorbarTitle','showColorbar'])move(two(k),z.body,axesBody);const auto=[...axesBody.children].find(e=>e.tagName==='BUTTON'&&e.textContent==='Auto Z');if(auto){const actions=document.createElement('div');actions.className='row';actions.append(auto);z.body.append(actions);}axesBody.append(z.box);}
  if(oldProjection){oldProjection.querySelector('summary').textContent='Projections';oldProjection.open=open.projections??true;oldProjection.addEventListener('toggle',()=>{open.projections=oldProjection.open;});const body=oldProjection.querySelector('.local-block');for(const [axis,name,keys]of [['x','Top projection',['xMode','xProjectionScale','xProjectionNotation','projectionYMin','projectionYMax','xProjectionMin','xProjectionMax','showXProjection','showXProjectionRange','showXProjectionTitle','xProjectionTitle']],['y','Right projection',['yMode','yProjectionScale','yProjectionNotation','projectionXMin','projectionXMax','yProjectionMin','yProjectionMax','showYProjection','showYProjectionRange','showYProjectionTitle','yProjectionTitle']]]){const part=section(axis==='x'?'Top':'Side','projection'+axis,true);for(const k of keys){const el=two(k);move(el,part.body,body);if(k.startsWith('projection')){const source=axis==='x'?axisInfo.y:axisInfo.x;el.parentElement.firstChild.textContent=k.endsWith('Min')?'Range min':'Range max';}}// Keep each range together and visibility switches on their own rows.
  const rangePair=(first,second)=>{const row=document.createElement('div');row.className='control-pair';const a=two(first).parentElement,b=two(second).parentElement;a.before(row);row.append(a,b);};

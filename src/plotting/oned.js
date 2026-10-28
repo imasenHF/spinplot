@@ -262,7 +262,8 @@ export function renderFigure(
     });
   }
   function subplotTickFormat(sp, axis) {
-    const notation = sp[axis + "TickNotation"];
+    const mode=axis==='y'?(sp.yScale&&sp.yScale!=='inherit'?sp.yScale:($('globalYScale')?.value||'linear')):'linear';
+    const notation = mode==='scientific'?'scientific':mode==='log'?'auto':sp[axis + "TickNotation"];
     return {
       digits:
         sp[axis + "TickDigits"] !== "" && sp[axis + "TickDigits"] !== undefined
@@ -567,7 +568,7 @@ export function renderFigure(
       const upperSource = sp.yUseGlobal ? $('globalYMax').value : sp.yMax;
       const yValues = function* () { for(const c of curves) for(const val of c.yd) yield val; };
       const [yBottom,yTop] = positiveAxisDomain(yValues(),m.ymin,m.ymax,yScale,{
-        explicitMin:String(boundsSource??'').trim()!=='',explicitMax:String(upperSource??'').trim()!=='',label:'Y'
+        explicitMin:String(boundsSource??'').trim()!=='',explicitMax:String(upperSource??'').trim()!=='',label:'Y',signed:true
       });
       const compactY = cellH < 180,
         gTitleDistance = Number.isFinite(gcfg.titleDistance)
