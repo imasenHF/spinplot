@@ -43,7 +43,10 @@ export function createDisplayCurves(curves, sp) {
 export const applyStackOffsets = createDisplayCurves;
 
 export function resolveCurveStyle(sp, index) {
-  const value = sp?.derivedFromTwoD && sp.scanCurveStyle ? { style: sp.scanCurveStyle } : sp?.curveStyles?.[index] || {};
+  const configured = sp?.curveStyles?.[index];
+  const scanStyle = sp?.derivedFromTwoD && sp.scanCurveStyle;
+  const value = scanStyle ? { style: sp.scanCurveStyle } : configured || {};
+  if (!configured && !scanStyle) return { mode: "line", symbol: "circle", filled: false, lineDash: [], style: "line" };
   const style = value.style;
   if (typeof style === "string") {
     const lineOnly = { line: [], "dashed-line": [6, 3], "dotted-line": [1.5, 2.5] };
