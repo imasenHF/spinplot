@@ -189,6 +189,12 @@ export function model(d, s) {
   cache.set(d, { key, value });
   return value;
 }
+// Resolve Auto Z to the actual physical range of the current matrix window.
+// Return numbers rather than clearing the corresponding user-visible fields.
+export function autoZBounds(d,s){
+  const m=model(d,{...s,zUseGlobal:false,zMin:'',zMax:''});
+  return [Number(m.zmin.toPrecision(10)),Number(m.zmax.toPrecision(10))];
+}
 export function controls(card, sp, d, onChange) {
   const s = migrate(d, sp.twoD.settings),
     root = card.querySelector('.subplot-body');
@@ -344,10 +350,10 @@ export function controls(card, sp, d, onChange) {
   }
   // Fit from the current visible matrix and show real numerical limits.
   function fitZ(){
-    const m=model(d,{...s,zMin:'',zMax:'',zUseGlobal:false});
+    const [minimum,maximum]=autoZBounds(d,s);
     s.zUseGlobal=false;
-    s.zMin=Number(m.zmin.toPrecision(10));
-    s.zMax=Number(m.zmax.toPrecision(10));
+    s.zMin=minimum;
+    s.zMax=maximum;
     const toggle=axes.querySelector('[data-twod=zUseGlobal]');
     if(toggle)toggle.checked=false;
     for(const key of ['zMin','zMax']){

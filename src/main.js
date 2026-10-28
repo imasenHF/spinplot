@@ -398,13 +398,12 @@ function initEvents(){
     p.y<=r.colorbar.y+r.colorbar.h
   );
   if(cb){
-    const s=state.subplots[cb.subplot].twoD.settings;
-    s.zUseGlobal=false;
-    s.zMin='';
-    s.zMax='';
-    renderSubplotUI();
-    draw();
-    recordHistory('Auto Z');
+    const sp=state.subplots[cb.subplot],s=sp.twoD.settings;
+    try{
+      const [minimum,maximum]=TwoD.autoZBounds(subplotMatrix(sp),s);
+      s.zUseGlobal=false;s.zMin=minimum;s.zMax=maximum;
+      renderSubplotUI();draw();recordHistory('Auto Z');
+    }catch(err){setStatus(err.message,'bad');}
     return;
   }
   const r=regionAtPoint(p.x,p.y);if(!r)return;if(r.projection){const sp=state.subplots[r.subplot],s=sp.twoD.settings,axis=r.projection==='top'?'x':'y',v=orient2DForFit(sp)[axis];sp[axis+'UseGlobal']=false;sp[axis+'Min']=s[axis+'Min']=Math.min(v.values[0],v.values.at(-1));sp[axis+'Max']=s[axis+'Max']=Math.max(v.values[0],v.values.at(-1));const prefix=r.projection==='top'?'xProjection':'yProjection';s[prefix+'Min']='';s[prefix+'Max']='';renderSubplotUI();draw();recordHistory('Fit projection axes');return;}if(r.twoD){const sp=state.subplots[r.subplot];let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}const b=TwoD.defaults(matrix);Object.assign(sp.twoD.settings,{xMin:b.xMin,xMax:b.xMax,yMin:b.yMin,yMax:b.yMax,swap:b.swap});for(const a of ['x','y']){sp[a+'UseGlobal']=false;sp[a+'Min']=b[a+'Min'];sp[a+'Max']=b[a+'Max'];}renderSubplotUI();draw();recordHistory('Fit 2D axes');return;}if($('linkXAxes').checked&&state.subplots[r.subplot].linkX){$('globalXMin').value='';$('globalXMax').value=''}else{const sp=state.subplots[r.subplot];sp.xMin='';sp.xMax=''}renderSubplotUI();draw();recordHistory('Fit subplot X');logAction(`Subplot ${r.subplot+1}: X fitted`)};
