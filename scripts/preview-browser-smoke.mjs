@@ -358,8 +358,8 @@ try {
     assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="scan"]').count(),1,'Manual 1D subplots must offer Variable scan');
-    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose an independent display-style selector');
-    assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),3,'Each curve must expose an independent symbol-shape selector');
+    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose one combined line/symbol style selector');
+    assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),0,'Line and marker choices must use a single selector');
     await page.evaluate(() => {window.__markerFillCount=0;const original=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){window.__markerFillCount++;return original.apply(this,args);};});
     await sourceCard.locator('[data-curve-style="1"]').selectOption('symbols');
     await sourceCard.locator('[data-curve-symbol="1"]').selectOption('triangle');
