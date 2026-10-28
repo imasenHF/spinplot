@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Put the Current order names and glyph-only line/marker style selectors into two genuinely separate side-by-side columns with synchronized scrolling; no menu overlays the data-list component. The style choices retain their existing semantic values for saved projects.
+
 - Keep new subplots on Local mean frequency alignment by default, even when the global frequency mode has previously been edited; explicit global-mode changes still apply through their existing propagation mechanism.
 - Preserve the Available curves, Current order, curve-style selectors, and curve-management toolbar when converting selected 1D curves from Overlap to a curve-derived Heatmap; native 2D matrices continue to use the compact data display.
 
