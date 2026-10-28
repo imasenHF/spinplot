@@ -332,7 +332,7 @@ try {
     const zSettings=zReset.config.subplots[0].twoD.settings;
     assert.ok(Number.isFinite(zSettings.zMin)&&Number.isFinite(zSettings.zMax)&&zSettings.zMax>zSettings.zMin,'Colorbar double-click must fill the fitted Z bounds numerically');
     assert.equal(zSettings.zMin,2,'Colorbar auto-fit minimum must reflect the visible synthetic 2D sample range');
-    assert.equal(zSettings.zMax,6,'Colorbar auto-fit maximum must reflect the visible synthetic 2D sample range');
+    assert.equal(zSettings.zMax,4,'Colorbar auto-fit maximum must respect the current X window (3305–3345 G), excluding the 3350 G column');
     assert.equal(zSettings.zUseGlobal,false,'Auto Z must store locally fitted numerical bounds');
     assert.equal(zSettings.xMin,3305,'Colorbar double-click must not reset X');
     assert.equal(zSettings.xMax,3345,'Colorbar double-click must not reset X');
