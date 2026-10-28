@@ -358,6 +358,15 @@ try {
     assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');
     assert.equal(await sourceCard.locator('[data-field="mode"] option[value="scan"]').count(),1,'Manual 1D subplots must offer Variable scan');
+    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose an independent display-style selector');
+    assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),3,'Each curve must expose an independent symbol-shape selector');
+    await page.evaluate(() => {window.__markerFillCount=0;const original=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){window.__markerFillCount++;return original.apply(this,args);};});
+    await sourceCard.locator('[data-curve-style="1"]').selectOption('symbols');
+    await sourceCard.locator('[data-curve-symbol="1"]').selectOption('triangle');
+    await sourceCard.locator('[data-curve-style="2"]').selectOption('both');
+    await sourceCard.locator('[data-curve-symbol="2"]').selectOption('diamond');
+    await page.waitForTimeout(250);
+    assert.ok(await page.evaluate(()=>window.__markerFillCount>0),'Symbols must be drawn on the interactive canvas');
     await sourceCard.locator('.order-item[data-curve="2"]').click();
     await sourceCard.locator('[data-action="moveTop"]').click();
     assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1]);
@@ -406,6 +415,7 @@ try {
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const saved=await save('browser-preview/manual-curves.spinplot.json');
     assert.equal(saved.rawCurves.length,3,'Derived heatmap must not append duplicate matrix data to the source data list');
+    assert.deepEqual(saved.config.subplots[0].curveStyles,{1:{mode:'symbols',symbol:'triangle'},2:{mode:'both',symbol:'diamond'}},'Per-curve display styles must persist in saved projects');
     assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
     assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
