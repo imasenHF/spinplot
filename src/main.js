@@ -222,7 +222,7 @@ function enableManualHeatmap(sp){
   let settings=sp.manualTwoDSettings?cloneJson(sp.manualTwoDSettings):TwoD.defaults(matrix);TwoD.migrate(matrix,settings);settings.open=false;
   sp.curves=[...curveIndices];sp.twoD={derivedFromCurves:true,curveIndices:[...curveIndices],settings,scanAxisRange:sp.manualTwoDScanAxisRange||{min:matrix.y.values[0],max:matrix.y.values.at(-1)}};
   delete sp.manualTwoDScanAxisRange;sp.mode='heatmap';syncManualMatrixSettings(sp);
-  renderSubplotUI();renderLayoutPreview();recordHistory('Create manual curve heatmap');scheduleDraw();logAction('Created heatmap from '+curveIndices.length+' manual 1D curves');
+  renderSubplotUI();requestAnimationFrame(()=>{const card=[...document.querySelectorAll('.subplot')][state.subplots.indexOf(sp)];for(const summary of card?.querySelectorAll('summary')||[])if(summary.textContent.trim()==='Projections')summary.parentElement.open=false;});renderLayoutPreview();recordHistory('Create manual curve heatmap');scheduleDraw();logAction('Created heatmap from '+curveIndices.length+' manual 1D curves');
  }catch(e){setStatus(e.message,'bad');renderSubplotUI();}
 }
 function addVariableScanSubplot(source,sourceIndex){
