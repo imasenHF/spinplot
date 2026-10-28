@@ -346,7 +346,8 @@ try {
     assert.equal(xySettings.xMax,3350,'Heatmap double-click must still reset X maximum');
     assert.equal(xySettings.yMin,0,'Heatmap double-click must still reset Y minimum');
     assert.equal(xySettings.yMax,10,'Heatmap double-click must still reset Y maximum');
-    assert.equal(xySettings.zMin,'','Heatmap axis reset must not reapply a local Z range');
+    assert.equal(xySettings.zMin,zSettings.zMin,'Heatmap XY reset must preserve the fitted Z minimum');
+    assert.equal(xySettings.zMax,zSettings.zMax,'Heatmap XY reset must preserve the fitted Z maximum');
     // Restore the export control state so the pre-migration comparison remains apples-to-apples.
     await page.locator('#imageFormat').selectOption('svg');
   }
