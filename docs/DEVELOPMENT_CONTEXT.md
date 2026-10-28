@@ -37,7 +37,7 @@
 - **新绘图模式：** Contour 与可旋转的 3D surface 已在模块化预览分支实现。3D 为具备深度遮挡的三角网格/WebGL 曲面，支持鼠标旋转、相机角度、Z 拉伸和缩放；视角控件放在 Plot 中、默认折叠。无 WebGL 场景采用同一网格的深度排序绘制。Heatmap、Contour、3D 支持 `zScale=linear|log`，Log10 严格筛除非正值，不改写源矩阵。
 - **坐标轴与投影：** 新增一维/二维 Y 轴全局和子图 Linear/Log10，以及顶部和右侧投影分别设置对数强度轴、普通/科学计数法。Log10 的刻度与鼠标坐标采用同一对数映射，不能显示零或负强度；显式无效边界必须报错。项目版本 11、配置版本 10 不变。新轴控件需在主站 Axes 面板重组时迁移，不能被丢弃。
 - **界面约束：** Current order 左侧独立曲线列表、右侧 34 px 纯符号样式列；参数标题用简短术语，必要解释使用动态有效的 `?` 提示，移除 Scan variable 长篇说明。图例/投影/坐标仍保留正确物理量、单位与保存配置。
-- **验证：** 预览代码的数值、CSV、旧项目 9/10/11、配置 10、生产构建、Chromium 交互和迁移前对照均通过 [40737957861](https://github.com/imasenHF/spinplot/actions/runs/40737957861)。预览静态资源 `index-C4239H4u.js`、`index-B6BT7PR8.css` 已同步主站，Pages [40738422130](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40738422130) 成功；公开站点新增功能的浏览器测试需单独确认。正式 `main` 与 `/spinplot/` 未修改，Draft PR #1 未合并。
+- **验证：** 预览代码的数值、CSV、旧项目 9/10/11、配置 10、生产构建、Chromium 交互和迁移前对照均通过 [40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)。预览静态资源 `index-C4239H4u.js`、`index-B6BT7PR8.css` 与完整同次构建 HTML 已同步主站，Pages [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 发布成功；线上浏览器完整复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。第一次公开测试失败因为部署时只替换 JS/CSS，旧 HTML 不包含 `globalYScale`，已改为整份同步 `preview-site/index.html`。正式 `main` 与 `/spinplot/` 未修改，Draft PR #1 未合并。
 
 ## 最近一次已核查的基线
 

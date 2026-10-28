@@ -25,7 +25,7 @@
 
 Log10 只接受**严格正值**；零值和负值被屏蔽，不进行绝对值变换或人为平移。等高线采用原始 X/Y 坐标的 marching squares；3D 使用三角网格与可旋转视角，`Plot → View` 视角面板默认折叠。旧项目配置仍默认线性轴。
 
-完整数值测试、构建、Chromium 交互和迁移前对照通过 [Actions #40737957861](https://github.com/imasenHF/spinplot/actions/runs/40737957861)；正式入口仍只代表 `main` 已发布功能。
+完整数值测试、生产构建、Chromium 交互与迁移前对照通过 [Actions #40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)；主站 Pages [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 发布成功，公开临时预览的完整 Chromium 复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。正式入口仍只代表 `main` 已发布功能。
 
 ## 使用与科研限制
 
