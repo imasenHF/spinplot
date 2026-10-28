@@ -9,6 +9,7 @@ const errors=[];
 try {
   const page = await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true});
   page.on('pageerror', err => errors.push(err.message));
+  page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
   const response = await page.goto(url,{waitUntil:'networkidle',timeout:45000});
   assert.equal(response.status(),200,'Preview HTML must be served');
   assert.match(await page.title(),/SpinPlot 0\.9\.2/);
@@ -167,7 +168,7 @@ try {
       throw new Error(`Project load timeout for ${name}: ${JSON.stringify(diagnostics)}`,{cause:error});
     }
     await page.waitForTimeout(150);
-    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')),await page.locator('#status').textContent());
+    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')),(await page.locator('#status').textContent())+' | '+errors.slice(-3).join(' | '));
   };
   const save=async path=>{const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#saveProjectBtn').click()]);await d.saveAs(path);return JSON.parse(fs.readFileSync(path));};
   for(const mode of ['overlay','manual-positive','manual-negative','auto-positive','auto-negative']){
