@@ -364,7 +364,8 @@ try {
     await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
     await page.waitForTimeout(200);
     assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
-    assert.equal(await sourceCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
+    const heatmapCard = page.locator('.subplot').filter({has:page.locator('.manual-scan-variable')}).first();
+    assert.equal(await heatmapCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
     assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),['Stack','Heatmap','Overlap','Variable scan (new subplot)'],'Curve-derived Heatmap must expose only the four supported plot modes');
     assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
     assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
