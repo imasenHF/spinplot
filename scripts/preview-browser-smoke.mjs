@@ -424,8 +424,8 @@ try {
     const saved=await save('browser-preview/manual-curves.spinplot.json');
     assert.equal(saved.rawCurves.length,3,'Derived heatmap must not append duplicate matrix data to the source data list');
     assert.deepEqual(saved.config.subplots[0].curveStyles,{1:{style:'filled-triangle'},2:{style:'dashed-filled-diamond'}},'Combined per-curve styles must persist in saved projects');
-    assert.equal(saved.config.subplots[0].lineWidth,'2.8','Subplot line width must persist');
-    assert.equal(saved.config.subplots[0].symbolSize,'5.5','Subplot symbol size must persist');
+    assert.equal(saved.config.subplots[0].lineWidth,2.8,'Subplot line width must persist');
+    assert.equal(saved.config.subplots[0].symbolSize,5.5,'Subplot symbol size must persist');
     assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
     assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
     assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
