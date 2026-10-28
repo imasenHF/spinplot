@@ -70,6 +70,10 @@ export function vectorScene(design, metric, render) {
     clip() {
       st.clip = { d: path.join(" ") };
     },
+    fill() {
+      if (path.length)
+        scene.push({ type: "path", d: path.join(" "), fill: st.fillStyle, clip: st.clip });
+    },
     stroke() {
       if (path.length)
         scene.push({
