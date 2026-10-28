@@ -562,7 +562,7 @@ export function renderFigure(
         showYTitle =
           !$("hideYTitle").checked &&
           String(sp.yAxisLabel || $("yLabel").value || "").trim();
-      const yScale = sp.yScale && sp.yScale !== 'inherit' ? sp.yScale : $('globalYScale').value;
+      const yScale = sp.yScale && sp.yScale !== 'inherit' ? sp.yScale : ($('globalYScale')?.value || 'linear');
       const boundsSource = sp.yUseGlobal ? $('globalYMin').value : sp.yMin;
       const upperSource = sp.yUseGlobal ? $('globalYMax').value : sp.yMax;
       const yValues = function* () { for(const c of curves) for(const val of c.yd) yield val; };
