@@ -39,7 +39,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - Variable scan 可显示峰峰幅度、线宽或二者。二者同时出现时峰峰幅度使用左 Y 轴，线宽使用右 Y 轴；已有离散统计模式保留。
 - 功率拟合只在 Variable scan 中：峰峰幅度 `A√P/(1+P/P_half)+C` 与线宽 `A√(1+P/P_sat)+C` 两种独立候选模型。可分别选择拟合或同时拟合、设置拟合偏置、排除轨迹、限制功率参数上下界，显示 P、A、C、RMSE、R² 及告警。线宽模型依赖均匀功率展宽假设。
 - dB 衰减根据 P₀ 换算，兼容已校准的 mW/W/µW 功率轴。Export 提供独立特征与拟合 CSV；项目保存相关设置，重载按原始数据重算拟合结果。
-- 数值及 13 条合成谱浏览器验收通过 [40891497754](https://github.com/imasenHF/spinplot/actions/runs/40891497754)。新增排除点测试和记录变更需检查后续最新 Actions。未做真实谱线科学验证、拟合参数不确定度和多组分自动识别。独立预览静态快照需单独同步，不能以分支 CI 代替公开部署验收。
+- 数值及 13 条合成谱浏览器验收通过 [40891497754](https://github.com/imasenHF/spinplot/actions/runs/40891497754)。补充排除轨迹和参数上下界后的完整回归 [40892281885](https://github.com/imasenHF/spinplot/actions/runs/40892281885) 成功；独立预览静态快照 Pages 发布 [40892566215](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40892566215) 成功，公开 Chromium 验收 [40892808647](https://github.com/imasenHF/spinplot/actions/runs/40892808647) 成功。未做真实谱线科学验证、拟合参数不确定度和多组分自动识别。
 
 ### 二维查看与导出
 
