@@ -168,3 +168,27 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .surface-view-input{display:flex;align-items:center;gap:6px;min-width:0;}
 .surface-view-input input[type=range]{flex:1;min-width:0;width:100%;}
 .surface-view-input output{font-variant-numeric:tabular-nums;min-width:27px;text-align:right;font-size:11px;}
+
+
+/* Variable scan: source names and derived styles use the original two columns. */
+.curve-manager.scan-matrix .current-order-columns{grid-template-columns:minmax(0,1fr) minmax(105px,125px);gap:7px}
+.curve-manager.scan-matrix .order-item{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:18px}
+.curve-manager.scan-matrix .scan-derived-name{padding-left:12px;color:var(--text,#26383f);font-size:11px}
+.curve-manager.scan-matrix .curve-style-list{width:100%;min-width:0;overflow:hidden;border-color:transparent}
+.curve-manager.scan-matrix .curve-style-row{min-height:24px;height:24px}
+.curve-manager.scan-matrix .curve-style{min-width:0;width:100%;max-width:none;font-family:inherit;text-align:left;font-size:10px;padding:0 4px}
+.scan-source-spacer{pointer-events:none}
+.scan-fit-equation{background:var(--panel-bg,#f2f4f5);border:1px solid #b7c4c8;border-radius:3px;padding:10px 7px;margin:8px 0;overflow-x:auto}
+.scan-fit-equation math{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:17px;min-width:max-content}
+.scan-fit-model{border-top:1px solid #b7c4c8;padding-top:9px;margin-top:8px}
+.scan-fit-model:first-child{border-top:none;margin-top:0}
+.scan-fit-model .scan-fit-parameters{margin-top:8px}
+.scan-fit-model .scan-fit-parameters input[readonly]{background:#f2f5f7;color:#182d39;cursor:default;font-variant-numeric:tabular-nums}
+.scan-measured-power{font-size:11px;color:#364b58;padding-top:5px}
+.scan-exclude-panel{font-size:11px;margin-top:4px;border:1px solid #b5c2c8;padding:5px 7px;min-width:0}
+.scan-exclude-panel>summary{cursor:pointer;font-weight:600}
+.scan-help-inline{margin:6px 0;line-height:1.35}
+.scan-exclude-list{max-height:180px;overflow:auto;border:1px solid #cad1d4;background:#f8fafb;margin:5px 0;padding:4px}
+.scan-exclude-point{display:flex;align-items:center;gap:5px;min-height:22px;font-size:11px;white-space:nowrap}
+.scan-exclude-point input{flex:none}
+.scan-exclude-panel>button{font-size:11px;min-height:22px;margin:3px 0}
