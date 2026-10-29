@@ -855,8 +855,8 @@ export function scanCorrelationData(d, s) {
       secondary:featureMode==='both'?featurePoints.map(p=>p.linewidth):null,
       points:featurePoints,xAxis,featureMode,statisticRange:[rangeMin,rangeMax],
       axisUnit:v.x.unit||'',mode:s.scanAxisMode,
-      amplitudeFit:fitting('amplitude',s.scanFitAmplitude===true,'amplitude'),
-      linewidthFit:fitting('linewidth',s.scanFitLinewidth===true,'linewidth'),
+      amplitudeFit:fitting('amplitude',s.scanFitAmplitude===true&&featureMode!=='linewidth','amplitude'),
+      linewidthFit:fitting('linewidth',s.scanFitLinewidth===true&&featureMode!=='amplitude','linewidth'),
       yAxis:{name:featureMode==='linewidth'?'Peak-to-peak linewidth':'Peak-to-peak amplitude',
         unit:featureMode==='linewidth'?(v.x.unit||''):''},
       secondaryAxis:featureMode==='both'?{name:'Peak-to-peak linewidth',unit:v.x.unit||''}:null};
