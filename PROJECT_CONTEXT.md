@@ -39,7 +39,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - Variable scan 只有一个 `Measurement` 选择器：Mean/Max/Min/RMS/Sum、Peak-to-peak amplitude、Peak-to-peak linewidth、Both。旧 Statistic/PTP 项目保持既有统计结果，直到用户主动启用新饱和拟合。振幅曲线使用左 Y 轴，线宽在双特征模式下使用右 Y 轴。
 - 饱和/展宽拟合只在 Variable scan：幅度模型 `A√P/(1+P/P_half)+C`、线宽模型 `A√(1+P/P_sat)+C`，分别计算，不默认二者参数相等。使用有界对数搜索（求解器说明在问号帮助），公式通过 MathML 展示，参数与 RMSE/R² 使用只读字段。默认特征功率上下界收敛到拟合有效点实际测量范围，可按需手动改写并得到边界警告。
 - 排除点改为逐轨迹复选框，未参与拟合的测量值单独以符号标识，保留原始记录及导出纳入状态。直接二维来源的 Current data 左侧缩进显示衍生曲线，右列独立设置每条线型/符号；多条原始一维曲线生成的旧扫描视图保留原 Style 控件兼容。拟合曲线默认虚线、实测特征默认点线，图例默认置于绘图区外侧上方。设置随项目保存，拟合重载后重算；正式数据及基线不修改。
-- 完整数值/Chromium/旧版对照 [40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) 通过；真实谱线的科学适用性与参数不确定度尚未独立验收。
+- **2026-10-30 界面修订：** 普通二维 Heatmap 不显示无用的 Scan style 或 Current data 空白样式列；直接二维 Variable scan 的衍生曲线恢复 34 px 纯符号 Style 列，数据/样式列表等高、逐行对应。非功率扫描自动折叠拟合设置且不将 dB 误显示为 mW；排除点设置恢复一致的折叠外观；MathML 括号禁止随分式拉伸。Linear 模式下的主图 Y、Top/Right 投影和 Z 色标均用十进制刻度，只有明确选 Scientific 才使用科学计数法。原始数值/项目格式/二维基线均不变。完整回归与浏览器/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 成功，主站独立预览 Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功；真实谱线科学适用性与参数不确定度尚未独立验收。
 - 本次**未实施**阶段 B 的按子图选择主图区/顶部/右侧/全画幅与跨列重新排版；亦未完成多峰线宽判读、真实仪器校准或拟合不确定度估计。详细内容与测试入口见 `docs/DEVELOPMENT_CONTEXT.md` 和 `docs/TWO_DIMENSIONAL.md`。
 
 ### 二维查看与导出
