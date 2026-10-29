@@ -738,6 +738,56 @@ export function controls(card, sp, d, onChange) {
     row.textContent = sp.twoD.derivedFromCurves ? sp.twoD.curveIndices.length + ' manual 1D curves' : sp.twoD.index + '. ' + d.name;
     row.title = d.name;
     list.replaceChildren(row);
+    if(sp.mode==='scan'){
+      const styles=manager.querySelector('.curve-style-list');
+      if(styles)styles.style.display='none';
+      const view=sp.twoD.settings;
+      const mode=view.scanFeatureMode||'statistic';
+      const entries=mode==='statistic'?
+        [[-100,'Statistic · '+(view.scanStatistic||'rms')]]:
+        [...(mode==='amplitude'||mode==='both'?[[-101,'Peak-to-peak amplitude']]:[]),
+         ...(mode==='linewidth'||mode==='both'?[[-102,'Peak-to-peak linewidth']]:[]),
+         ...(view.scanFitAmplitude&&(mode==='amplitude'||mode==='both')?[[-103,'Amplitude fit']]:[]),
+         ...(view.scanFitLinewidth&&(mode==='linewidth'||mode==='both')?[[-104,'Linewidth fit']]:[])];
+      const appended=document.createElement('div');
+      appended.className='scan-derived-curve-list';
+      appended.style.paddingLeft='14px';
+      appended.style.paddingTop='5px';
+      appended.style.display='grid';
+      appended.style.rowGap='5px';
+      for(const [id,title] of entries){
+        const line=document.createElement('div');
+        line.className='scan-derived-row';
+        line.style.display='grid';
+        line.style.gridTemplateColumns='minmax(0,1fr) 110px';
+        line.style.gap='6px';
+        line.style.alignItems='center';
+        const name=document.createElement('span');
+        name.textContent='↳ '+title;
+        name.title='Derived curve · source data unchanged';
+        name.style.fontSize='11px';
+        const style=document.createElement('select');
+        style.className='curve-style';
+        style.dataset.curveStyle=id;
+        style.setAttribute('aria-label','Display style for '+title);
+        const stylesList=['line','dashed-line','dotted-line','circle','filled-circle','square','filled-square',
+          'triangle','filled-triangle','diamond','filled-diamond','solid-circle','solid-filled-circle',
+          'dashed-circle','dashed-filled-circle','dotted-circle','dotted-filled-circle'];
+        for(const label of stylesList){
+          const opt=document.createElement('option');opt.value=label;opt.textContent=label.replaceAll('-',' ');
+          style.append(opt);
+        }
+        const selected=sp.curveStyles?.[id]?.style||(id===-103||id===-104?'dashed-line':sp.scanCurveStyle||'line');
+        style.value=stylesList.includes(selected)?selected:'line';
+        style.onchange=()=>{
+          sp.curveStyles||={};
+          sp.curveStyles[id]={style:style.value};
+          onChange();
+        };
+        line.append(name,style);appended.append(line);
+      }
+      list.append(appended);
+    }
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
   projectionSection.box.querySelector('summary').textContent = 'Projections';
