@@ -47,6 +47,9 @@ export function defaults(d) {
     scanFitAmplitude: false,
     scanFitLinewidth: false,
     scanFitOffset: false,
+    scanFitExcluded: '',
+    scanFitPowerMinMW: '',
+    scanFitPowerMaxMW: '',
     topFeatureDisplay: 'none',
     sideFeatureDisplay: 'none',
     scanStatisticMin: xMin,
@@ -299,6 +302,8 @@ export function controls(card, sp, d, onChange) {
               'xProjectionMax',
               'yProjectionMin',
               'yProjectionMax',
+              'scanFitPowerMinMW',
+              'scanFitPowerMaxMW',
             ].includes(key)
             ? ''
             : e.value === ''
@@ -441,6 +446,9 @@ export function controls(card, sp, d, onChange) {
   check(fitControls, 'scanFitAmplitude', 'Fit peak-to-peak amplitude');
   check(fitControls, 'scanFitLinewidth', 'Fit peak-to-peak linewidth');
   check(fitControls, 'scanFitOffset', 'Fit constant offset (C)');
+  input(fitControls,'scanFitExcluded','Exclude source trace indices (0-based, comma separated)');
+  input(fitControls,'scanFitPowerMinMW','Characteristic power lower bound (mW)','number');
+  input(fitControls,'scanFitPowerMaxMW','Characteristic power upper bound (mW)','number');
   const fitResults=document.createElement('div');
   fitResults.className='scan-fit-results';
   fitResults.style.gridColumn='1 / -1';
@@ -846,8 +854,14 @@ export function scanCorrelationData(d, s) {
       if(!enabled)return null;
       if(s.scanAxisMode!=='power' && !(directPowerFactor===1 && v.y.unit.toLowerCase()==='mw'))
         return {valid:false,reason:'Select calibrated microwave power (mW) before fitting.'};
+      const tokens=String(s.scanFitExcluded??'').trim().split(/[,;\s]+/).filter(Boolean);
+      if(tokens.some(t=>!/^\d+$/.test(t)))return {valid:false,reason:'Exclude trace indices must be non-negative integers.'};
+      const optionalBound=value=>value===''||value==null?null:Number(value);
       return fitSaturation(featurePoints.map(p=>({index:p.index,power:p.x,signal:p[feature]})),{
-        model,allowOffset:s.scanFitOffset===true
+        model,allowOffset:s.scanFitOffset===true,
+        excludedIndices:tokens.map(Number),
+        minPower:optionalBound(s.scanFitPowerMinMW),
+        maxPower:optionalBound(s.scanFitPowerMaxMW)
       });
     };
     return {valid:true,x:featurePoints.map(p=>p.x),scan:featurePoints.map(p=>p.scan),
