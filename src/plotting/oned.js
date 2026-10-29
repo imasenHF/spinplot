@@ -263,7 +263,11 @@ export function renderFigure(
   }
   function subplotTickFormat(sp, axis) {
     const mode=axis==='y'?(sp.yScale&&sp.yScale!=='inherit'?sp.yScale:($('globalYScale')?.value||'linear')):'linear';
-    const notation = mode==='scientific'?'scientific':mode==='log'?'auto':sp[axis + "TickNotation"];
+    // Linear Y has an explicit Scientific peer, so do not silently use
+    // an inherited auto/scientific notation for its tick labels.
+    const notation = axis==='y'
+      ? mode==='scientific'?'scientific':mode==='linear'?'decimal':'auto'
+      : sp[axis + "TickNotation"];
     return {
       digits:
         sp[axis + "TickDigits"] !== "" && sp[axis + "TickDigits"] !== undefined
