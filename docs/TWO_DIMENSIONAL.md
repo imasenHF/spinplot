@@ -78,6 +78,14 @@ These features are implemented in `preview/modularization-phase1-20261009`, not 
 - Heatmap/Contour/3D top and right projection panels have independent dropdowns for None, Peak-to-peak amplitude, Peak-to-peak linewidth, and Both. The feature values are numeric readouts extracted from the already aggregated projection profiles; they are not additional scan-dependent curves. Max/min must belong to the resonance being investigated; narrow the calculation interval for complex or overlapping spectra.
 - Variable scan offers Existing statistic (default), Peak-to-peak amplitude, Peak-to-peak linewidth and Amplitude + linewidth. It extracts features separately from every source trace over the `scanStatisticMin/Max` interval. In dual mode amplitude uses the left Y axis and linewidth uses an independent right Y axis with its physical unit. The original mean, max, min, ptp, rms and sum statistics remain supported. Original matrices are immutable.
 
+### Variable scan control layout and derived curves (preview UI)
+
+- The Scan panel has one Signal feature selector: Statistic, Peak-to-peak amplitude, Peak-to-peak linewidth or Both. The Statistic dropdown appears only when Statistic is selected.
+- The selected field interval and characteristic power parameter bounds each have paired Start/End inputs. With no manual power bounds, the boxes display the automatic search bounds as placeholders.
+- Fitting controls are grouped under a collapsible section. Each enabled model displays its equation followed by read-only characteristic power, A, C, RMSE and R² fields. The numerical solver remains fixed to bounded logarithmic search with local refinement and conditional linear least squares. No additional fitting algorithm is exposed at this stage.
+- The source matrix stays in Current data; beneath it, the Variable scan derived statistic/feature/fit curves appear as indented child rows. Each child row has its own line and marker style, with stable internal virtual identifiers and normal project save/reload support. The original dataset itself is unchanged.
+- Browser regression covers the new grouping, read-only results, auto-bound placeholders, derived styles and project persistence. See [40901814549](https://github.com/imasenHF/spinplot/actions/runs/40901814549).
+
 ### Fitting in Variable scan only
 
 - The fitting controls exist only in Variable scan. Peak-to-peak amplitude and linewidth have independent enable switches; both fitted curves may appear together with their respective observed points/lines. Fitted curves are dashed. Fitting requires at least four distinct, valid positive powers without a constant offset or five with a free offset.
