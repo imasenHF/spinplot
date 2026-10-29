@@ -69,8 +69,10 @@ export function fitSaturation(rawPoints,{model='amplitude',allowOffset=false,min
   if(new Set(points.map(p=>p.power)).size<required)return {valid:false,reason:'Too few distinct positive powers.'};
   const pmin=points[0].power,pmax=points.at(-1).power;
   if(pmax/pmin<3)return {valid:false,reason:'Power range is too narrow for a stable saturation fit.'};
-  const lower=minPower==null?pmin/100:Number(minPower);
-  const upper=maxPower==null?pmax*100:Number(maxPower);
+  // Prefer an identifiable fit inside the measured power domain. Users may
+  // explicitly expand either bound when fitting an extrapolated hypothesis.
+  const lower=minPower==null?pmin:Number(minPower);
+  const upper=maxPower==null?pmax:Number(maxPower);
   if(!(lower>0&&upper>lower&&Number.isFinite(upper)))return {valid:false,reason:'Invalid power parameter bounds.'};
   let best=null;
   // Variable projection: for a fixed characteristic power, amplitude and offset
