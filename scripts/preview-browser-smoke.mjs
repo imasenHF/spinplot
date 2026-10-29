@@ -284,6 +284,7 @@ try {
       .filter(row=>row[featureIndex]==='Microwave attenuation')
       .map(row=>({coordinate:Number(row[coordinateIndex]),signal:Number(row[signalIndex])}))
       .sort((a,b)=>a.coordinate-b.coordinate);
+    console.log('Variable scan feature export diagnostic',JSON.stringify({header:scanFeatureCSV.header,rows:scanFeatureCSV.rows}));
     assert.deepEqual(extracted,[{coordinate:0,signal:3},{coordinate:10,signal:6}],
       'Max feature over 3320–3350 G must be [3, 6] at 0 and 10 dB; source Heatmap must remain unchanged');
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
