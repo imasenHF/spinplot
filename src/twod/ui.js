@@ -479,14 +479,36 @@ export function controls(card, sp, d, onChange) {
   check(fitBody,'scanFitAmplitude','Fit peak-to-peak amplitude');
   check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
   check(fitBody,'scanFitOffset','Fit constant offset (C)');
-  input(fitBody,'scanFitExcluded','Exclude trace indices (0-based)');
+  const excludePanel=document.createElement('details');
+  excludePanel.className='scan-exclude-panel';
+  excludePanel.style.gridColumn='1 / -1';
+  const excludeHeading=document.createElement('summary');
+  excludeHeading.textContent='Exclude points from fit';
+  excludePanel.append(excludeHeading);
+  const excludeHint=document.createElement('p');
+  excludeHint.className='scan-help-inline';
+  excludeHint.textContent='Uncheck a measured point to omit it from both fits. The original spectrum and plotted point are kept. Source trace indices start at 0.';
+  excludePanel.append(excludeHint);
+  const excludeList=document.createElement('div');
+  excludeList.className='scan-exclude-list';
+  excludePanel.append(excludeList);
+  const resetExcluded=document.createElement('button');
+  resetExcluded.type='button';
+  resetExcluded.textContent='Include all points';
+  resetExcluded.onclick=()=>{s.scanFitExcluded='';onChange();};
+  excludePanel.append(resetExcluded);
+  fitBody.append(excludePanel);
+  const measuredPower=document.createElement('div');
+  measuredPower.className='scan-measured-power';
+  measuredPower.style.gridColumn='1 / -1';
+  fitBody.append(measuredPower);
   const fitBounds=document.createElement('div');
   fitBounds.className='grid2 scan-fit-bounds';
   fitBounds.style.gridColumn='1 / -1';
   fitBody.append(fitBounds);
   const fitBoundTitle=document.createElement('div');
   fitBoundTitle.style.gridColumn='1 / -1';
-  fitBoundTitle.textContent='Characteristic power range (mW)';
+  fitBoundTitle.textContent='Characteristic power search limits (mW) · blank = measured range';
   fitBounds.append(fitBoundTitle);
   input(fitBounds,'scanFitPowerMinMW','Start','number');
   input(fitBounds,'scanFitPowerMaxMW','End','number');
@@ -525,11 +547,40 @@ export function controls(card, sp, d, onChange) {
       results.textContent=error.message;return;
     }
     const powers=data.valid?data.points?.map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
-    const low=powers?.length?Math.min(...powers)/100:NaN;
-    const high=powers?.length?Math.max(...powers)*100:NaN;
+    const low=powers?.length?Math.min(...powers):NaN;
+    const high=powers?.length?Math.max(...powers):NaN;
+    measuredPower.textContent=Number.isFinite(low)&&Number.isFinite(high)
+      ?'Measured power: '+formatNumber(low)+'–'+formatNumber(high)+' mW'
+      :'Measured power: unavailable';
     for(const [key,value] of [['scanFitPowerMinMW',low],['scanFitPowerMaxMW',high]]){
       const field=fitBounds.querySelector('[data-twod='+key+']');
       if(field)field.placeholder=formatNumber(value);
+    }
+    excludeList.replaceChildren();
+    const excluded=new Set(String(s.scanFitExcluded||'').split(/[,;\\s]+/).filter(Boolean).map(Number));
+    if(data.valid&&Array.isArray(data.points)){
+      for(const point of data.points){
+        const label=document.createElement('label');
+        label.className='scan-exclude-point';
+        const checkbox=document.createElement('input');
+        checkbox.type='checkbox';
+        checkbox.checked=!excluded.has(point.index);
+        checkbox.dataset.traceIndex=String(point.index);
+        checkbox.setAttribute('aria-label','Include source trace '+point.index);
+        checkbox.onchange=()=>{
+          if(checkbox.checked)excluded.delete(point.index);else excluded.add(point.index);
+          s.scanFitExcluded=[...excluded].filter(Number.isInteger).sort((a,b)=>a-b).join(',');
+          onChange();
+        };
+        const scanUnit=orient(d,s.component,s.swap).y.unit||'';
+        const source='Trace '+point.index+' · '+formatNumber(point.scan)+' '+scanUnit;
+        const powerInfo=s.scanAxisMode==='power'?' · '+formatNumber(point.x)+' mW':'';
+        const text=document.createElement('span');
+        text.textContent=source+powerInfo;
+        label.append(checkbox,text);
+        excludeList.append(label);
+      }
+      excludeHeading.textContent='Exclude points from fit ('+excluded.size+' excluded)';
     }
     if(!data.valid){results.textContent=data.reason||'No valid scan data';return;}
     for(const [key,title,fit,enabled,formula] of [
@@ -546,10 +597,12 @@ export function controls(card, sp, d, onChange) {
       head.style.fontWeight='600';
       head.textContent=title+' · '+(key==='amplitude'?'Amplitude saturation':'Homogeneous power broadening');
       const eq=document.createElement('div');
-      eq.style.fontFamily='serif';
-      eq.style.fontSize='12px';
-      eq.style.overflowWrap='anywhere';
-      eq.textContent=formula;
+      eq.className='scan-fit-equation';
+      // Static MathML is parsed as native mathematical markup in Chromium.
+      // No user-provided strings are interpolated into these expressions.
+      eq.innerHTML=key==='amplitude'
+        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo>(</mo><mi>P</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
+        :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo>(</mo><mi>P</mi><mo>)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
       section.append(head,eq);
       if(!fit?.valid){
         const notice=document.createElement('div');
@@ -560,7 +613,7 @@ export function controls(card, sp, d, onChange) {
         grid.className='grid2 scan-fit-parameters';
         outputField(grid,key==='amplitude'?'P½':'Psat',formatNumber(fit.parameters.P),'mW');
         outputField(grid,'A',formatNumber(fit.parameters.A));
-        outputField(grid,'C',formatNumber(fit.parameters.C));
+        outputField(grid,s.scanFitOffset?'C':'C · fixed',formatNumber(fit.parameters.C));
         outputField(grid,'RMSE',formatNumber(fit.rmse));
         outputField(grid,'R²',fit.r2==null?'—':formatNumber(fit.r2));
         section.append(grid);
@@ -577,10 +630,13 @@ export function controls(card, sp, d, onChange) {
       results.textContent='Choose amplitude or linewidth to fit.';
     }
   }
-  fitBody.append(Object.assign(document.createElement('div'),{
-    textContent:'Solver: bounded logarithmic search · fixed',
-    className:'scan-fit-solver-label'
-  }));
+  const solverHelp=document.createElement('button');
+  solverHelp.type='button';
+  solverHelp.className='help-tip';
+  solverHelp.textContent='?';
+  solverHelp.dataset.help='Fixed solver: bounded logarithmic search with local refinement. For each candidate characteristic power, linear least squares determines A and optional C. By default the characteristic power is restricted to the measured domain; entering custom bounds permits extrapolation. At least four distinct powers are needed (five when C is fitted).';
+  solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
+  fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
   scanAxisSelect.onchange=()=>{onScanAxisChange();refreshFitResults();};
   const onFeatureChange=featureSelect.onchange;
