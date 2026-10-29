@@ -123,5 +123,5 @@ npm run build
 - `src/twod/zscale.js` 中，恒定信号为色标生成非退化显示范围时，曾将扩展后的显示边界同时作为 `dataMin/dataMax` 返回。
 - 修复后分别保存原始数据极值与显示范围：恒定正值 5 返回原始极值 5/5，显示范围 0.5–50；恒定负值 -5 返回原始极值 -5/-5，显示范围 -5.5–-4.5；恒定零值仍显示 -1–1。
 - 新增 `src/twod/zscale.test.js`，覆盖 13 组 Z 坐标映射、可见区域范围、恒定信号、非法输入、刻度和缩放断言；预览工作流已加入独立执行步骤。
-- 修复提交：`f77ab589`；测试提交：`276d2be`；工作流提交：`6389322`。CI 运行 [40831412790](https://github.com/imasenHF/spinplot/actions/runs/40831412790) 在本记录创建时排队中，最终验收状态以重新查询结果为准。
+- 修复提交：`f77ab589`；测试提交：`276d2be`；工作流提交：`6389322`。完整 CI [40831466219](https://github.com/imasenHF/spinplot/actions/runs/40831466219) 成功：13 项 Z-scale 测试、现有二维与其他回归、生产构建、Chromium 浏览器回归及迁移前对照均通过。新静态构建已同步主站预览，Pages 发布 [40831743715](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40831743715) 成功。
 - 仅更新预览分支源码与记录；未同步主站临时预览快照，正式 `main` 和 `/spinplot/` 未修改，PR #1 保持 Draft。
