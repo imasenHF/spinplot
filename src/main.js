@@ -360,6 +360,8 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }
  }
  const renderSp={...sp,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
+    legendPosition:sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'&&sp.legendPosition==='upper_right'
+      ?'outside_top':sp.legendPosition,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
  const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves.filter(c=>!c.rightAxis),xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
 }
