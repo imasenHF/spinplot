@@ -468,7 +468,7 @@ export function controls(card, sp, d, onChange) {
   const fitControls=document.createElement('details');
   fitControls.className='advanced-layout scan-fitting-controls';
   fitControls.style.gridColumn='1 / -1';
-  fitControls.open=!!(s.scanFitAmplitude||s.scanFitLinewidth);
+  fitControls.open=s.scanAxisMode==='power'&&!!(s.scanFitAmplitude||s.scanFitLinewidth);
   const fitHeading=document.createElement('summary');
   fitHeading.textContent='Power saturation fitting';
   fitControls.append(fitHeading);
@@ -487,7 +487,7 @@ export function controls(card, sp, d, onChange) {
   check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
   check(fitBody,'scanFitOffset','Fit constant offset (C)');
   const excludePanel=document.createElement('details');
-  excludePanel.className='scan-exclude-panel';
+  excludePanel.className='advanced-layout scan-exclude-panel';
   excludePanel.style.gridColumn='1 / -1';
   const excludeHeading=document.createElement('summary');
   excludeHeading.textContent='Exclude points from fit';
@@ -614,8 +614,8 @@ export function controls(card, sp, d, onChange) {
       // Static MathML is parsed as native mathematical markup in Chromium.
       // No user-provided strings are interpolated into these expressions.
       eq.innerHTML=key==='amplitude'
-        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo>(</mo><mi>P</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
-        :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo>(</mo><mi>P</mi><mo>)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
+        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
+        :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
       section.append(head,eq);
       if(!fit?.valid){
         const notice=document.createElement('div');
@@ -651,7 +651,7 @@ export function controls(card, sp, d, onChange) {
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
-  scanAxisSelect.onchange=()=>{onScanAxisChange();refreshFitResults();};
+  scanAxisSelect.onchange=()=>{if(scanAxisSelect.value!=='power')fitControls.open=false;onScanAxisChange();refreshFitResults();};
   const onFeatureChange=featureSelect.onchange;
   featureSelect.onchange=()=>{onFeatureChange();refreshFitResults();};
   root.addEventListener('change',refreshFitResults);
@@ -838,9 +838,7 @@ export function controls(card, sp, d, onChange) {
       baseSpacer.className='curve-style-row scan-source-spacer';
       baseSpacer.title='The source matrix has no line style; select a derived curve below.';
       styles.append(baseSpacer);
-      const styleChoices=['line','dashed-line','dotted-line','circle','filled-circle','square','filled-square',
-        'triangle','filled-triangle','diamond','filled-diamond','solid-circle','solid-filled-circle',
-        'dashed-circle','dashed-filled-circle','dotted-circle','dotted-filled-circle'];
+      const styleTemplate=card.querySelector('[data-field=scanCurveStyle]');
       for(const [id,title] of entries){
         const left=document.createElement('div');
         left.className='order-item scan-derived-name';
@@ -855,10 +853,9 @@ export function controls(card, sp, d, onChange) {
         style.className='curve-style';
         style.dataset.curveStyle=id;
         style.setAttribute('aria-label','Display style for '+title);
-        for(const label of styleChoices){
-          const opt=document.createElement('option');opt.value=label;
-          opt.textContent=label.replaceAll('-',' ');style.append(opt);
-        }
+        // Reuse the compact Unicode line/symbol choices used by ordinary 1D curves.
+        if(styleTemplate)style.innerHTML=styleTemplate.innerHTML;
+        style.title='Line and symbol style · '+title;
         const defaultStyle=id===-103||id===-104?'dashed-line':
           id===-105||id===-106?'diamond':
           id===-100?(sp.scanCurveStyle||'line'):
@@ -873,9 +870,12 @@ export function controls(card, sp, d, onChange) {
       }
       current.querySelector('.curve-box-label').title='Source matrix and derived curves; choose each derived curve style in the right column.';
       const sourceLine=24,rows=entries.length+1;
-      list.style.height=styles.style.height=(rows*sourceLine+2)+'px';
+      list.style.height=styles.style.height=Math.max(30,Math.min(rows,8)*sourceLine+4)+'px';
     }else if(styles){
+      manager.classList.add('matrix-no-style');
+      styles.hidden=true;
       styles.style.display='none';
+      list.style.height='auto';
     }
   }
   function syncExcludedCurveRows(){
@@ -911,7 +911,7 @@ export function controls(card, sp, d, onChange) {
       row.append(select);
       list.append(label);styles.append(row);
     }
-    const h=(list.children.length*24+2)+'px';
+    const h=Math.max(30,Math.min(list.children.length,8)*24+4)+'px';
     list.style.height=styles.style.height=h;
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
@@ -921,7 +921,7 @@ export function controls(card, sp, d, onChange) {
   const scanStyleControl=card.querySelector('.scan-curve-style');
   // Manual-curve-derived scans retain their legacy style control until the
   // separate manual-curve inventory can expose per-derived-curve styles.
-  if(scanStyleControl)scanStyleControl.hidden=sp.mode==='scan'&&!manualDerived;
+  if(scanStyleControl)scanStyleControl.hidden=!(sp.mode==='scan'&&manualDerived);
   powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
   stackInput.closest('label').hidden = sp.mode === 'scan';
   body.querySelector('[data-twod=swap]').closest('label').hidden = sp.mode === 'scan';
