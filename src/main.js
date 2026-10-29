@@ -377,7 +377,43 @@ async function loadProjectFile(file){const o=JSON.parse(await file.text());const
 
 
 function globalCorrectedCurves(target=globalTargetFrequency()){return state.rawCurves.map((c,i)=>({...c,...alignedCurve(c,i,target)}))}
-function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='grid2';$('exportMetaBtn').parentElement.after(box);}box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);}
+function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='grid2';$('exportMetaBtn').parentElement.after(box);}box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
+const scanPlots=plots.filter(([sp])=>sp.mode==='scan');
+if(scanPlots.length){
+ const label=document.createElement('label');
+ label.textContent='Variable scan features: subplot';
+ const choose=document.createElement('select');
+ for(const [sp,i] of scanPlots){const option=document.createElement('option');option.value=i;option.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');choose.append(option);}
+ label.append(choose);
+ const button=document.createElement('button');button.textContent='Export scan features CSV';
+ button.onclick=()=>{
+  const i=Number(choose.value),sp=state.subplots[i];
+  let dataset;try{dataset=TwoD.scanCorrelationData(subplotMatrix(sp),sp.twoD.settings);}
+  catch(error){setStatus(error.message,'bad');return;}
+  if(!dataset.valid){setStatus(dataset.reason||'Scan feature data unavailable','bad');return;}
+  if(!dataset.points){setStatus('Select peak-to-peak amplitude, linewidth or both in Feature display.','bad');return;}
+  const header=['source_index','scan_value','power_or_scan_x','amplitude','linewidth','linewidth_unit',
+   'fit_amplitude','residual_amplitude','fit_linewidth','residual_linewidth'];
+  const amp=new Map(dataset.amplitudeFit?.valid?dataset.amplitudeFit.points.map(p=>[p.index,p]):[]);
+  const width=new Map(dataset.linewidthFit?.valid?dataset.linewidthFit.points.map(p=>[p.index,p]):[]);
+  const rows=[header.join(',')];
+  for(const p of dataset.points){
+   const a=amp.get(p.index),w=width.get(p.index);
+   rows.push([p.index,p.scan,p.x,p.amplitude,p.linewidth,dataset.axisUnit,
+    a?.fitted??'',a?.residual??'',w?.fitted??'',w?.residual??''].join(','));
+  }
+  for(const [type,fit] of [['amplitude',dataset.amplitudeFit],['linewidth',dataset.linewidthFit]]){
+   if(!fit)continue;
+   rows.push('# '+type+' fit: '+(fit.valid?
+     JSON.stringify({model:fit.model,parameters:fit.parameters,rmse:fit.rmse,r2:fit.r2,warning:fit.warning}):
+     (fit.reason||'Unavailable')));
+  }
+  downloadText(`${safeBaseName()}_S${i+1}_scan_features.csv`,rows.join('\n'),'text/csv;charset=utf-8');
+  logAction('Variable scan features and fit results exported');
+ };
+ box.append(label,button);
+}
+}
 function renderExportCanvas(){const d=getDesignSize(),dpi=currentDpi(),scale=dpi/96,c=document.createElement('canvas');renderPlot(c,d.width,d.height,scale,true);return{canvas:c,design:d,dpi,scale}}
 async function makeCurrentFigureBlob(){const fmt=$('imageFormat').value;if(fmt==='svg'||fmt==='pdf'){const scene=vectorScene(getDesignSize(),document.createElement('canvas').getContext('2d'),renderPlot),blob=fmt==='svg'?new Blob([svgFromScene(scene)],{type:'image/svg+xml'}):pdfFromScene(scene);return{blob,ext:fmt,dpi:currentDpi()}}const{canvas,design,dpi}=renderExportCanvas(),q=clamp(Number($('imageQuality').value)||.95,.1,1);let blob,ext=fmt;if(fmt==='png'||fmt==='jpeg'||fmt==='webp'){blob=await canvasBlob(canvas,fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',q);if(fmt==='png')blob=await pngWithDpi(blob,dpi);if(fmt==='jpeg'){blob=await jpegWithDpi(blob,dpi);ext='jpg'}}else if(fmt==='bmp')blob=bmpBlob(canvas,dpi);else if(fmt==='tiff')blob=tiffBlob(canvas,dpi);return{blob,ext,dpi}}
 async function exportFigure(){if(!state.rawCurves.length)return alert('No data loaded');try{const base=safeBaseName(),r=await makeCurrentFigureBlob();downloadBlob(`${base}.${r.ext}`,r.blob);logAction(`Figure exported: ${base}.${r.ext}${['svg','pdf'].includes(r.ext)?' (vector)':` (${r.dpi} DPI)`}`)}catch(e){setStatus(e.message,'bad');logAction('Export error: '+e.message)}}
