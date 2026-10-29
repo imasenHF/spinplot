@@ -200,3 +200,8 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .curve-manager.scan-matrix .order-list,.curve-manager.scan-matrix .curve-style-list{box-sizing:border-box;max-height:250px;padding-top:2px;padding-bottom:2px}
 .curve-manager.scan-matrix .scan-derived-name{padding-left:10px}
 .curve-manager.scan-matrix .scan-source-spacer{height:24px;min-height:24px}
+
+/* Derived Variable scan curves behave like draggable Current order entries. */
+.curve-manager.scan-matrix .scan-derived-name{cursor:grab;user-select:none}
+.curve-manager.scan-matrix .scan-derived-name:active{cursor:grabbing}
+.curve-manager.scan-matrix .scan-derived-name:focus-visible{outline:2px solid #2b6686;outline-offset:-2px}
