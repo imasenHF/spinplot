@@ -43,8 +43,8 @@ function linearFit(x,y,offset){
   for(let i=0;i<x.length;i++){const u=x[i],v=y[i];sw++;sx+=u;sy+=v;sxx+=u*u;sxy+=u*v;}
   const det=sw*sxx-sx*sx;
   if(!(Math.abs(det)>1e-14*Math.max(sw*sxx,1)))return null;
-  const a=(sw*sxy-sx*sy)/det,c=offset?(sy-a*sx)/sw:0;
-  if(!offset){a=sxy/sxx;}
+  if(!offset)return sxx>0?{a:sxy/sxx,c:0}:null;
+  const a=(sw*sxy-sx*sy)/det,c=(sy-a*sx)/sw;
   return {a,c};
 }
 function solveAt(points,model,pHalf,allowOffset){
