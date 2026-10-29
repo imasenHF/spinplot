@@ -93,7 +93,6 @@ These capabilities are implemented on `preview/modularization-phase1-20261009`, 
 ### Validation and limitations
 
 - The regression suite checks independent right-projection linewidth calculation, reversed field coordinates, legacy PTP values, constant traces, synthetic saturated signals, dual axes, excluded-point interaction, model markup, project persistence, CSV, SVG and reference-compatible builds. [Full regression 40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) passed before the final documentation-only updates.
-- Two user-provided v11 project files were inspected locally and not committed publicly. Both contain a 200-point field axis (G) and 50 attenuation steps (dB); the range of independently extracted linewidths is approximately 7.035–9.045 G. In the second project, independently fitting the peak-to-peak amplitude reproduces `P_half ≈ 17.609 mW`, while the linewidth fit has limited R² and a characteristic power near the measured upper boundary. This is a numerical diagnostic, not a scientific validation of the homogeneous broadening model.
 - Complex overlapping lines, extrema distorted by noise, uncertainty/covariance estimates and real-instrument physical calibration remain separate scientific verification tasks. The phase-B per-subplot `Plot footprint` geometry options have not been implemented; existing grid span and rendering geometry remain unchanged.
 
 ## Interface organization
