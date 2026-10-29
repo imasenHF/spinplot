@@ -355,6 +355,21 @@ try {
       'Returning to power reopens an enabled fit');
     await derived.locator('[data-curve-style="-101"]').selectOption('filled-circle');
     await derived.locator('[data-curve-style="-103"]').selectOption('dotted-line');
+    const derivedOrder=()=>derived.locator('.scan-derived-name').evaluateAll(rows=>
+      rows.map(row=>Number(row.dataset.derivedId)));
+    assert.deepEqual(await derivedOrder(),[-101,-102,-103,-104]);
+    const fitRow=derived.locator('.scan-derived-name[data-derived-id="-103"]');
+    const amplitudeRow=derived.locator('.scan-derived-name[data-derived-id="-101"]');
+    assert.equal(await fitRow.getAttribute('draggable'),'true','Derived fit row is draggable');
+    assert.equal(await derived.locator('.matrix-data-row').getAttribute('draggable'),null,
+      'Original source data remains fixed, never dragged into the derived stack');
+    await fitRow.dragTo(amplitudeRow);
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Dropping the fit above amplitude must change the back-to-front paint order');
+    const alignedOrder=await derived.locator('.scan-derived-style').evaluateAll(rows=>
+      rows.map(row=>Number(row.dataset.derivedId)));
+    assert.deepEqual(alignedOrder,await derivedOrder(),
+      'Right style controls must move together with dragged derived data');
     const savePath='browser-preview/synthetic-saturation.json';
     const saved=await save(savePath);
     const cfg=saved.config.subplots[0].twoD.settings;
@@ -362,6 +377,9 @@ try {
     assert.equal(cfg.scanFitAmplitude,true);assert.equal(cfg.scanFitLinewidth,true);
     assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
     assert.equal(saved.config.subplots[0].curveStyles['-103'].style,'dotted-line');
+    assert.deepEqual(saved.config.subplots[0].scanDerivedOrder.slice(0,5),
+      [-100,-103,-101,-102,-104],
+      'Derived Z-order is serialized at subplot level without changing matrix data');
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [csvDownload]=await Promise.all([page.waitForEvent('download'),
       page.getByRole('button',{name:'Export scan features CSV'}).click()]);
@@ -377,6 +395,8 @@ try {
     const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
+    assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
+      'SVG legend and drawing must use the dragged derived-curve order');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const excludePanel=scanPanel.locator('.scan-exclude-panel');
     await excludePanel.locator('summary').click();
@@ -401,6 +421,19 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Reloading the saved project must restore the derived-curve drawing order');
+    await fitRow.focus();
+    await fitRow.press('Alt+ArrowDown');
+    assert.deepEqual(await derivedOrder(),[-101,-103,-102,-104],
+      'Keyboard reorder must follow the same Z-order rule as dragging');
+    const keyboardSaved=await save('browser-preview/synthetic-saturation-keyboard-order.json');
+    assert.equal(keyboardSaved.config.subplots[0].scanDerivedOrder.indexOf(-101)<
+      keyboardSaved.config.subplots[0].scanDerivedOrder.indexOf(-103),true);
+    await load(saved,'synthetic-saturation-reload-again.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Saved drag Z-order must remain stable after changes and a second reload');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
     console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
     const projectedSubplot={...saturationSubplot,mode:'overlay',
