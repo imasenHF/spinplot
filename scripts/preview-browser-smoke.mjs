@@ -352,6 +352,22 @@ try {
     const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
+    const excludePanel=scanPanel.locator('.scan-exclude-panel');
+    await excludePanel.locator('summary').click();
+    assert.equal(await excludePanel.locator('.scan-exclude-point').count(),13,'Every measured power has an inclusion checkbox');
+    await excludePanel.locator('[data-trace-index="0"]').uncheck();
+    const excludedProject=await save('browser-preview/synthetic-saturation-excluded.json');
+    assert.equal(excludedProject.config.subplots[0].twoD.settings.scanFitExcluded,'0');
+    assert.equal(await page.locator('.scan-derived-style [data-curve-style="-105"]').count(),1,'Excluded amplitude has a separate symbol style');
+    assert.equal(await page.locator('.scan-derived-style [data-curve-style="-106"]').count(),1,'Excluded linewidth has a separate symbol style');
+    const [exclusionDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export scan features CSV'}).click()]);
+    await exclusionDownload.saveAs('browser-preview/synthetic-saturation-excluded.csv');
+    const excludedCsv=fs.readFileSync('browser-preview/synthetic-saturation-excluded.csv','utf8');
+    const firstRow=excludedCsv.split(/\r?\n/).find(line=>/^0,/.test(line));
+    assert.ok(firstRow,'Original excluded observation is preserved in the feature export');
+    assert.equal(firstRow.split(',')[10],'no','Excluded source trace 0 is not used in amplitude fit');
+    assert.equal(firstRow.split(',')[11],'no','Excluded source trace 0 is not used in linewidth fit');
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
