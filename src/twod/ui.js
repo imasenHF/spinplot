@@ -425,87 +425,156 @@ export function controls(card, sp, d, onChange) {
       ['rms', 'RMS'],
       ['sum', 'Sum'],
     ]);
-  const scanAxisSelect = select(scanSettings, 'scanAxisMode', 'Scan X axis', [
-    ['native', 'Acquired scan variable'],
-    ['power', 'Microwave power (mW)'],
+  const scanAxisSelect=select(scanSettings,'scanAxisMode','Scan X axis',[
+    ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
-  select(scanSettings, 'scanFeatureMode', 'Feature display', [
-    ['statistic', 'Existing statistic'],
-    ['amplitude', 'Peak-to-peak amplitude'],
-    ['linewidth', 'Peak-to-peak linewidth'],
-    ['both', 'Amplitude + linewidth'],
+  const featureSelect=select(scanSettings,'scanFeatureMode','Signal feature',[
+    ['statistic','Statistic'],['amplitude','Peak-to-peak amplitude'],
+    ['linewidth','Peak-to-peak linewidth'],['both','Amplitude + linewidth']
   ]);
-  const fitControls=document.createElement('div');
-  fitControls.className='local-block grid2 scan-fitting-controls';
+  const statisticControl=select(scanSettings,'scanStatistic','Statistic',[
+    ['mean','Mean'],['max','Maximum'],['min','Minimum'],
+    ['ptp','Peak-to-peak (max − min)'],['rms','RMS'],['sum','Sum']
+  ]).closest('label');
+  const sourceAxis=orient(d,s.component,s.swap).x;
+  const scanRangeRow=document.createElement('div');
+  scanRangeRow.className='grid2 scan-range-row';
+  scanRangeRow.style.gridColumn='1 / -1';
+  scanSettings.append(scanRangeRow);
+  const intervalHeading=document.createElement('div');
+  intervalHeading.style.gridColumn='1 / -1';
+  intervalHeading.textContent='Feature interval · '+sourceAxis.name+(sourceAxis.unit?' ('+sourceAxis.unit+')':'');
+  scanRangeRow.append(intervalHeading);
+  input(scanRangeRow,'scanStatisticMin','Start','number');
+  input(scanRangeRow,'scanStatisticMax','End','number');
+  const powerReferenceControls=document.createElement('div');
+  powerReferenceControls.className='grid2 scan-power-reference-controls';
+  powerReferenceControls.style.gridColumn='1 / -1';
+  scanSettings.append(powerReferenceControls);
+  input(powerReferenceControls,'scanPowerReferenceMW','Reference power P₀ (mW) at 0 dB','number');
+  const fitControls=document.createElement('details');
+  fitControls.className='advanced-layout scan-fitting-controls';
   fitControls.style.gridColumn='1 / -1';
-  const fitHeading=document.createElement('div');
-  fitHeading.textContent='Power saturation fitting · Variable scan only';
-  fitHeading.style.gridColumn='1 / -1';
+  fitControls.open=!!(s.scanFitAmplitude||s.scanFitLinewidth);
+  const fitHeading=document.createElement('summary');
+  fitHeading.textContent='Power saturation fitting';
   fitControls.append(fitHeading);
+  const fitBody=document.createElement('div');
+  fitBody.className='local-block grid2';
+  fitControls.append(fitBody);
   scanSettings.append(fitControls);
-  check(fitControls, 'scanFitAmplitude', 'Fit peak-to-peak amplitude');
-  check(fitControls, 'scanFitLinewidth', 'Fit peak-to-peak linewidth');
-  check(fitControls, 'scanFitOffset', 'Fit constant offset (C)');
-  input(fitControls,'scanFitExcluded','Exclude source trace indices (0-based, comma separated)');
-  input(fitControls,'scanFitPowerMinMW','Characteristic power lower bound (mW)','number');
-  input(fitControls,'scanFitPowerMaxMW','Characteristic power upper bound (mW)','number');
-  const fitResults=document.createElement('div');
-  fitResults.className='scan-fit-results';
-  fitResults.style.gridColumn='1 / -1';
-  fitResults.style.fontSize='11px';
-  fitResults.style.whiteSpace='pre-line';
-  fitControls.append(fitResults);
-  function updateFitResults(){
+  check(fitBody,'scanFitAmplitude','Fit peak-to-peak amplitude');
+  check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
+  check(fitBody,'scanFitOffset','Fit constant offset (C)');
+  input(fitBody,'scanFitExcluded','Exclude trace indices (0-based)');
+  const fitBounds=document.createElement('div');
+  fitBounds.className='grid2 scan-fit-bounds';
+  fitBounds.style.gridColumn='1 / -1';
+  fitBody.append(fitBounds);
+  const fitBoundTitle=document.createElement('div');
+  fitBoundTitle.style.gridColumn='1 / -1';
+  fitBoundTitle.textContent='Characteristic power range (mW)';
+  fitBounds.append(fitBoundTitle);
+  input(fitBounds,'scanFitPowerMinMW','Start','number');
+  input(fitBounds,'scanFitPowerMaxMW','End','number');
+  const results=document.createElement('div');
+  results.className='scan-fit-results';
+  results.style.gridColumn='1 / -1';
+  fitBody.append(results);
+  const formatNumber=(value)=>Number.isFinite(value)?Number(value.toPrecision(7)).toString():'—';
+  function outputField(parent,label,value,unit=''){
+    const holder=document.createElement('label');
+    holder.className='control-label';
+    holder.textContent=label+(unit?' ('+unit+')':'');
+    const field=document.createElement('input');
+    field.type='text';
+    field.readOnly=true;
+    field.value=value;
+    field.title='Calculated result; not editable';
+    holder.append(field);
+    parent.append(holder);
+  }
+  function refreshFitResults(){
     if(sp.mode!=='scan')return;
-    if(!s.scanFitAmplitude&&!s.scanFitLinewidth){
-      fitResults.textContent='Select a feature and enable a fit to view its parameters.';
-      return;
+    statisticControl.hidden=s.scanFeatureMode!=='statistic';
+    fitControls.hidden=s.scanFeatureMode==='statistic';
+    const powerMode=s.scanAxisMode==='power';
+    powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(orient(d,s.component,s.swap).y);
+    const signalAxis=orient(d,s.component,s.swap).x.values;
+    const signalMin=Math.min(...signalAxis),signalMax=Math.max(...signalAxis);
+    for(const [key,fallback] of [['scanStatisticMin',signalMin],['scanStatisticMax',signalMax]]){
+      const field=scanRangeRow.querySelector('[data-twod='+key+']');
+      if(field&&!Number.isFinite(Number(s[key])))field.placeholder=formatNumber(fallback);
     }
-    let result;
-    try{result=scanCorrelationData(d,s);}
-    catch(error){fitResults.textContent=error.message;return;}
-    if(!result.valid){fitResults.textContent=result.reason;return;}
-    const lines=[];
-    for(const [title,fit,enabled] of [
-      ['Amplitude',result.amplitudeFit,s.scanFitAmplitude],
-      ['Linewidth',result.linewidthFit,s.scanFitLinewidth]
+    results.replaceChildren();
+    if(s.scanFeatureMode==='statistic')return;
+    let data;
+    try{data=scanCorrelationData(d,s);}catch(error){
+      results.textContent=error.message;return;
+    }
+    const powers=data.valid?data.points?.map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
+    const low=powers?.length?Math.min(...powers)/100:NaN;
+    const high=powers?.length?Math.max(...powers)*100:NaN;
+    for(const [key,value] of [['scanFitPowerMinMW',low],['scanFitPowerMaxMW',high]]){
+      const field=fitBounds.querySelector('[data-twod='+key+']');
+      if(field)field.placeholder=formatNumber(value);
+    }
+    if(!data.valid){results.textContent=data.reason||'No valid scan data';return;}
+    for(const [key,title,fit,enabled,formula] of [
+      ['amplitude','Amplitude',data.amplitudeFit,s.scanFitAmplitude,
+       'Spp(P) = A√P / (1 + P/P½) + C'],
+      ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth,
+       'ΔBpp(P) = A√(1 + P/Psat) + C']
     ]){
       if(!enabled)continue;
-      if(!fit){lines.push(title+': select the corresponding feature.');continue;}
-      if(!fit.valid){lines.push(title+': '+fit.reason);continue;}
-      const p=fit.parameters;
-      lines.push(title+': P = '+p.P.toPrecision(5)+' mW, A = '+p.A.toPrecision(5)+
-        ', C = '+p.C.toPrecision(5)+', RMSE = '+fit.rmse.toPrecision(4)+
-        ', R² = '+(fit.r2==null?'—':fit.r2.toPrecision(5))+
-        (fit.warning?' · '+fit.warning:''));
+      const section=document.createElement('div');
+      section.className='scan-fit-model';
+      section.style.gridColumn='1 / -1';
+      const head=document.createElement('div');
+      head.style.fontWeight='600';
+      head.textContent=title+' · '+(key==='amplitude'?'Amplitude saturation':'Homogeneous power broadening');
+      const eq=document.createElement('div');
+      eq.style.fontFamily='serif';
+      eq.style.fontSize='12px';
+      eq.style.overflowWrap='anywhere';
+      eq.textContent=formula;
+      section.append(head,eq);
+      if(!fit?.valid){
+        const notice=document.createElement('div');
+        notice.textContent=fit?.reason||'Select the corresponding feature to fit.';
+        section.append(notice);
+      }else{
+        const grid=document.createElement('div');
+        grid.className='grid2 scan-fit-parameters';
+        outputField(grid,key==='amplitude'?'P½':'Psat',formatNumber(fit.parameters.P),'mW');
+        outputField(grid,'A',formatNumber(fit.parameters.A));
+        outputField(grid,'C',formatNumber(fit.parameters.C));
+        outputField(grid,'RMSE',formatNumber(fit.rmse));
+        outputField(grid,'R²',fit.r2==null?'—':formatNumber(fit.r2));
+        section.append(grid);
+        if(fit.warning){
+          const warning=document.createElement('div');
+          warning.textContent=fit.warning;
+          warning.style.fontSize='11px';
+          section.append(warning);
+        }
+      }
+      results.append(section);
     }
-    fitResults.textContent=lines.join('\n');
+    if(!s.scanFitAmplitude&&!s.scanFitLinewidth){
+      results.textContent='Choose amplitude or linewidth to fit.';
+    }
   }
-  root.addEventListener('change',updateFitResults);
-  updateFitResults();
-  select(scanSettings, 'scanStatistic', 'Statistic', [
-    ['mean', 'Mean'],
-    ['max', 'Maximum'],
-    ['min', 'Minimum'],
-    ['ptp', 'Peak-to-peak (max − min)'],
-    ['rms', 'RMS'],
-    ['sum', 'Sum'],
-  ]);
-  const statisticAxis = orient(d, s.component, s.swap).x;
-  const statisticAxisLabel = statisticAxis.name + (statisticAxis.unit ? ' (' + statisticAxis.unit + ')' : '');
-  input(scanSettings, 'scanStatisticMin', 'Statistic interval · ' + statisticAxisLabel + ' min', 'number');
-  input(scanSettings, 'scanStatisticMax', 'Statistic interval · ' + statisticAxisLabel + ' max', 'number');
-  const powerReferenceControls = document.createElement('div');
-  powerReferenceControls.className = 'grid2 scan-power-reference-controls';
-  powerReferenceControls.style.gridColumn = '1 / -1';
-  powerReferenceControls.hidden = s.scanAxisMode !== 'power' || !isAttenuationAxis(orient(d,s.component,s.swap).y);
-  scanSettings.append(powerReferenceControls);
-  input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power at 0 dB attenuation P₀ (mW)', 'number');
-  const onScanAxisChange = scanAxisSelect.onchange;
-  scanAxisSelect.onchange = () => {
-    onScanAxisChange();
-    powerReferenceControls.hidden = scanAxisSelect.value !== 'power' || !isAttenuationAxis(orient(d,s.component,s.swap).y);
-  };
+  fitBody.append(Object.assign(document.createElement('div'),{
+    textContent:'Solver: bounded logarithmic search · fixed',
+    className:'scan-fit-solver-label'
+  }));
+  const onScanAxisChange=scanAxisSelect.onchange;
+  scanAxisSelect.onchange=()=>{onScanAxisChange();refreshFitResults();};
+  const onFeatureChange=featureSelect.onchange;
+  featureSelect.onchange=()=>{onFeatureChange();refreshFitResults();};
+  root.addEventListener('change',refreshFitResults);
+  refreshFitResults();
   select(projection,'topFeatureDisplay','Top projection feature',[
     ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
   ]);
