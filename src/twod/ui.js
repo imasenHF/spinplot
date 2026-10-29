@@ -438,8 +438,8 @@ export function controls(card, sp, d, onChange) {
   const featureSelect=select(scanSettings,'scanMeasurement','Measurement',[
     ['stat:mean','Mean'],['stat:max','Maximum'],['stat:min','Minimum'],
     ['stat:rms','RMS'],['stat:sum','Sum'],
-    ...(legacyPeak?[['stat:ptp','Peak-to-peak amplitude (legacy statistic)']]:[]),
-    ['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],
+    ...(legacyPeak?[['stat:ptp','Peak-to-peak amplitude']]:[['amplitude','Peak-to-peak amplitude']]),
+    ['linewidth','Peak-to-peak linewidth'],
     ['both','Amplitude + linewidth']
   ]);
   featureSelect.onchange=()=>{
