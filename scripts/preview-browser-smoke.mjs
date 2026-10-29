@@ -374,6 +374,34 @@ try {
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
     console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
+    const projectedSubplot={...saturationSubplot,mode:'overlay',
+      twoD:{index:0,settings:{...saturationSubplot.twoD.settings,
+        mode:'heatmap',xMode:'mean',yMode:'both',showProjections:true,
+        showXProjection:true,showYProjection:true,showColorbar:false,
+        xMin:3340,xMax:3364,yMin:0,yMax:36,
+        projectionXMin:3340,projectionXMax:3364,projectionYMin:0,projectionYMax:36}}};
+    const projectionProject={...saturationProject,
+      config:{...saturationProject.config,subplots:[projectedSubplot]}};
+    await load(projectionProject,'synthetic-right-projection.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const projectionCard=page.locator('.subplot').first();
+    assert.equal(await projectionCard.locator('[data-twod="yMode"]').inputValue(),'both');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [projectionDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);
+    await projectionDownload.saveAs('browser-preview/synthetic-side-dual-features.csv');
+    const projectionCSV=fs.readFileSync('browser-preview/synthetic-side-dual-features.csv','utf8');
+    assert.match(projectionCSV,/axis,coordinate,projection,linewidth,linewidth_unit/);
+    const sideRows=projectionCSV.split(/\r?\n/).filter(row=>/^Y,/.test(row));
+    assert.equal(sideRows.length,13);
+    assert.ok(sideRows.every(row=>Number(row.split(',')[3])>0&&row.split(',')[4]==='G'),
+      'Right projection linewidth must come from field extrema of every acquired scan');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await projectionCard.locator('[data-twod="yMode"]').selectOption('linewidth');
+    const linewidthProjection=await save('browser-preview/synthetic-side-linewidth.json');
+    assert.equal(linewidthProjection.config.subplots[0].twoD.settings.yMode,'linewidth');
+    assert.equal(errors.length,0,'Per-field-scan linewidth projection must not cause browser errors');
+    console.log('BROWSER PASS: right projection peak-to-peak linewidth and dual amplitude/linewidth CSV');
   }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.
