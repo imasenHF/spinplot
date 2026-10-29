@@ -274,6 +274,18 @@ try {
     assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMin,3320);
     assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMax,3350);
     assert.equal(savedViews.config.layout.spans,'1,1 / 2','The added subplot is included in the saved layout');
+    // Verify the extracted per-trace feature values in the exported display data.
+    const scanFeatureCSV=await exportDisplay('browser-preview/scan-feature-values.csv');
+    const featureIndex=scanFeatureCSV.header.indexOf('axis_name');
+    const coordinateIndex=scanFeatureCSV.header.indexOf('coordinate');
+    const signalIndex=scanFeatureCSV.header.indexOf('Y_display');
+    assert.ok(featureIndex>=0&&coordinateIndex>=0&&signalIndex>=0,'Feature export must include axis, coordinate and signal columns');
+    const extracted=scanFeatureCSV.rows
+      .filter(row=>row[featureIndex]==='Microwave attenuation')
+      .map(row=>({coordinate:Number(row[coordinateIndex]),signal:Number(row[signalIndex])}))
+      .sort((a,b)=>a.coordinate-b.coordinate);
+    assert.deepEqual(extracted,[{coordinate:0,signal:3},{coordinate:10,signal:6}],
+      'Max feature over 3320–3350 G must be [3, 6] at 0 and 10 dB; source Heatmap must remain unchanged');
     await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
     let viewsDownload;
     try { [viewsDownload]=await Promise.all([page.waitForEvent('download',{timeout:8000}),page.locator('#exportImageBtnSide').click()]); }
