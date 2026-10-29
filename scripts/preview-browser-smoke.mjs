@@ -313,8 +313,9 @@ try {
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
-    assert.match(fitText,/Amplitude: P =/);
-    assert.match(fitText,/Linewidth: P =/);
+    assert.match(fitText,/Amplitude · Amplitude saturation/);
+    assert.match(fitText,/Linewidth · Homogeneous power broadening/);
+    assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
     const savePath='browser-preview/synthetic-saturation.json';
     const saved=await save(savePath);
     const cfg=saved.config.subplots[0].twoD.settings;
