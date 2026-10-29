@@ -972,10 +972,13 @@ export function projectionCsv(d, s) {
           yMode: s.yMode,
           component: s.component,
         }),
-      'axis,coordinate,projection',
+      p.sideLinewidth?'axis,coordinate,projection,linewidth,linewidth_unit':'axis,coordinate,projection',
     ];
-  for (let i = 0; i < v.x.values.length; i++) lines.push('X,' + v.x.values[i] + ',' + p.x[i]);
-  for (let j = 0; j < v.y.values.length; j++) lines.push('Y,' + v.y.values[j] + ',' + p.y[j]);
+  for (let i = 0; i < v.x.values.length; i++)
+    lines.push('X,' + v.x.values[i] + ',' + p.x[i] + (p.sideLinewidth?',,':''));
+  for (let j = 0; j < v.y.values.length; j++)
+    lines.push('Y,' + v.y.values[j] + ',' + p.y[j] +
+      (p.sideLinewidth?','+p.sideLinewidth[j]+','+v.x.unit:''));
   return lines.join('\n');
 }
 function isAttenuationAxis(axis) {
