@@ -307,10 +307,42 @@ function addVariableScanSubplot(source,sourceIndex){
 function derivedTwoDPlotModel(sp,i,matrixOverride){
  const manual=!!sp.twoD.derivedFromCurves,sourceIndex=sp.twoD.index,ids=manual?sp.twoD.curveIndices:[sourceIndex],d=matrixOverride||subplotMatrix(sp),t=sp.twoD.settings;
  let data,xAxis,yAxis,curves=[],notice='';const frequency=subplotGFrequency(sp,ids);
- if(sp.mode==='scan'){data=TwoD.scanCorrelationData(d,t);xAxis=data.xAxis||(t.swap?d.y:d.x);yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};if(data.valid)curves=[{index:ids[0]??0,name:yAxis.name,source:d.name,freq:frequency,B:data.x.slice(),y:data.y.slice(),yd:data.y.slice(),xAxis:{name:xAxis.name,unit:xAxis.unit||''}}];else notice=data.reason||'No valid scan data';}
+ if(sp.mode==='scan'){
+  data=TwoD.scanCorrelationData(d,t);
+  xAxis=data.xAxis||(t.swap?d.y:d.x);
+  yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
+  if(data.valid){
+    const feature=data.featureMode&&data.featureMode!=='statistic';
+    const makeCurve=(name,values,axis='left',fitLine=false)=>{
+      const curve={index:ids[0]??0,name,source:d.name,freq:frequency,
+        B:data.x.slice(),y:values.slice(),yd:values.slice(),
+        xAxis:{name:xAxis.name,unit:xAxis.unit||''},rightAxis:axis==='right',fitLine};
+      return curve;
+    };
+    if(!feature)curves=[makeCurve(yAxis.name,data.y)];
+    else {
+      const amplitude=data.featureMode==='amplitude'||data.featureMode==='both';
+      const linewidth=data.featureMode==='linewidth'||data.featureMode==='both';
+      if(amplitude)curves.push(makeCurve('Peak-to-peak amplitude',data.points.map(p=>p.amplitude)));
+      if(linewidth)curves.push(makeCurve('Peak-to-peak linewidth',data.points.map(p=>p.linewidth),data.featureMode==='both'?'right':'left'));
+      for(const [which,fit] of [['amplitude',data.amplitudeFit],['linewidth',data.linewidthFit]]){
+        if(!fit?.valid)continue;
+        const isLine=which==='linewidth';
+        const values=data.points.map(p=>fit.parameters.A*
+          (isLine?Math.sqrt(1+p.x/fit.parameters.P):Math.sqrt(p.x)/(1+p.x/fit.parameters.P))
+          +fit.parameters.C);
+        curves.push(makeCurve((isLine?'Linewidth':'Amplitude')+' fit',values,
+          isLine&&data.featureMode==='both'?'right':'left',true));
+      }
+      if(t.scanFitAmplitude&&data.amplitudeFit&&!data.amplitudeFit.valid)notice=data.amplitudeFit.reason;
+      else if(t.scanFitLinewidth&&data.linewidthFit&&!data.linewidthFit.valid)notice=data.linewidthFit.reason;
+    }
+  }else notice=data.reason||'No valid scan data';
+ }
  else{data=TwoD.overlapData(d,t);xAxis=data.xAxis;yAxis={name:'Signal intensity ('+(t.component||'real')+')',unit:''};curves=data.traces.map(trace=>{const curveIndex=manual?(d.metadata?.curveIndices?.[trace.index]??ids[trace.index]??ids[0]):sourceIndex;return{index:curveIndex,name:data.scanAxis.name+' = '+Number(trace.scan).toPrecision(5)+(data.scanAxis.unit?' '+data.scanAxis.unit:''),source:manual?(state.rawCurves[curveIndex]?.name||d.name):d.name,freq:manual?(state.rawCurves[curveIndex]?.freq??frequency):frequency,B:trace.x.slice(),y:trace.y.slice(),yd:trace.y.slice(),xAxis:{name:xAxis.name,unit:xAxis.unit||''}}});}
- const renderSp={...sp,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'?'none':sp.labelMode,renderNotice:notice};
- const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves,xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
+ const renderSp={...sp,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
+    secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
+ const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves.filter(c=>!c.rightAxis),xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
 }
 function preparePlotModel(){
  const items=state.subplots.map((sp,i)=>{
