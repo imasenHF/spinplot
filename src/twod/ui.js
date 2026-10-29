@@ -502,7 +502,7 @@ export function controls(card, sp, d, onChange) {
   const resetExcluded=document.createElement('button');
   resetExcluded.type='button';
   resetExcluded.textContent='Include all points';
-  resetExcluded.onclick=()=>{s.scanFitExcluded='';onChange();};
+  resetExcluded.onclick=()=>{s.scanFitExcluded='';syncExcludedCurveRows();onChange();};
   excludePanel.append(resetExcluded);
   fitBody.append(excludePanel);
   const measuredPower=document.createElement('div');
@@ -582,6 +582,7 @@ export function controls(card, sp, d, onChange) {
         checkbox.onchange=()=>{
           if(checkbox.checked)excluded.delete(point.index);else excluded.add(point.index);
           s.scanFitExcluded=[...excluded].filter(Number.isInteger).sort((a,b)=>a-b).join(',');
+          syncExcludedCurveRows();
           onChange();
         };
         const scanUnit=orient(d,s.component,s.swap).y.unit||'';
@@ -843,11 +844,13 @@ export function controls(card, sp, d, onChange) {
       for(const [id,title] of entries){
         const left=document.createElement('div');
         left.className='order-item scan-derived-name';
+        left.dataset.derivedId=String(id);
         left.textContent='↳ '+title;
         left.title='Derived from '+d.name+'; original samples stay unchanged.';
         list.append(left);
         const right=document.createElement('div');
         right.className='curve-style-row scan-derived-style';
+        right.dataset.derivedId=String(id);
         const style=document.createElement('select');
         style.className='curve-style';
         style.dataset.curveStyle=id;
@@ -874,6 +877,42 @@ export function controls(card, sp, d, onChange) {
     }else if(styles){
       styles.style.display='none';
     }
+  }
+  function syncExcludedCurveRows(){
+    const manager=card.querySelector('.curve-manager.scan-matrix');
+    if(!manager)return;
+    const list=manager.querySelector('.order-list');
+    const styles=manager.querySelector('.curve-style-list');
+    const mode=s.scanFeatureMode;
+    const enabled=!!String(s.scanFitExcluded||'').trim()&&(s.scanFitAmplitude||s.scanFitLinewidth);
+    for(const [id,title,visible] of [
+      [-105,'Excluded amplitude',enabled&&(mode==='amplitude'||mode==='both')],
+      [-106,'Excluded linewidth',enabled&&(mode==='linewidth'||mode==='both')]
+    ]){
+      const selector='[data-derived-id="'+id+'"]';
+      const left=list.querySelector(selector),right=styles.querySelector(selector);
+      if(!visible){left?.remove();right?.remove();continue;}
+      if(left&&right)continue;
+      const label=document.createElement('div');
+      label.className='order-item scan-derived-name';
+      label.dataset.derivedId=String(id);
+      label.textContent='↳ '+title;
+      label.title='Excluded from fitting, retained in the original source and visualisation';
+      const row=document.createElement('div');
+      row.className='curve-style-row scan-derived-style';
+      row.dataset.derivedId=String(id);
+      const template=styles.querySelector('.curve-style');
+      const select=template?template.cloneNode(true):document.createElement('select');
+      select.className='curve-style';
+      select.dataset.curveStyle=String(id);
+      select.setAttribute('aria-label','Display style for '+title);
+      select.value=sp.curveStyles?.[id]?.style||'diamond';
+      select.onchange=()=>{sp.curveStyles||={};sp.curveStyles[id]={style:select.value};onChange();};
+      row.append(select);
+      list.append(label);styles.append(row);
+    }
+    const h=(list.children.length*24+2)+'px';
+    list.style.height=styles.style.height=h;
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
   projectionSection.box.querySelector('summary').textContent = 'Projections';
