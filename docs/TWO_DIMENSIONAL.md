@@ -83,6 +83,7 @@ The following is an agreed implementation plan, not a description of shipped fun
 - Either feature may be displayed alone. When both are shown together, peak-to-peak amplitude uses the left Y axis and linewidth uses the right Y axis. Each axis has independent units, range, visibility and styling. Feature display must not overwrite or mutate the source matrix or projection profile.
 - For Variable scan, extract both features independently from each source trace over the configured signal-axis interval, then plot the feature values against the scan coordinate. Existing mean/max/min/ptp/RMS/sum statistics remain available and must retain their current behavior.
 - For top/right projections, apply the same definitions to the corresponding displayed projection profile over its configured calculation interval. The feature calculation interval is distinct from the display-axis range.
+- A single aggregated top/right projection profile yields one peak-to-peak value and one linewidth value. Show these as numeric readouts or width markers on that projection; do not represent two scalar values as scan-dependent curves. The dual-Y-axis curve display applies when feature values are extracted across multiple traces and indexed by the scan coordinate, as in Variable scan. If the intended projection workflow requires a scan-dependent feature curve, extract each source trace before aggregation and label the resulting view explicitly.
 
 ### Power-saturation fitting in Variable scan only
 
