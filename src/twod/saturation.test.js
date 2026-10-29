@@ -47,6 +47,22 @@ for(const [model,A,q,C] of [['amplitude',5,12,0],['linewidth',2,18,0]]){
  assert.equal(offsetFit.valid,true);
  assert.ok(Math.abs(offsetFit.parameters.C-2)<.05,model+' offset '+offsetFit.parameters.C);
 }
+const controlPoints=[.1,.3,1,3,6,10,20,40,80,150].map((power,index)=>({
+ index,power,signal:saturationModels.amplitude(power,5,12,0)
+}));
+const excludedFit=fitSaturation(controlPoints,{model:'amplitude',excludedIndices:[0,1],minPower:1,maxPower:40});
+assert.equal(excludedFit.valid,true);
+assert.equal(excludedFit.n,8);
+assert.ok(excludedFit.parameters.P>=1&&excludedFit.parameters.P<=40);
+const configured={...settings,scanFitAmplitude:true,scanFitExcluded:'0,1',
+ scanFitPowerMinMW:1,scanFitPowerMaxMW:100};
+const configuredResult=scanCorrelationData(matrix,configured);
+assert.equal(configuredResult.valid,true);
+assert.equal(configuredResult.amplitudeFit.valid,false,'Insufficient remaining scan points must be reported');
+assert.match(configuredResult.amplitudeFit.reason,/At least/);
+const invalidExclusions=scanCorrelationData(matrix,{...configured,scanFitExcluded:'not-an-index'});
+assert.equal(invalidExclusions.amplitudeFit.valid,false);
+assert.match(invalidExclusions.amplitudeFit.reason,/non-negative integers/);
 assert.equal(fitSaturation([{power:1,signal:1}],{}).valid,false);
 assert.equal(fitSaturation([1,2,3,4,5].map(i=>({power:i,signal:1})),{model:'invalid'}).valid,false);
 assert.equal(fitSaturation([1,1,1,1].map((i,index)=>({power:i,signal:index}))).valid,false);
