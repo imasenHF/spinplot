@@ -393,14 +393,14 @@ if(scanPlots.length){
   if(!dataset.valid){setStatus(dataset.reason||'Scan feature data unavailable','bad');return;}
   if(!dataset.points){setStatus('Select peak-to-peak amplitude, linewidth or both in Feature display.','bad');return;}
   const header=['source_index','scan_value','power_or_scan_x','amplitude','linewidth','linewidth_unit',
-   'fit_amplitude','residual_amplitude','fit_linewidth','residual_linewidth'];
+   'fit_amplitude','residual_amplitude','fit_linewidth','residual_linewidth','used_in_amplitude_fit','used_in_linewidth_fit'];
   const amp=new Map(dataset.amplitudeFit?.valid?dataset.amplitudeFit.points.map(p=>[p.index,p]):[]);
   const width=new Map(dataset.linewidthFit?.valid?dataset.linewidthFit.points.map(p=>[p.index,p]):[]);
   const rows=[header.join(',')];
   for(const p of dataset.points){
    const a=amp.get(p.index),w=width.get(p.index);
    rows.push([p.index,p.scan,p.x,p.amplitude,p.linewidth,dataset.axisUnit,
-    a?.fitted??'',a?.residual??'',w?.fitted??'',w?.residual??''].join(','));
+    a?.fitted??'',a?.residual??'',w?.fitted??'',w?.residual??'',a?'yes':'no',w?'yes':'no'].join(','));
   }
   for(const [type,fit] of [['amplitude',dataset.amplitudeFit],['linewidth',dataset.linewidthFit]]){
    if(!fit)continue;
