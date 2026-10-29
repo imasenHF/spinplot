@@ -352,6 +352,7 @@ try {
     const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const excludePanel=scanPanel.locator('.scan-exclude-panel');
     await excludePanel.locator('summary').click();
     assert.equal(await excludePanel.locator('.scan-exclude-point').count(),13,'Every measured power has an inclusion checkbox');
@@ -360,6 +361,7 @@ try {
     assert.equal(excludedProject.config.subplots[0].twoD.settings.scanFitExcluded,'0');
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-105"]').count(),1,'Excluded amplitude has a separate symbol style');
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-106"]').count(),1,'Excluded linewidth has a separate symbol style');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
     const [exclusionDownload]=await Promise.all([page.waitForEvent('download'),
       page.getByRole('button',{name:'Export scan features CSV'}).click()]);
     await exclusionDownload.saveAs('browser-preview/synthetic-saturation-excluded.csv');
