@@ -1,5 +1,6 @@
 import { gFromCoordinate, coordinateFromG } from '../processing/axis.js';
 import { orient, projections, reduce, validate, axisKind, fieldToGauss } from './core.js';
+import { peakFeatures, fitSaturation } from './saturation.js';
 import { tickFormatter } from './ticks.js';
 import { COLOR_SCHEMES } from './palettes.js';
 import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
@@ -42,6 +43,12 @@ export function defaults(d) {
     scanAxisMode: 'native',
     scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
     scanStatistic: 'rms',
+    scanFeatureMode: 'statistic',
+    scanFitAmplitude: false,
+    scanFitLinewidth: false,
+    scanFitOffset: false,
+    topFeatureDisplay: 'none',
+    sideFeatureDisplay: 'none',
     scanStatisticMin: xMin,
     scanStatisticMax: xMax,
     showXProjectionRange: true,
@@ -417,6 +424,23 @@ export function controls(card, sp, d, onChange) {
     ['native', 'Acquired scan variable'],
     ['power', 'Microwave power (mW)'],
   ]);
+  select(scanSettings, 'scanFeatureMode', 'Feature display', [
+    ['statistic', 'Existing statistic'],
+    ['amplitude', 'Peak-to-peak amplitude'],
+    ['linewidth', 'Peak-to-peak linewidth'],
+    ['both', 'Amplitude + linewidth'],
+  ]);
+  const fitControls=document.createElement('div');
+  fitControls.className='local-block grid2 scan-fitting-controls';
+  fitControls.style.gridColumn='1 / -1';
+  const fitHeading=document.createElement('div');
+  fitHeading.textContent='Power saturation fitting · Variable scan only';
+  fitHeading.style.gridColumn='1 / -1';
+  fitControls.append(fitHeading);
+  scanSettings.append(fitControls);
+  check(fitControls, 'scanFitAmplitude', 'Fit peak-to-peak amplitude');
+  check(fitControls, 'scanFitLinewidth', 'Fit peak-to-peak linewidth');
+  check(fitControls, 'scanFitOffset', 'Fit constant offset (C)');
   select(scanSettings, 'scanStatistic', 'Statistic', [
     ['mean', 'Mean'],
     ['max', 'Maximum'],
@@ -440,6 +464,12 @@ export function controls(card, sp, d, onChange) {
     onScanAxisChange();
     powerReferenceControls.hidden = scanAxisSelect.value !== 'power';
   };
+  select(projection,'topFeatureDisplay','Top projection feature',[
+    ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
+  ]);
+  select(projection,'sideFeatureDisplay','Right projection feature',[
+    ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
+  ]);
   const projectionCoordinateFields = new Map();
   for (const [key, title] of [
     ['projectionXMin', 'Y projection: X min'],
@@ -757,6 +787,34 @@ export function scanCorrelationData(d, s) {
       return { valid: false, reason: 'Enter a positive reference power at 0 dB attenuation.', xAxis };
     x = x.map(attenuation => referencePower * 10 ** (-attenuation / 10));
     xAxis = { name: 'Microwave power', unit: 'mW' };
+  }
+  // A feature scan measures extrema on each acquired trace; never use the
+  // extrema of the aggregated 2D projection in place of per-trace features.
+  const featureMode=['amplitude','linewidth','both'].includes(s.scanFeatureMode)?s.scanFeatureMode:'statistic';
+  if(featureMode!=='statistic'){
+    const featurePoints=v.z.map((row,i)=>{
+      const feature=peakFeatures(v.x.values,row,[rangeMin,rangeMax]);
+      return {index:i,scan:v.y.values[i],x:x[i],...feature};
+    }).filter(point=>point.valid&&Number.isFinite(point.x));
+    if(featurePoints.length<2)
+      return {valid:false,reason:'Fewer than two valid feature traces.',xAxis};
+    const fitting=(feature,enabled,model)=>{
+      if(!enabled)return null;
+      if(s.scanAxisMode!=='power')return {valid:false,reason:'Select calibrated microwave power (mW) before fitting.'};
+      return fitSaturation(featurePoints.map(p=>({index:p.index,power:p.x,signal:p[feature]})),{
+        model,allowOffset:s.scanFitOffset===true
+      });
+    };
+    return {valid:true,x:featurePoints.map(p=>p.x),scan:featurePoints.map(p=>p.scan),
+      y:featurePoints.map(p=>featureMode==='linewidth'?p.linewidth:p.amplitude),
+      secondary:featureMode==='both'?featurePoints.map(p=>p.linewidth):null,
+      points:featurePoints,xAxis,featureMode,statisticRange:[rangeMin,rangeMax],
+      axisUnit:v.x.unit||'',mode:s.scanAxisMode,
+      amplitudeFit:fitting('amplitude',s.scanFitAmplitude===true,'amplitude'),
+      linewidthFit:fitting('linewidth',s.scanFitLinewidth===true,'linewidth'),
+      yAxis:{name:featureMode==='linewidth'?'Peak-to-peak linewidth':'Peak-to-peak amplitude',
+        unit:featureMode==='linewidth'?(v.x.unit||''):''},
+      secondaryAxis:featureMode==='both'?{name:'Peak-to-peak linewidth',unit:v.x.unit||''}:null};
   }
   const points = x.map((value, i) => ({
     x: value,
