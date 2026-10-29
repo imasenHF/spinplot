@@ -437,6 +437,32 @@ try {
     const linewidthProjection=await save('browser-preview/synthetic-side-linewidth.json');
     assert.equal(linewidthProjection.config.subplots[0].twoD.settings.yMode,'linewidth');
     assert.equal(errors.length,0,'Per-field-scan linewidth projection must not cause browser errors');
+    // Large intensity values must stay decimal across the Y, Top, Side and Z
+    // scale controls when the explicit display mode is Linear.
+    const scaledMatrix={...saturationMatrix,
+      real:syntheticRows.map(row=>row.map(value=>value*1e7))};
+    const scaledCurve={...saturationCurve,matrix:scaledMatrix,y:scaledMatrix.real[0]};
+    const largeLinearProject={...projectionProject,rawCurves:[scaledCurve],
+      config:{...projectionProject.config,subplots:[{...projectedSubplot,
+        twoD:{...projectedSubplot.twoD,settings:{...projectedSubplot.twoD.settings,
+          yMode:'ptp',zScale:'linear',xProjectionScale:'linear',yProjectionScale:'linear',
+          showColorbar:true,showProjections:true}}}]}};
+    await page.evaluate(()=>{
+      window.__spinplotLinearLabels=[];
+      const base=CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText=function(value,...args){
+        window.__spinplotLinearLabels.push(String(value));
+        return base.call(this,value,...args);
+      };
+    });
+    await load(largeLinearProject,'synthetic-large-linear-axis.spinplot.json');
+    await page.waitForTimeout(180);
+    const linearLabels=await page.evaluate(()=>window.__spinplotLinearLabels);
+    assert.ok(linearLabels.some(label=>/^[-+]?\\d{6,}(?:\\.\\d+)?$/.test(label)),
+      'Large Linear intensity ticks should be written as ordinary decimal numbers');
+    assert.equal(linearLabels.filter(label=>/^[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)[eE][-+]?\\d+$/.test(label)).length,0,
+      'Linear Z colorbar and projection tick labels must not switch to exponential notation');
+    console.log('BROWSER PASS: compact scan UI, heatmap inventory and explicit Linear decimal labels');
     console.log('BROWSER PASS: right projection peak-to-peak linewidth and dual amplitude/linewidth CSV');
   }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
