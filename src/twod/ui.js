@@ -456,13 +456,13 @@ export function controls(card, sp, d, onChange) {
   const powerReferenceControls = document.createElement('div');
   powerReferenceControls.className = 'grid2 scan-power-reference-controls';
   powerReferenceControls.style.gridColumn = '1 / -1';
-  powerReferenceControls.hidden = s.scanAxisMode !== 'power';
+  powerReferenceControls.hidden = s.scanAxisMode !== 'power' || !isAttenuationAxis(orient(d,s.component,s.swap).y);
   scanSettings.append(powerReferenceControls);
   input(powerReferenceControls, 'scanPowerReferenceMW', 'Reference power at 0 dB attenuation P₀ (mW)', 'number');
   const onScanAxisChange = scanAxisSelect.onchange;
   scanAxisSelect.onchange = () => {
     onScanAxisChange();
-    powerReferenceControls.hidden = scanAxisSelect.value !== 'power';
+    powerReferenceControls.hidden = scanAxisSelect.value !== 'power' || !isAttenuationAxis(orient(d,s.component,s.swap).y);
   };
   select(projection,'topFeatureDisplay','Top projection feature',[
     ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
@@ -748,6 +748,11 @@ function isAttenuationAxis(axis) {
   return String(axis?.unit || '').trim().toLowerCase() === 'db' &&
     /atten|power|功率|衰减/i.test(String(axis?.name || ''));
 }
+function calibratedPowerFactor(axis) {
+  const unit=String(axis?.unit||'').trim().toLowerCase().replace('μ','µ');
+  if(!/power|microwave|功率/i.test(String(axis?.name||'')))return null;
+  return {'mw':1,'w':1000,'µw':0.001}[unit]??null;
+}
 
 function fullRangeSettings(d, s) {
   const v = orient(d, s.component, s.swap), x0 = v.x.values[0], x1 = v.x.values.at(-1), y0 = v.y.values[0], y1 = v.y.values.at(-1);
@@ -761,8 +766,9 @@ export function overlapData(d, s) {
 export function scanCorrelationData(d, s) {
   migrate(d, s);
   const v = orient(d, s.component, s.swap);
-  if (s.scanAxisMode === 'power' && !isAttenuationAxis(v.y))
-    return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis.', xAxis: { name: v.y.name, unit: v.y.unit } };
+  const directPowerFactor=calibratedPowerFactor(v.y);
+  if (s.scanAxisMode === 'power' && !isAttenuationAxis(v.y) && directPowerFactor===null)
+    return { valid: false, reason: 'Power conversion requires a dB attenuation scan axis or calibrated power units.', xAxis: { name: v.y.name, unit: v.y.unit } };
   const rangeMin = Number(s.scanStatisticMin),
     rangeMax = Number(s.scanStatisticMax);
   if (
@@ -781,11 +787,15 @@ export function scanCorrelationData(d, s) {
   let x = v.y.values.slice(),
     xAxis = { name: v.y.name, unit: v.y.unit };
   if (s.scanAxisMode === 'power') {
-    const referencePower = Number(s.scanPowerReferenceMW);
-    if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
-        !Number.isFinite(referencePower) || referencePower <= 0)
-      return { valid: false, reason: 'Enter a positive reference power at 0 dB attenuation.', xAxis };
-    x = x.map(attenuation => referencePower * 10 ** (-attenuation / 10));
+    if(directPowerFactor!==null){
+      x=x.map(power=>power*directPowerFactor);
+    }else{
+      const referencePower = Number(s.scanPowerReferenceMW);
+      if (String(s.scanPowerReferenceMW ?? '').trim() === '' ||
+          !Number.isFinite(referencePower) || referencePower <= 0)
+        return { valid: false, reason: 'Enter a positive reference power at 0 dB attenuation.', xAxis };
+      x = x.map(attenuation => referencePower * 10 ** (-attenuation / 10));
+    }
     xAxis = { name: 'Microwave power', unit: 'mW' };
   }
   // A feature scan measures extrema on each acquired trace; never use the
@@ -800,7 +810,8 @@ export function scanCorrelationData(d, s) {
       return {valid:false,reason:'Fewer than two valid feature traces.',xAxis};
     const fitting=(feature,enabled,model)=>{
       if(!enabled)return null;
-      if(s.scanAxisMode!=='power')return {valid:false,reason:'Select calibrated microwave power (mW) before fitting.'};
+      if(s.scanAxisMode!=='power' && !(directPowerFactor===1 && v.y.unit.toLowerCase()==='mw'))
+        return {valid:false,reason:'Select calibrated microwave power (mW) before fitting.'};
       return fitSaturation(featurePoints.map(p=>({index:p.index,power:p.x,signal:p[feature]})),{
         model,allowOffset:s.scanFitOffset===true
       });
