@@ -458,9 +458,9 @@ try {
     await load(largeLinearProject,'synthetic-large-linear-axis.spinplot.json');
     await page.waitForTimeout(180);
     const linearLabels=await page.evaluate(()=>window.__spinplotLinearLabels);
-    assert.ok(linearLabels.some(label=>/^[-+]?\\d{6,}(?:\\.\\d+)?$/.test(label)),
+    assert.ok(linearLabels.some(label=>/^[-+]?\d{6,}(?:\.\d+)?$/.test(label)),
       'Large Linear intensity ticks should be written as ordinary decimal numbers');
-    assert.equal(linearLabels.filter(label=>/^[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)[eE][-+]?\\d+$/.test(label)).length,0,
+    assert.equal(linearLabels.filter(label=>/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)[eE][-+]?\d+$/.test(label)).length,0,
       'Linear Z colorbar and projection tick labels must not switch to exponential notation');
     console.log('BROWSER PASS: compact scan UI, heatmap inventory and explicit Linear decimal labels');
     console.log('BROWSER PASS: right projection peak-to-peak linewidth and dual amplitude/linewidth CSV');
