@@ -36,6 +36,8 @@ jobs:
         run: node --test src/twod/zscale.test.js
       - name: Per-trace feature extraction regression
         run: node --test src/twod/scan-analysis.test.js
+      - name: Derived scan Z-order and legacy project regression
+        run: node --test src/twod/scan-order.test.js
       - name: Saturation and linewidth regression
         run: node --test src/twod/saturation.test.js
       - name: Per-field-scan right projection linewidth regression
