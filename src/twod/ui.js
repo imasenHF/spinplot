@@ -430,14 +430,25 @@ export function controls(card, sp, d, onChange) {
   const scanAxisSelect=select(scanSettings,'scanAxisMode','Scan X axis',[
     ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
-  const featureSelect=select(scanSettings,'scanFeatureMode','Signal feature',[
-    ['statistic','Statistic'],['amplitude','Peak-to-peak amplitude'],
-    ['linewidth','Peak-to-peak linewidth'],['both','Amplitude + linewidth']
+  // A single user-facing measurement selector; preserve the original
+  // scanFeatureMode/scanStatistic fields so saved v11 projects stay compatible.
+  const initialMeasurement=s.scanFeatureMode==='statistic'?'stat:'+s.scanStatistic:s.scanFeatureMode;
+  const legacyPeak=initialMeasurement==='stat:ptp';
+  s.scanMeasurement=initialMeasurement;
+  const featureSelect=select(scanSettings,'scanMeasurement','Measurement',[
+    ['stat:mean','Mean'],['stat:max','Maximum'],['stat:min','Minimum'],
+    ['stat:rms','RMS'],['stat:sum','Sum'],
+    ...(legacyPeak?[['stat:ptp','Peak-to-peak amplitude (legacy statistic)']]:[]),
+    ['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],
+    ['both','Amplitude + linewidth']
   ]);
-  const statisticControl=select(scanSettings,'scanStatistic','Statistic',[
-    ['mean','Mean'],['max','Maximum'],['min','Minimum'],
-    ['ptp','Peak-to-peak (max − min)'],['rms','RMS'],['sum','Sum']
-  ]).closest('label');
+  featureSelect.onchange=()=>{
+    const value=featureSelect.value;
+    s.scanMeasurement=value;
+    s.scanFeatureMode=value.startsWith('stat:')?'statistic':value;
+    if(value.startsWith('stat:'))s.scanStatistic=value.slice(5);
+    onChange();
+  };
   const sourceAxis=orient(d,s.component,s.swap).x;
   const scanRangeRow=document.createElement('div');
   scanRangeRow.className='grid2 scan-range-row';
@@ -498,7 +509,6 @@ export function controls(card, sp, d, onChange) {
   }
   function refreshFitResults(){
     if(sp.mode!=='scan')return;
-    statisticControl.hidden=s.scanFeatureMode!=='statistic';
     fitControls.hidden=s.scanFeatureMode==='statistic';
     const powerMode=s.scanAxisMode==='power';
     powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(orient(d,s.component,s.swap).y);
