@@ -2,6 +2,7 @@ import { gFromCoordinate, coordinateFromG } from '../processing/axis.js';
 import { orient, projections, reduce, validate, axisKind, fieldToGauss } from './core.js';
 import { peakFeatures, fitSaturation } from './saturation.js';
 import { tickFormatter } from './ticks.js';
+import {moveScanDerivedOrder,sortScanDerived} from './scan-order.js';
 import { COLOR_SCHEMES } from './palettes.js';
 import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
 import { contourSegments } from './contours.js';
@@ -811,6 +812,75 @@ export function controls(card, sp, d, onChange) {
   }
   mode.value = sp.mode;
   s.mode = ['stack','overlap','scan','contour','surface3d'].includes(sp.mode) ? sp.mode : 'heatmap';
+  // The data source is fixed. Derived curves use the same back-to-front
+  // drag/drop semantics as the ordinary Current order list.
+  let draggedDerivedId=null;
+  function sortDerivedRows(){
+    const manager=card.querySelector('.curve-manager.scan-matrix');
+    if(!manager)return;
+    const list=manager.querySelector('.order-list');
+    const styles=manager.querySelector('.curve-style-list');
+    const ordered=sortScanDerived([...list.querySelectorAll('.scan-derived-name')],
+      sp.scanDerivedOrder,row=>Number(row.dataset.derivedId));
+    for(const row of ordered){
+      list.append(row);
+      const style=styles.querySelector('[data-derived-id="'+row.dataset.derivedId+'"]');
+      if(style)styles.append(style);
+    }
+  }
+  function attachDerivedDrag(row){
+    const id=Number(row.dataset.derivedId);
+    row.draggable=true;
+    row.tabIndex=0;
+    row.title+=' Drag to reorder; lower entries are drawn on top.';
+    row.setAttribute('aria-label',row.textContent.trim()+
+      ': drag to change drawing order, or press Alt+Up / Alt+Down');
+    row.addEventListener('dragstart',event=>{
+      draggedDerivedId=id;
+      row.classList.add('dragging');
+      if(event.dataTransfer){
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData('text/plain','spinplot-derived:'+id);
+      }
+    });
+    row.addEventListener('dragend',()=>{
+      draggedDerivedId=null;
+      row.classList.remove('dragging');
+      card.querySelectorAll('.scan-derived-name.drag-over')
+        .forEach(item=>item.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover',event=>{
+      if(draggedDerivedId===null||draggedDerivedId===id)return;
+      event.preventDefault();
+      if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',event=>{
+      if(draggedDerivedId===null||draggedDerivedId===id)return;
+      event.preventDefault();
+      const from=draggedDerivedId;
+      draggedDerivedId=null;
+      card.querySelectorAll('.scan-derived-name.drag-over')
+        .forEach(item=>item.classList.remove('drag-over'));
+      sp.scanDerivedOrder=moveScanDerivedOrder(sp.scanDerivedOrder,from,id);
+      sortDerivedRows();
+      onChange();
+    });
+    row.addEventListener('keydown',event=>{
+      if(!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key))return;
+      const rows=[...row.parentElement.querySelectorAll('.scan-derived-name')];
+      const index=rows.indexOf(row),destination=index+
+        (event.key==='ArrowUp'?-1:1);
+      if(destination<0||destination>=rows.length)return;
+      event.preventDefault();
+      sp.scanDerivedOrder=moveScanDerivedOrder(sp.scanDerivedOrder,id,
+        Number(rows[destination].dataset.derivedId));
+      sortDerivedRows();
+      row.focus();
+      onChange();
+    });
+  }
   for (const manager of card.querySelectorAll('.curve-manager')) {
     // Keep the original curve inventory and ordering controls for 1D-derived heatmaps.
     if (sp.twoD.derivedFromCurves) continue;
@@ -856,6 +926,7 @@ export function controls(card, sp, d, onChange) {
         left.dataset.derivedId=String(id);
         left.textContent='↳ '+title;
         left.title='Derived from '+d.name+'; original samples stay unchanged.';
+        attachDerivedDrag(left);
         list.append(left);
         const right=document.createElement('div');
         right.className='curve-style-row scan-derived-style';
@@ -879,7 +950,8 @@ export function controls(card, sp, d, onChange) {
         };
         right.append(style);styles.append(right);
       }
-      current.querySelector('.curve-box-label').title='Source matrix and derived curves; choose each derived curve style in the right column.';
+      current.querySelector('.curve-box-label').title='Source matrix is fixed; drag derived curves to change their Z-order. The bottom curve is drawn last (on top).';
+      sortDerivedRows();
       const sourceLine=24,rows=entries.length+1;
       list.style.height=styles.style.height=Math.max(30,Math.min(rows,8)*sourceLine+4)+'px';
     }else if(styles){
@@ -909,6 +981,7 @@ export function controls(card, sp, d, onChange) {
       label.dataset.derivedId=String(id);
       label.textContent='↳ '+title;
       label.title='Excluded from fitting, retained in the original source and visualisation';
+      attachDerivedDrag(label);
       const row=document.createElement('div');
       row.className='curve-style-row scan-derived-style';
       row.dataset.derivedId=String(id);
@@ -922,6 +995,7 @@ export function controls(card, sp, d, onChange) {
       row.append(select);
       list.append(label);styles.append(row);
     }
+    sortDerivedRows();
     const h=Math.max(30,Math.min(list.children.length,8)*24+4)+'px';
     list.style.height=styles.style.height=h;
   }
