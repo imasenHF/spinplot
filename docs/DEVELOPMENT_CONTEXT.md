@@ -74,24 +74,16 @@
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合
 
-## Variable scan 峰峰值、线宽和功率拟合实施状态（2026-10-29）
+## 当前预览：峰峰线宽、Variable scan 和功率拟合（2026-10-29）
 
-- **代码已实现于独立预览分支，尚未合并正式版。** `src/twod/saturation.js` 提供纯函数 `peakFeatures()`（最大值与最小值之差、两极值横坐标绝对间距）、`traceFeatures()`、dB→mW 换算及独立的峰峰幅度和线宽饱和拟合。峰峰幅度候选模型为 `A√P/(1+P/P_half)+C`；线宽模型为 `A√(1+P/P_sat)+C`，默认无常数偏置，允许按需启用偏置。线宽模型限于适用均匀展宽假设的谱线，两个特征功率参数不默认为相同。使用对数网格/局部细化搜索正特征功率，幅度系数与偏置在给定特征功率时通过线性最小二乘求解；支持自动或用户指定特征功率上下界，报告 RMSE、R²、参数、范围边界告警。
-- **界面接入。** Heatmap/Contour/3D 视图的 Top/Right 投影有独立的 Feature display 选项，可在投影曲线上显示峰峰值、线宽读数或二者；投影的单一统计曲线得到的是两个标量读数。Variable scan 新增 Feature display（保留 Existing statistic，另有 Peak-to-peak amplitude、Peak-to-peak linewidth、Both）。共同显示时峰峰值为左 Y 轴，线宽为独立右 Y 轴；两条原始特征及相应拟合曲线可共存，拟合曲线使用虚线。功率拟合控件只存在于 Variable scan，支持分别启用两个拟合、偏置项、排除原轨迹索引与特征功率边界，参数及诊断在控件中显示。
-- **功率来源。** dB 衰减轴使用 `P=P₀×10^(-D/10)` 换算为 mW；已校准且轴名属于功率的 mW、W、µW 轴可按单位使用/转换，避免二次衰减换算。原始扫描坐标与二维矩阵不修改。
-- **导出与保存。** Export 中新增 `Export scan features CSV`，包含源轨迹索引、扫描坐标、实际功率或原始扫描 X、峰峰值、线宽及单位、两种拟合预测值/残差/使用状态、拟合参数与指标。拟合开关、偏置、排除索引、边界和分析区间保存在现有二维子图设置中；重载后基于源数据确定性重算，尚未把数值拟合结果作为单独不可变快照序列化。
-- **测试。** 新增 `src/twod/saturation.test.js`，检查极值坐标/线宽、双特征数据、已知参数幅度与线宽模型恢复、浮点功率换算及无效输入；新增排除点/边界测试。预览 Chromium 专项模拟 13 条场扫描谱，检验两项拟合参数、双 Y 轴 SVG、特征 CSV、保存及重载。完整回归 [40891497754](https://github.com/imasenHF/spinplot/actions/runs/40891497754) 成功（数值、构建、Chromium、23 项数据与 14 项图形结构对照）。排除/边界测试及后续文档提交以各自最新 Actions 结果为准。
-- **科学与验收限制。** 特征提取直接在指定区间取全局正负极值，未自动判断两个极值属于同一导数谱线；宽区间多峰、强噪声、重叠信号可能产生不适宜的线宽。未实现参数协方差/置信区间、不确定度估计或真实仪器文件科学验收；不能将模型拟合解释为无条件可比较的真实弛豫时间。此前已验证的 Variable scan 统计量、Heatmap、Overlap 与正式版保持独立。
-- 本轮修改仅限 `preview/modularization-phase1-20261009`，Draft PR #1 仍未合并 `main`。独立预览 JS 静态资源已同步主站提交 `342f1b7`、HTML 已更新于 `e8f0def`，Pages 部署 [40892566215](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40892566215) 成功，公开预览 Chromium 专项验收 [40892808647](https://github.com/imasenHF/spinplot/actions/runs/40892808647) 成功（双 Y 轴、拟合参数、CSV 与项目重载）。正式 `/spinplot/` 未修改；自动回归与真实仪器数值验收分开判断。
-
-## Variable scan fitting UI refinement (2026-10-29)
-
-- Consolidated the feature selector. The existing statistic selector is visible only when Statistic is the chosen feature. Peak-to-peak amplitude and linewidth retain independent fit switches.
-- Feature interval Start/End and characteristic power Start/End now appear as paired controls. Empty fit power bounds show computed automatic bounds as placeholders without saving them as explicit user values.
-- Fit results show formulas and read-only parameter fields for characteristic power, A, C, RMSE and R². The numerical solver remains the existing bounded logarithmic search; algorithm selection has not been introduced.
-- Derived scan curves appear indented below the source dataset with individual line/marker style selectors, backed by stable virtual IDs and saved subplot style settings. Source data are not replaced.
-- Full regression [40901814549](https://github.com/imasenHF/spinplot/actions/runs/40901814549) succeeded; preview JavaScript bundle index-D-jSbHcJ.js and HTML were published in main-site commit 96012be5. Pages run [40902151391](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40902151391) succeeded. The public browser smoke rerun is tracked separately.
-- Changes are confined to the preview branch and static preview; PR #1 is still draft and the release remains unchanged. Quantitative verification on real spectra and parameter uncertainty remain outstanding.
+- **目标分支与发布边界。** `preview/modularization-phase1-20261009` 的 Draft PR #1 尚未合并 `main`，正式 `/spinplot/` 不变。独立预览站 `/previews/spinplot-modularization/` 静态 JS/CSS/HTML 已在主站 `main` 更新，Pages/公开浏览器验收需另查当前运行状态。
+- **投影。** `src/twod/core.js` 中，右侧 `yMode='linewidth'` 与 `yMode='both'` 对每一条 Y 扫描值对应的完整 X 轴谱分别求正负极值横坐标差，返回同 X 轴物理单位的峰峰线宽；Both 时同时返回峰峰幅度及线宽，以不同水平刻度显示在右侧投影中。旧 Mean/Max/Min/PTP/RMS/Sum 不变。顶部聚合投影仍可根据其生成的谱线显示标量峰峰值或线宽读数。以前沿右侧聚合曲线对 Y 轴求极值间距得到 dB 的标量读数已从界面移除；这与逐谱提取 G 单位线宽是两种不同操作。导出右投影 Both 模式时附加线宽及单位列。
+- **Variable scan 单一 Measurement。** 将原 Statistic 下拉与 Signal feature 合并为一个下拉，包含 Mean、Maximum、Minimum、RMS、Sum、峰峰幅度、峰峰线宽及二者组合。保留 `scanFeatureMode/scanStatistic` 旧配置字段，旧 `Statistic / ptp` 保存文件在用户主动启用饱和拟合前保持原数值语义。新 UI 仅增加衍生 `scanMeasurement` 状态，不修改源数据。
+- **拟合交互。** `src/twod/ui.js` 使用静态 MathML 组件展示两个模型及只读参数字段（P、A、C、RMSE、R²，未拟合的 C 显示 fixed）。求解器维持有界对数搜索+局部细化与给定特征功率的线性最小二乘；说明移至可悬停/focus 的问号帮助。测得功率范围明确显示，未手动设边界时，`src/twod/saturation.js` 默认使用已纳入拟合的有效点 `[Pmin,Pmax]`（不再扩张 100 倍）；边界输入框显示当前自动范围为占位值，支持手动放宽并保留越界/边界告警。
+- **排除测量点。** 原 0-based 索引文本输入换为 `Exclude points from fit` 折叠点表，逐项显示轨迹编号、原始扫描变量及实际功率，以勾选决定是否纳入拟合。保留 `scanFitExcluded` 项目兼容字段。被排除的实测值不删除，Variable scan 中独立显示为菱形符号，并在特征 CSV 中记录拟合纳入状态。勾选/取消时直接更新当前派生曲线样式列表。
+- **衍生曲线与默认样式。** 直接二维扫描的 Current data 恢复左右两列：左侧为源矩阵及缩进的派生信号/线宽/拟合/排除点条目，右侧一一对应独立 Style 下拉；重复的 Scan style 控件隐藏。旧手动多条一维曲线组成的 Variable scan 保留既有 Scan style 控件，以免失去操作入口。默认实测点使用线+符号，拟合使用虚线；默认图例移到绘图区上方。每条样式随项目恢复；原始 `rawCurves` 不改动。阶段 B 的可选画幅占用范围和跨列重排**不包含在本次实施中**。
+- **测试。** 合成 `src/twod/projection-linewidth.test.js`、`src/twod/saturation.test.js`、既有数值/旧项目及 Chromium 浏览器测试均纳入工作流；浏览器增加右侧双曲线 CSV、拟合公式、排除点交互与纳入状态、曲线样式保存恢复。完整回归 [40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) 已通过。两份用户提供的 v11 项目只用于本地数值检查，未上传公开仓库：50 条扫描中峰峰线宽约 7.035–9.045 G，第二份峰峰幅度 `P_half≈17.609 mW` 与已有结果一致；线宽模型拟合 R² 约 0.61、特征功率接近上边界，不视为科学模型已得到证实。
+- **未完成项。** 真正复杂多组分谱的峰识别、真实仪器校准、不确定度/协方差、阶段 B Plot footprint 选项，以及正式版本合并仍待后续任务。不得把已通过的构建与合成数据回归等同于这些验收。
 
 ### 已确认的交互要求（2026-10-23）
 
@@ -102,7 +94,7 @@
 - 2D Overlap 将各扫描轨迹绘制在共同 X 坐标轴上，轨迹标签显示扫描变量及其单位；每隔 N 条轨迹的设置控制显示抽样。原始二维矩阵不受显示偏移影响。
 - 对 dB 衰减轴，功率扫描只要求零衰减参考功率 P₀，按 P(A) = P₀ × 10^(-A/10) 换算为 mW。界面不再要求输入 A₀；旧项目保存的 (P_ref, A_ref) 会迁移为等效 P₀ = P_ref × 10^(A_ref/10)。
 - 对手动选入同一子图的两条及以上 1D 曲线，提供与导入二维数据一致的 Heatmap 和 Variable scan 操作。扫描变量默认名为 `Subplot index`、单位留空、数值从 1 开始按步长 1 等间距生成；可编辑变量名和单位，选择等间距（Start/Step）或手动数组。数组按当前曲线顺序逐一对应，热图行仍按数值排序，变量值按曲线 ID 保存，避免重排后错配。变量单位为空时坐标标题不显示单位括号。
-- 第二阶段 CW EPR 饱和功率拟合尚未实现。需在第一阶段通过验收后再定义候选模型、参数约束、初值、失败判据和残差输出；不将未确认模型记为已实现。
+- 峰峰幅度与峰峰线宽饱和拟合已经在隔离预览分支实现。模型、边界、诊断及验收限制以本文件上方“当前预览”节和 `docs/TWO_DIMENSIONAL.md` 为准；正式 `main` 仍未合并。
 
 ### 当前实施与验收状态（2026-10-24）
 
