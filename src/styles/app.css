@@ -171,24 +171,32 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 
 
 /* Variable scan: source names and derived styles use the original two columns. */
-.curve-manager.scan-matrix .current-order-columns{grid-template-columns:minmax(0,1fr) minmax(105px,125px);gap:7px}
+.curve-manager.scan-matrix .current-order-columns{grid-template-columns:minmax(0,1fr) 34px;gap:4px}
 .curve-manager.scan-matrix .order-item{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:18px}
 .curve-manager.scan-matrix .scan-derived-name{padding-left:12px;color:var(--text,#26383f);font-size:11px}
-.curve-manager.scan-matrix .curve-style-list{width:100%;min-width:0;overflow:hidden;border-color:transparent}
+.curve-manager.scan-matrix .curve-style-list{width:34px;min-width:0;max-height:250px;padding:2px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;border-color:transparent}
 .curve-manager.scan-matrix .curve-style-row{min-height:24px;height:24px}
-.curve-manager.scan-matrix .curve-style{min-width:0;width:100%;max-width:none;font-family:inherit;text-align:left;font-size:10px;padding:0 4px}
+.curve-manager.scan-matrix .curve-style{min-width:0;width:100%;max-width:none;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif;text-align:center;font-size:9px;padding:0 1px}
 .scan-source-spacer{pointer-events:none}
 .scan-fit-equation{background:var(--panel-bg,#f2f4f5);border:1px solid #b7c4c8;border-radius:3px;padding:10px 7px;margin:8px 0;overflow-x:auto}
-.scan-fit-equation math{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:17px;min-width:max-content}
+.scan-fit-equation math{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:15px;min-width:0}
 .scan-fit-model{border-top:1px solid #b7c4c8;padding-top:9px;margin-top:8px}
 .scan-fit-model:first-child{border-top:none;margin-top:0}
 .scan-fit-model .scan-fit-parameters{margin-top:8px}
 .scan-fit-model .scan-fit-parameters input[readonly]{background:#f2f5f7;color:#182d39;cursor:default;font-variant-numeric:tabular-nums}
 .scan-measured-power{font-size:11px;color:#364b58;padding-top:5px}
-.scan-exclude-panel{font-size:11px;margin-top:4px;border:1px solid #b5c2c8;padding:5px 7px;min-width:0}
-.scan-exclude-panel>summary{cursor:pointer;font-weight:600}
+.scan-exclude-panel{font-size:11px;margin:5px 0 5px 7px;border:0;background:transparent;padding:0;min-width:0}
+.scan-exclude-panel>summary{cursor:pointer;font-size:10px;color:#42515a;font-weight:400}
 .scan-help-inline{margin:6px 0;line-height:1.35}
 .scan-exclude-list{max-height:180px;overflow:auto;border:1px solid #cad1d4;background:#f8fafb;margin:5px 0;padding:4px}
 .scan-exclude-point{display:flex;align-items:center;gap:5px;min-height:22px;font-size:11px;white-space:nowrap}
 .scan-exclude-point input{flex:none}
 .scan-exclude-panel>button{font-size:11px;min-height:22px;margin:3px 0}
+
+/* A compact matrix source has no line style. Show the full source name instead. */
+.curve-manager.matrix-no-style .current-order-columns{grid-template-columns:minmax(0,1fr)}
+.curve-manager.matrix-no-style .curve-style-list{display:none!important}
+/* Pair the two scroll lists on identical 24px rows and 2px inner padding. */
+.curve-manager.scan-matrix .order-list,.curve-manager.scan-matrix .curve-style-list{box-sizing:border-box;max-height:250px;padding-top:2px;padding-bottom:2px}
+.curve-manager.scan-matrix .scan-derived-name{padding-left:10px}
+.curve-manager.scan-matrix .scan-source-spacer{height:24px;min-height:24px}
