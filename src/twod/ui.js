@@ -546,18 +546,23 @@ export function controls(card, sp, d, onChange) {
     try{data=scanCorrelationData(d,s);}catch(error){
       results.textContent=error.message;return;
     }
+    const excludedIndices=new Set(String(s.scanFitExcluded||'').split(/[,;\s]+/).filter(Boolean).map(Number));
     const powers=data.valid?data.points?.map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
-    const low=powers?.length?Math.min(...powers):NaN;
-    const high=powers?.length?Math.max(...powers):NaN;
-    measuredPower.textContent=Number.isFinite(low)&&Number.isFinite(high)
-      ?'Measured power: '+formatNumber(low)+'–'+formatNumber(high)+' mW'
+    const fittingPowers=data.valid?data.points?.filter(p=>!excludedIndices.has(p.index))
+      .map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
+    const measuredLow=powers?.length?Math.min(...powers):NaN;
+    const measuredHigh=powers?.length?Math.max(...powers):NaN;
+    const low=fittingPowers?.length?Math.min(...fittingPowers):NaN;
+    const high=fittingPowers?.length?Math.max(...fittingPowers):NaN;
+    measuredPower.textContent=Number.isFinite(measuredLow)&&Number.isFinite(measuredHigh)
+      ?'Measured power: '+formatNumber(measuredLow)+'–'+formatNumber(measuredHigh)+' mW'
       :'Measured power: unavailable';
     for(const [key,value] of [['scanFitPowerMinMW',low],['scanFitPowerMaxMW',high]]){
       const field=fitBounds.querySelector('[data-twod='+key+']');
       if(field)field.placeholder=formatNumber(value);
     }
     excludeList.replaceChildren();
-    const excluded=new Set(String(s.scanFitExcluded||'').split(/[,;\s]+/).filter(Boolean).map(Number));
+    const excluded=excludedIndices;
     if(data.valid&&Array.isArray(data.points)){
       for(const point of data.points){
         const label=document.createElement('label');
