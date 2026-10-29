@@ -282,6 +282,65 @@ try {
     const viewsSvg=fs.readFileSync('browser-preview/2d-view-modes.svg','utf8');
     assert.doesNotMatch(viewsSvg,/>Variable scan<\/text>/,'Variable scan subplot has no default title');assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
   }
+  if(process.env.SPINPLOT_TEST_POWER_SATURATION === '1'){
+    const fields=Array.from({length:241},(_,i)=>3340+i*0.1);
+    const attenuation=Array.from({length:13},(_,i)=>i*3);
+    const syntheticRows=attenuation.map(dB=>{
+      const power=100*10**(-dB/10),width=2.3*Math.sqrt(1+power/20);
+      const amplitude=4*Math.sqrt(power)/(1+power/12);
+      const raw=fields.map(B=>((B-3352)/width)*Math.exp(-.5*((B-3352)/width)**2));
+      const range=Math.max(...raw)-Math.min(...raw);
+      return raw.map(v=>v*amplitude/range);
+    });
+    const saturationMatrix={name:'Synthetic saturation',x:{name:'Field',unit:'G',values:fields},
+      y:{name:'Microwave attenuation',unit:'dB',values:attenuation},
+      real:syntheticRows,imag:syntheticRows.map(row=>row.map(()=>0)),metadata:{}};
+    const baseSubplot=mixed.config.subplots[1];
+    const saturationSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
+      mode:'scan',title:'Saturation validation',gridRow:1,gridCol:1,curves:[],
+      twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
+        scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
+        scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false}}};
+    const saturationCurve={...mixed.rawCurves[2],name:'Synthetic saturation',
+      B:fields,y:syntheticRows[0],matrix:saturationMatrix};
+    const saturationProject={...mixed,rawCurves:[saturationCurve],
+      config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:1,spans:'1'},
+        subplots:[saturationSubplot]}};
+    await load(saturationProject,'synthetic-saturation.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const scanPanel=page.locator('.subplot').first();
+    assert.equal(await scanPanel.locator('[data-twod="scanFeatureMode"]').inputValue(),'both');
+    assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
+    assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
+    const fitText=await scanPanel.locator('.scan-fit-results').textContent();
+    assert.match(fitText,/Amplitude: P =/);
+    assert.match(fitText,/Linewidth: P =/);
+    const savePath='browser-preview/synthetic-saturation.json';
+    const saved=await save(savePath);
+    const cfg=saved.config.subplots[0].twoD.settings;
+    assert.equal(cfg.scanFeatureMode,'both');
+    assert.equal(cfg.scanFitAmplitude,true);assert.equal(cfg.scanFitLinewidth,true);
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [csvDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export scan features CSV'}).click()]);
+    await csvDownload.saveAs('browser-preview/synthetic-saturation-features.csv');
+    const csv=fs.readFileSync('browser-preview/synthetic-saturation-features.csv','utf8');
+    assert.match(csv,/source_index,scan_value,power_or_scan_x,amplitude,linewidth,linewidth_unit,fit_amplitude/);
+    const bodyRows=csv.split(/\r?\n/).filter(line=>/^\d+,/.test(line));
+    assert.equal(bodyRows.length,13);
+    assert.ok(bodyRows.every(line=>line.split(',')[6]!==''&&line.split(',')[8]!==''));
+    await page.locator('#imageFormat').selectOption('svg');
+    const [svgDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await svgDownload.saveAs('browser-preview/synthetic-saturation.svg');
+    const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
+    assert.match(svg,/Peak-to-peak amplitude/);
+    assert.match(svg,/Peak-to-peak linewidth/);
+    await load(saved,'synthetic-saturation-reload.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude: P =/);
+    assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
+    console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
+  }
   // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
   // then verify that a heatmap-body double-click still restores X/Y ranges.
   if (process.env.SPINPLOT_TEST_COLORBAR_DBLCLICK === '1') {
