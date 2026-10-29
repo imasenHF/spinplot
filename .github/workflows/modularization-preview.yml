@@ -34,6 +34,8 @@ jobs:
         run: node --test src/data/curve-matrix.test.js
       - name: Z scale and color range regression
         run: node --test src/twod/zscale.test.js
+      - name: Per-trace feature extraction regression
+        run: node --test src/twod/scan-analysis.test.js
       - name: Existing 2D regression
         run: |
           node src/twod/core.test.js
