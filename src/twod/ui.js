@@ -539,8 +539,12 @@ export function controls(card, sp, d, onChange) {
   function refreshFitResults(){
     if(sp.mode!=='scan')return;
     fitControls.hidden=s.scanFeatureMode==='statistic'&&s.scanStatistic!=='ptp';
+    const scanCoordinateAxis=orient(d,s.component,s.swap).y;
     const powerMode=s.scanAxisMode==='power';
-    powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(orient(d,s.component,s.swap).y);
+    const calibratedNativePower=!powerMode&&calibratedPowerFactor(scanCoordinateAxis)===1
+      &&String(scanCoordinateAxis.unit||'').trim().toLowerCase()==='mw';
+    const canFitPower=powerMode||calibratedNativePower;
+    powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(scanCoordinateAxis);
     const signalAxis=orient(d,s.component,s.swap).x.values;
     const signalMin=Math.min(...signalAxis),signalMax=Math.max(...signalAxis);
     for(const [key,fallback] of [['scanStatisticMin',signalMin],['scanStatisticMax',signalMax]]){
@@ -554,16 +558,19 @@ export function controls(card, sp, d, onChange) {
       results.textContent=error.message;return;
     }
     const excludedIndices=new Set(String(s.scanFitExcluded||'').split(/[,;\s]+/).filter(Boolean).map(Number));
-    const powers=data.valid?data.points?.map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
-    const fittingPowers=data.valid?data.points?.filter(p=>!excludedIndices.has(p.index))
+    const powers=canFitPower&&data.valid?data.points?.map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
+    const fittingPowers=canFitPower&&data.valid?data.points?.filter(p=>!excludedIndices.has(p.index))
       .map(p=>p.x).filter(p=>Number.isFinite(p)&&p>0):[];
     const measuredLow=powers?.length?Math.min(...powers):NaN;
     const measuredHigh=powers?.length?Math.max(...powers):NaN;
     const low=fittingPowers?.length?Math.min(...fittingPowers):NaN;
     const high=fittingPowers?.length?Math.max(...fittingPowers):NaN;
-    measuredPower.textContent=Number.isFinite(measuredLow)&&Number.isFinite(measuredHigh)
-      ?'Measured power: '+formatNumber(measuredLow)+'–'+formatNumber(measuredHigh)+' mW'
-      :'Measured power: unavailable';
+    measuredPower.textContent=!canFitPower
+      ?'The acquired scan variable ('+(scanCoordinateAxis.unit||'no unit')+
+        ') is not calibrated power. Select Microwave power (mW) to fit.'
+      :Number.isFinite(measuredLow)&&Number.isFinite(measuredHigh)
+        ?'Measured power: '+formatNumber(measuredLow)+'–'+formatNumber(measuredHigh)+' mW'
+        :'Measured power: unavailable';
     for(const [key,value] of [['scanFitPowerMinMW',low],['scanFitPowerMaxMW',high]]){
       const field=fitBounds.querySelector('[data-twod='+key+']');
       if(field)field.placeholder=formatNumber(value);
@@ -651,7 +658,11 @@ export function controls(card, sp, d, onChange) {
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
-  scanAxisSelect.onchange=()=>{if(scanAxisSelect.value!=='power')fitControls.open=false;onScanAxisChange();refreshFitResults();};
+  scanAxisSelect.onchange=()=>{
+    fitControls.open=scanAxisSelect.value==='power'&&!!(s.scanFitAmplitude||s.scanFitLinewidth);
+    onScanAxisChange();
+    refreshFitResults();
+  };
   const onFeatureChange=featureSelect.onchange;
   featureSelect.onchange=()=>{onFeatureChange();refreshFitResults();};
   root.addEventListener('change',refreshFitResults);
