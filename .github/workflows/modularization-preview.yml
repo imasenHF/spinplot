@@ -38,6 +38,8 @@ jobs:
         run: node --test src/twod/scan-analysis.test.js
       - name: Saturation and linewidth regression
         run: node --test src/twod/saturation.test.js
+      - name: Per-field-scan right projection linewidth regression
+        run: node --test src/twod/projection-linewidth.test.js
       - name: Existing 2D regression
         run: |
           node src/twod/core.test.js
