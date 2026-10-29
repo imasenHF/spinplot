@@ -476,7 +476,14 @@ export function controls(card, sp, d, onChange) {
   fitBody.className='local-block grid2';
   fitControls.append(fitBody);
   scanSettings.append(fitControls);
-  check(fitBody,'scanFitAmplitude','Fit peak-to-peak amplitude');
+  check(fitBody,'scanFitAmplitude','Fit peak-to-peak amplitude',()=>{
+    // Existing v11 Statistic/PTP projects keep their old zero/constant trace
+    // semantics until users explicitly enable the physical saturation fit.
+    if(s.scanFeatureMode==='statistic'&&s.scanStatistic==='ptp'){
+      s.scanFeatureMode='amplitude';
+      s.scanMeasurement='amplitude';
+    }
+  });
   check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
   check(fitBody,'scanFitOffset','Fit constant offset (C)');
   const excludePanel=document.createElement('details');
@@ -531,7 +538,7 @@ export function controls(card, sp, d, onChange) {
   }
   function refreshFitResults(){
     if(sp.mode!=='scan')return;
-    fitControls.hidden=s.scanFeatureMode==='statistic';
+    fitControls.hidden=s.scanFeatureMode==='statistic'&&s.scanStatistic!=='ptp';
     const powerMode=s.scanAxisMode==='power';
     powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(orient(d,s.component,s.swap).y);
     const signalAxis=orient(d,s.component,s.swap).x.values;
