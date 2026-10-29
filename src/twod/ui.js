@@ -865,7 +865,9 @@ export function controls(card, sp, d, onChange) {
   projectionSection.box.hidden = ['overlap','scan','surface3d'].includes(sp.mode);
   scanSection.box.hidden = sp.mode !== 'scan';
   const scanStyleControl=card.querySelector('.scan-curve-style');
-  if(scanStyleControl)scanStyleControl.hidden=sp.mode==='scan';
+  // Manual-curve-derived scans retain their legacy style control until the
+  // separate manual-curve inventory can expose per-derived-curve styles.
+  if(scanStyleControl)scanStyleControl.hidden=sp.mode==='scan'&&!manualDerived;
   powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
   stackInput.closest('label').hidden = sp.mode === 'scan';
   body.querySelector('[data-twod=swap]').closest('label').hidden = sp.mode === 'scan';
