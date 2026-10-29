@@ -239,9 +239,9 @@ try {
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
-    const extraView=(title,row,mode)=>({...JSON.parse(JSON.stringify(source2D)),title,mode,gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}});
+    const extraView=(title,row,mode)=>({...JSON.parse(JSON.stringify(source2D)),title,mode,gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings,swap:false,scanAxisMode:'attenuation'}}});
     const viewMixed={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[
-      {...source2D,title:'Synthetic 2D',mode:'overlay',gridRow:1,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings}}},
+      {...source2D,title:'Synthetic 2D',mode:'overlay',gridRow:1,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings,swap:false,scanAxisMode:'attenuation'}}},
       extraView('Overlap',2,'overlap')
     ]}};
     await load(viewMixed,'2d-view-modes.spinplot.json');
