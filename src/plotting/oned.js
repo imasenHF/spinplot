@@ -46,7 +46,7 @@ export const applyStackOffsets = createDisplayCurves;
 export function resolveCurveStyle(sp, index) {
   const configured = sp?.curveStyles?.[index];
   const scanStyle = sp?.derivedFromTwoD && sp.scanCurveStyle;
-  const value = scanStyle ? { style: sp.scanCurveStyle } : configured || {};
+  const value = configured || (scanStyle ? { style: sp.scanCurveStyle } : {});
   if (!configured && !scanStyle) return { mode: "line", symbol: "circle", filled: false, lineDash: [], style: "line" };
   const style = value.style;
   if (typeof style === "string") {
@@ -894,7 +894,7 @@ export function renderFigure(
         if (display.mode !== "symbols") {
           ctx.strokeStyle = color;
           ctx.lineWidth = Number(sp.lineWidth) > 0 ? Number(sp.lineWidth) : lineW;
-          ctx.setLineDash(c.fitLine?[6,4]:(display.lineDash ?? theme.dashes[ci % theme.dashes.length] ?? []));
+          ctx.setLineDash(c.fitLine && !sp.curveStyles?.[c.index]?[6,4]:(display.lineDash ?? theme.dashes[ci % theme.dashes.length] ?? []));
           segments.forEach((part) => {
             if (!part.length) return;
             ctx.beginPath();
