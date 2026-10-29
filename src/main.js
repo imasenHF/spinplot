@@ -341,7 +341,15 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }else notice=data.reason||'No valid scan data';
  }
  else{data=TwoD.overlapData(d,t);xAxis=data.xAxis;yAxis={name:'Signal intensity ('+(t.component||'real')+')',unit:''};curves=data.traces.map(trace=>{const curveIndex=manual?(d.metadata?.curveIndices?.[trace.index]??ids[trace.index]??ids[0]):sourceIndex;return{index:curveIndex,name:data.scanAxis.name+' = '+Number(trace.scan).toPrecision(5)+(data.scanAxis.unit?' '+data.scanAxis.unit:''),source:manual?(state.rawCurves[curveIndex]?.name||d.name):d.name,freq:manual?(state.rawCurves[curveIndex]?.freq??frequency):frequency,B:trace.x.slice(),y:trace.y.slice(),yd:trace.y.slice(),xAxis:{name:xAxis.name,unit:xAxis.unit||''}}});}
- const renderSp={...sp,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
+ const derivedStyles={...sp.curveStyles};
+ if(sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'){
+  for(const curve of curves){
+   if(derivedStyles[curve.index])continue;
+   derivedStyles[curve.index]={style:curve.fitLine?'dashed-line':
+      (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle')};
+  }
+ }
+ const renderSp={...sp,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
  const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves.filter(c=>!c.rightAxis),xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
 }
