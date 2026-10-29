@@ -313,18 +313,19 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
   if(data.valid){
     const feature=data.featureMode&&data.featureMode!=='statistic';
-    const makeCurve=(name,values,axis='left',fitLine=false)=>{
-      const curve={index:ids[0]??0,name,source:d.name,freq:frequency,
+    const makeCurve=(name,values,axis='left',fitLine=false,kind='statistic')=>{
+      const identities={statistic:-100,amplitude:-101,linewidth:-102,amplitudeFit:-103,linewidthFit:-104};
+      const curve={index:identities[kind]??-100,name,source:d.name,freq:frequency,
         B:data.x.slice(),y:values.slice(),yd:values.slice(),
         xAxis:{name:xAxis.name,unit:xAxis.unit||''},rightAxis:axis==='right',fitLine};
       return curve;
     };
-    if(!feature)curves=[makeCurve(yAxis.name,data.y)];
+    if(!feature)curves=[makeCurve(yAxis.name,data.y,'left',false,'statistic')];
     else {
       const amplitude=data.featureMode==='amplitude'||data.featureMode==='both';
       const linewidth=data.featureMode==='linewidth'||data.featureMode==='both';
-      if(amplitude)curves.push(makeCurve('Peak-to-peak amplitude',data.points.map(p=>p.amplitude)));
-      if(linewidth)curves.push(makeCurve('Peak-to-peak linewidth',data.points.map(p=>p.linewidth),data.featureMode==='both'?'right':'left'));
+      if(amplitude)curves.push(makeCurve('Peak-to-peak amplitude',data.points.map(p=>p.amplitude),'left',false,'amplitude'));
+      if(linewidth)curves.push(makeCurve('Peak-to-peak linewidth',data.points.map(p=>p.linewidth),data.featureMode==='both'?'right':'left',false,'linewidth'));
       for(const [which,fit] of [['amplitude',data.amplitudeFit],['linewidth',data.linewidthFit]]){
         if(!fit?.valid)continue;
         const isLine=which==='linewidth';
@@ -332,7 +333,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
           (isLine?Math.sqrt(1+p.x/fit.parameters.P):Math.sqrt(p.x)/(1+p.x/fit.parameters.P))
           +fit.parameters.C);
         curves.push(makeCurve((isLine?'Linewidth':'Amplitude')+' fit',values,
-          isLine&&data.featureMode==='both'?'right':'left',true));
+          isLine&&data.featureMode==='both'?'right':'left',true,isLine?'linewidthFit':'amplitudeFit'));
       }
       if(t.scanFitAmplitude&&data.amplitudeFit&&!data.amplitudeFit.valid)notice=data.amplitudeFit.reason;
       else if(t.scanFitLinewidth&&data.linewidthFit&&!data.linewidthFit.valid)notice=data.linewidthFit.reason;
