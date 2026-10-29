@@ -1119,13 +1119,15 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     gapX = Math.max(gY ? 80 : 0, Number(s.projectionGapX) || 0),
     gapY = Math.max(0, Number(s.projectionGapY) || 0),
     topH = hasTop ? Math.max(25, h * 0.17) : 0,
-    gSpace = gX ? Math.max(34, options.g.titleDistance + axisSize + 8) : 0;
+    gSpace = gX ? Math.max(34, options.g.titleDistance + axisSize + 8) : 0,
+    sideDual=s.yMode==='both'&&hasSide;
   return {
     left: Math.max(52, options.yTitleDistance || 35),
     right: hasSide ? gapX + w * 0.14 + (cb ? 100 : 20) : cb ? 100 : gY ? 80 : 20,
-    top: hasTop
+    top: (hasTop
       ? Math.max(title.trim() ? 62 : 40, projectionTitleSize * 2 + 4) + topH + gapY + gSpace
-      : Math.max(title.trim() ? 65 : 42, hasSide ? projectionTitleSize * 2 + 4 : 0) + (gX ? 34 : 0),
+      : Math.max(title.trim() ? 65 : 42, hasSide ? projectionTitleSize * 2 + 4 : 0) + (gX ? 34 : 0))
+      + (sideDual ? 12 : 0),
     bottom: Math.max(55, (options.xTitleDistance || 20) + axisSize + 20),
     gapX,
     gapY,
@@ -1367,6 +1369,9 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
   if (proj) {
     const [a0, b0] = extent(p.x, xi),
       [c0, e0] = extent(p.y, yi),
+      [sideWidthMin,sideWidthMax]=p.sideLinewidth?extent(p.sideLinewidth,yi):[0,1],
+      sideWidthPad=(sideWidthMax-sideWidthMin)*0.08,
+      sideWidthBounds=[sideWidthMin-sideWidthPad,sideWidthMax+sideWidthPad],
       ap = (b0 - a0) * 0.08,
       cp = (e0 - c0) * 0.08,
       xScale=s.xProjectionScale||'linear',yScale=s.yProjectionScale||'linear',
@@ -1386,6 +1391,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       throw Error('Invalid projection intensity range');
     const XP = (z) => top.y + top.h - axisCoordinate(z,a,b,xScale) * top.h,
       YP = (z) => side.x + axisCoordinate(z,c,e,yScale) * side.w,
+      YPWidth = (z) => side.x + ((z-sideWidthBounds[0])/(sideWidthBounds[1]-sideWidthBounds[0]))*side.w,
       rangeText = (r, axis) => `${r[0].toPrecision(4)}–${r[1].toPrecision(4)} ${axis.unit}`;
     if (hasTop) {
       projectionRegions.push({
@@ -1457,7 +1463,10 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         projection: 'side',
         axisHitWidth: gapX,
       });
-      clip(side, () => line(yi, (j) => [YP(p.y[j]), Y(v.y.values[j])]));
+      clip(side, () => {
+        line(yi, (j) => [YP(p.y[j]), Y(v.y.values[j])]);
+        if(p.sideLinewidth)line(yi,(j)=>[YPWidth(p.sideLinewidth[j]),Y(v.y.values[j])],theme.text);
+      });
       border(side);
       const n = Math.max(1, Math.min(3, Math.floor(side.w / (tick * 5))));
       const sideTicks=scaledTicks(c,e,yScale,n+1);
@@ -1475,6 +1484,16 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       }
       if (pf.exponent)
         text(pf.multiplier, side.x + side.w, side.y + side.h + tick * 2 + 7, tick, 'right');
+      if(p.sideLinewidth){
+        const widthTicks=scaledTicks(sideWidthBounds[0],sideWidthBounds[1],'linear',n+1);
+        const widthFmt=tickFormatter(widthTicks,{notation:'auto'});
+        for (let k=0;k<widthTicks.length;k++){
+          text(widthFmt.format(widthTicks[k]),YPWidth(widthTicks[k]),side.y-9,Math.max(8,tick-2),
+            k===0?'left':k===widthTicks.length-1?'right':'center');
+        }
+        const widthUnit=v.x.unit?' ('+v.x.unit+')':'';
+        text('Linewidth'+widthUnit,side.x+side.w/2,side.y-38,Math.max(9,projectionTitleSize-1));
+      }
       ctx.strokeStyle = theme.axis;
       for (let k = 0; k <= 4; k++) {
         ctx.beginPath();
@@ -1485,7 +1504,9 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         ctx.stroke();
       }
       if (s.showYProjectionTitle !== false) {
-        const title = s.yProjectionTitle || `${v.y.name} projection (${s.yMode})`;
+        const title = s.yProjectionTitle || (s.yMode==='linewidth'
+          ? v.y.name+' · peak-to-peak linewidth ('+(v.x.unit||'X')+')'
+          :s.yMode==='both'?v.y.name+' · amplitude + linewidth':`${v.y.name} projection (${s.yMode})`);
         const measureWidth = (value) => {
           ctx.font = projectionTitleSize + 'px ' + font;
           const measured = typeof ctx.measureText === 'function' ? ctx.measureText(value)?.width : undefined;
