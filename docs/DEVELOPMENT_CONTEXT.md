@@ -32,6 +32,16 @@
 - 预览分支 Actions 生成的构建产物不会自动替换主站仓库里的预览快照。必须单独检查快照同步提交、主站 Pages 发布结果和公开 URL；不可将分支 CI 成功等同于线上页面已更新。
 - 公开预览禁止使用客户数据、内部文件或其他未经授权的材料。
 
+## 当前 UI 调整：七项界面与 Linear 刻度修复（2026-10-30）
+
+- **原始二维 Heatmap/Contour/3D 数据列表：** `src/twod/ui.js` 将没有可绘制的源曲线线型的直接二维数据列表标记为 `matrix-no-style`，Current data 占满单列，隐藏空白 Style 列；普通二维模式不再暴露无关的 `Scan style`。保留原始矩阵及其相关数据记录不变。
+- **Variable scan 衍生曲线样式：** 样式列恢复为与普通一维曲线一致的 **34 px 符号式下拉**（━、┄、○、●、━● 等）。复用已有 `scanCurveStyle` 下拉中的完整图形选项，而不是显示长文本；左侧名称与右侧样式固定 24 px 行高、均保留 2 px 内边距、相同滚动窗口高度，排除点增删后重新计算高度并同步条目。各衍生曲线样式仍保存在 `curveStyles`，项目重载后恢复。手动 1D 曲线生成的旧扫描视图继续保留其 Scan style 控件，避免破坏原操作路径。
+- **拟合面板：** 切换到 `scanAxisMode='native'` 时自动折叠 `Power saturation fitting`；切回已启用拟合的 `power` 模式时自动展开，但用户仍可手动打开查看说明。native dB 等非校准扫描坐标不再被错误标记为测得的 mW 功率范围，改为明确要求选择功率扫描。原 `scanFitAmplitude`、`scanFitLinewidth` 等开关不因此被清空。
+- **控件外观：** `Exclude points from fit` 改用现有嵌套 `advanced-layout` 折叠栏风格，去除额外方框。MathML 中函数参数括号明确 `stretchy="false"`，缩小公式默认字号；不修改数学表达式和拟合算法。
+- **轴格式：** 当 Y、Top/Right 投影强度轴或 Z 色标处于 `linear` 模式时，刻度使用十进制格式，不再从全局 Auto/Scientific 偏好或 `Number.toPrecision()` 的自动指数形式隐式切换为科学计数法。用户显式选择 `scientific` 仍显示科学计数法；Log10/SymLog 保持原数值映射与标签规则。普通 X 轴尚无该三模式设置，其原有手动 Tick notation 行为保持不变。
+- **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开线上浏览器复核需要单独以当前远程工作流结论为准。
+- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 的四种 Plot footprint 画幅范围和跨列对齐仍未实施。
+
 ## 当前预览交付与验收（2026-10-29）
 
 - **绘图模式：** Heatmap、Contour（物理坐标 marching squares）和可旋转的三角网格/WebGL 3D surface 位于独立预览分支，3D 视角默认折叠，支持鼠标旋转、方位角、俯仰角、Z 拉伸及缩放。
