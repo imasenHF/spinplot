@@ -36,6 +36,8 @@ jobs:
         run: node --test src/twod/zscale.test.js
       - name: Per-trace feature extraction regression
         run: node --test src/twod/scan-analysis.test.js
+      - name: Saturation and linewidth regression
+        run: node --test src/twod/saturation.test.js
       - name: Existing 2D regression
         run: |
           node src/twod/core.test.js
