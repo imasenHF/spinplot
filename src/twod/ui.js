@@ -1254,6 +1254,14 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           Math.max(8, tick - 1),
           'left',
         );
+      if(s.topFeatureDisplay && s.topFeatureDisplay!=='none'){
+        const feature=peakFeatures(v.x.values,p.x,xr);
+        const entries=feature.valid?[
+          ...(s.topFeatureDisplay!=='linewidth'?['PP '+feature.amplitude.toPrecision(4)]:[]),
+          ...(s.topFeatureDisplay!=='amplitude'?['Δ'+v.x.name+' '+feature.linewidth.toPrecision(4)+(v.x.unit?' '+v.x.unit:'')]:[])
+        ]:['Feature unavailable'];
+        entries.forEach((entry,k)=>text(entry,top.x+top.w/2,top.y+top.h-13-12*(entries.length-1-k),Math.max(8,tick-2)));
+      }
     }
     if (hasSide) {
       projectionRegions.push({
@@ -1344,6 +1352,14 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           Math.max(8, tick - 1),
           'right',
         );
+      if(s.sideFeatureDisplay && s.sideFeatureDisplay!=='none'){
+        const feature=peakFeatures(v.y.values,p.y,yr);
+        const entries=feature.valid?[
+          ...(s.sideFeatureDisplay!=='linewidth'?['PP '+feature.amplitude.toPrecision(4)]:[]),
+          ...(s.sideFeatureDisplay!=='amplitude'?['Δ'+v.y.name+' '+feature.linewidth.toPrecision(4)+(v.y.unit?' '+v.y.unit:'')]:[])
+        ]:['Feature unavailable'];
+        entries.forEach((entry,k)=>text(entry,side.x+side.w/2,side.y+side.h-14-12*(entries.length-1-k),Math.max(8,tick-2)));
+      }
     }
   }
   const g = options.g;
