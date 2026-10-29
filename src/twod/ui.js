@@ -441,6 +441,40 @@ export function controls(card, sp, d, onChange) {
   check(fitControls, 'scanFitAmplitude', 'Fit peak-to-peak amplitude');
   check(fitControls, 'scanFitLinewidth', 'Fit peak-to-peak linewidth');
   check(fitControls, 'scanFitOffset', 'Fit constant offset (C)');
+  const fitResults=document.createElement('div');
+  fitResults.className='scan-fit-results';
+  fitResults.style.gridColumn='1 / -1';
+  fitResults.style.fontSize='11px';
+  fitResults.style.whiteSpace='pre-line';
+  fitControls.append(fitResults);
+  function updateFitResults(){
+    if(sp.mode!=='scan')return;
+    if(!s.scanFitAmplitude&&!s.scanFitLinewidth){
+      fitResults.textContent='Select a feature and enable a fit to view its parameters.';
+      return;
+    }
+    let result;
+    try{result=scanCorrelationData(d,s);}
+    catch(error){fitResults.textContent=error.message;return;}
+    if(!result.valid){fitResults.textContent=result.reason;return;}
+    const lines=[];
+    for(const [title,fit,enabled] of [
+      ['Amplitude',result.amplitudeFit,s.scanFitAmplitude],
+      ['Linewidth',result.linewidthFit,s.scanFitLinewidth]
+    ]){
+      if(!enabled)continue;
+      if(!fit){lines.push(title+': select the corresponding feature.');continue;}
+      if(!fit.valid){lines.push(title+': '+fit.reason);continue;}
+      const p=fit.parameters;
+      lines.push(title+': P = '+p.P.toPrecision(5)+' mW, A = '+p.A.toPrecision(5)+
+        ', C = '+p.C.toPrecision(5)+', RMSE = '+fit.rmse.toPrecision(4)+
+        ', R² = '+(fit.r2==null?'—':fit.r2.toPrecision(5))+
+        (fit.warning?' · '+fit.warning:''));
+    }
+    fitResults.textContent=lines.join('\n');
+  }
+  root.addEventListener('change',updateFitResults);
+  updateFitResults();
   select(scanSettings, 'scanStatistic', 'Statistic', [
     ['mean', 'Mean'],
     ['max', 'Maximum'],
