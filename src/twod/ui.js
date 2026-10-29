@@ -1470,7 +1470,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ? options.yTicks(...yr, Number(s.yStep), 5)
       : Array.from({ length: 5 }, (_, k) => yr[0] + ((yr[1] - yr[0]) * k) / 4);
   const xf = tickFormatter(xt, options.xTickFormat),
-    yf = tickFormatter(yt, s.yScale==='scientific'?{...options.yTickFormat,notation:'scientific'}:options.yTickFormat);
+    yf = tickFormatter(yt, {...options.yTickFormat,notation:s.yScale==='scientific'?'scientific':s.yScale==='linear'?'decimal':'auto'});
   for (const a of (s.mode==='surface3d'?[]:xt))
     text(
       xf.format(a),
@@ -1540,7 +1540,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       clip(top, () => line(xi, (i) => [X(v.x.values[i]), XP(p.x[i])]));
       border(top);
       const topTicks=scaledTicks(a,b,xScale,4);
-      const topNotation=xScale==='scientific'?'scientific':xScale==='log'?'auto':s.xProjectionNotation&&s.xProjectionNotation!=='inherit'?s.xProjectionNotation:options.yTickFormat?.notation;
+      const topNotation=xScale==='scientific'?'scientific':xScale==='linear'?'decimal':'auto';
       const pf=tickFormatter(topTicks,{...options.yTickFormat,notation:topNotation});
       for (const z of topTicks) {
         text(pf.format(z), top.x - 5, XP(z), tick, 'right');
@@ -1601,7 +1601,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       border(side);
       const n = Math.max(1, Math.min(3, Math.floor(side.w / (tick * 5))));
       const sideTicks=scaledTicks(c,e,yScale,n+1);
-      const sideNotation=yScale==='scientific'?'scientific':yScale==='log'?'auto':s.yProjectionNotation&&s.yProjectionNotation!=='inherit'?s.yProjectionNotation:options.xTickFormat?.notation;
+      const sideNotation=yScale==='scientific'?'scientific':yScale==='linear'?'decimal':'auto';
       const pf=tickFormatter(sideTicks,{...options.xTickFormat,notation:sideNotation});
       for (let k = 0; k <= n; k++) {
         const q = sideTicks[k];
@@ -1617,7 +1617,7 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
         text(pf.multiplier, side.x + side.w, side.y + side.h + tick * 2 + 7, tick, 'right');
       if(p.sideLinewidth){
         const widthTicks=scaledTicks(sideWidthBounds[0],sideWidthBounds[1],'linear',n+1);
-        const widthFmt=tickFormatter(widthTicks,{notation:'auto'});
+        const widthFmt=tickFormatter(widthTicks,{notation:'decimal'});
         for (let k=0;k<widthTicks.length;k++){
           text(widthFmt.format(widthTicks[k]),YPWidth(widthTicks[k]),side.y-9,Math.max(8,tick-2),
             k===0?'left':k===widthTicks.length-1?'right':'center');
@@ -1735,18 +1735,22 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
       ctx.fillRect(bar.x, bar.y + (bar.h * k) / 256, bar.w, bar.h / 256 + 0.1);
     }
     border(bar);
-    for (const z of options.z?.hideTicks
+    const colorbarTicks=options.z?.hideTicks
       ? []
       : s.zScale!=='log' && options.z?.step > 0 && options.yTicks
         ? options.yTicks(zmin, zmax, options.z.step)
-        : zTicks(zmin,zmax,s.zScale)) {
+        : zTicks(zmin,zmax,s.zScale);
+    const colorbarFormatter=tickFormatter(colorbarTicks,{digits:6,notation:'decimal'});
+    for (const z of colorbarTicks) {
       const py = y + ph - ph*zFraction(z,zmin,zmax,s.zScale);
       ctx.strokeStyle = theme.axis;
       ctx.beginPath();
       ctx.moveTo(bar.x + bar.w, py);
       ctx.lineTo(bar.x + bar.w + 4, py);
       ctx.stroke();
-      text(s.zScale==='scientific'?z.toExponential(2):s.zScale==='log'?Number(z.toPrecision(3)).toString():z.toPrecision(4), bar.x + bar.w + 6, py, tick, 'left');
+      const label=s.zScale==='scientific'?z.toExponential(2)
+        :s.zScale==='log'?Number(z.toPrecision(3)).toString():colorbarFormatter.format(z);
+      text(label, bar.x + bar.w + 6, py, tick, 'left');
     }
     const zTitle = s.colorbarLabel || options.z?.label;
     if (
