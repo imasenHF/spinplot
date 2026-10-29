@@ -816,7 +816,9 @@ export function controls(card, sp, d, onChange) {
         [...(mode==='amplitude'||mode==='both'?[[-101,'Peak-to-peak amplitude']]:[]),
          ...(mode==='linewidth'||mode==='both'?[[-102,'Peak-to-peak linewidth']]:[]),
          ...(view.scanFitAmplitude&&(mode==='amplitude'||mode==='both')?[[-103,'Amplitude fit']]:[]),
-         ...(view.scanFitLinewidth&&(mode==='linewidth'||mode==='both')?[[-104,'Linewidth fit']]:[])];
+         ...(view.scanFitLinewidth&&(mode==='linewidth'||mode==='both')?[[-104,'Linewidth fit']]:[]),
+         ...(view.scanFitExcluded&&((view.scanFitAmplitude||view.scanFitLinewidth))&&(mode==='amplitude'||mode==='both')?[[-105,'Excluded amplitude']]:[]),
+         ...(view.scanFitExcluded&&((view.scanFitAmplitude||view.scanFitLinewidth))&&(mode==='linewidth'||mode==='both')?[[-106,'Excluded linewidth']]:[])];
       const oldStyles=styles.querySelectorAll('.curve-style-row');
       oldStyles.forEach(e=>e.remove());
       const baseSpacer=document.createElement('div');
@@ -843,6 +845,7 @@ export function controls(card, sp, d, onChange) {
           opt.textContent=label.replaceAll('-',' ');style.append(opt);
         }
         const defaultStyle=id===-103||id===-104?'dashed-line':
+          id===-105||id===-106?'diamond':
           id===-100?(sp.scanCurveStyle||'line'):
           sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle';
         style.value=sp.curveStyles?.[id]?.style||defaultStyle;
