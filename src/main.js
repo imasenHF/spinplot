@@ -314,7 +314,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   if(data.valid){
     const feature=data.featureMode&&data.featureMode!=='statistic';
     const makeCurve=(name,values,axis='left',fitLine=false,kind='statistic')=>{
-      const identities={statistic:-100,amplitude:-101,linewidth:-102,amplitudeFit:-103,linewidthFit:-104};
+      const identities={statistic:-100,amplitude:-101,linewidth:-102,amplitudeFit:-103,linewidthFit:-104,excludedAmplitude:-105,excludedLinewidth:-106};
       const curve={index:identities[kind]??-100,name,source:d.name,freq:frequency,
         B:data.x.slice(),y:values.slice(),yd:values.slice(),
         xAxis:{name:xAxis.name,unit:xAxis.unit||''},rightAxis:axis==='right',fitLine};
@@ -324,8 +324,17 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
     else {
       const amplitude=data.featureMode==='amplitude'||data.featureMode==='both';
       const linewidth=data.featureMode==='linewidth'||data.featureMode==='both';
-      if(amplitude)curves.push(makeCurve('Peak-to-peak amplitude',data.points.map(p=>p.amplitude),'left',false,'amplitude'));
-      if(linewidth)curves.push(makeCurve('Peak-to-peak linewidth',data.points.map(p=>p.linewidth),data.featureMode==='both'?'right':'left',false,'linewidth'));
+      const excluded=new Set(String(t.scanFitExcluded||'').split(/[,;\s]+/).filter(Boolean).map(Number));
+      const hasExcluded=(t.scanFitAmplitude||t.scanFitLinewidth)&&data.points.some(p=>excluded.has(p.index));
+      if(amplitude){
+        curves.push(makeCurve('Peak-to-peak amplitude',data.points.map(p=>hasExcluded&&excluded.has(p.index)?NaN:p.amplitude),'left',false,'amplitude'));
+        if(hasExcluded)curves.push(makeCurve('Excluded amplitude',data.points.map(p=>excluded.has(p.index)?p.amplitude:NaN),'left',false,'excludedAmplitude'));
+      }
+      if(linewidth){
+        const axis=data.featureMode==='both'?'right':'left';
+        curves.push(makeCurve('Peak-to-peak linewidth',data.points.map(p=>hasExcluded&&excluded.has(p.index)?NaN:p.linewidth),axis,false,'linewidth'));
+        if(hasExcluded)curves.push(makeCurve('Excluded linewidth',data.points.map(p=>excluded.has(p.index)?p.linewidth:NaN),axis,false,'excludedLinewidth'));
+      }
       for(const [which,fit] of [['amplitude',data.amplitudeFit],['linewidth',data.linewidthFit]]){
         if(!fit?.valid)continue;
         const isLine=which==='linewidth';
@@ -346,6 +355,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   for(const curve of curves){
    if(derivedStyles[curve.index])continue;
    derivedStyles[curve.index]={style:curve.fitLine?'dashed-line':
+      curve.index===-105||curve.index===-106?'diamond':
       (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle')};
   }
  }
