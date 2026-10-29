@@ -77,10 +77,10 @@
 ## 第 2–3 阶段验证状态（2026-10-29）
 
 - 新增 `src/twod/scan-analysis.test.js`，针对现有逐轨迹统计路径验证 mean、max、min、peak-to-peak、RMS、sum 六种统计量；同时检查扫描坐标顺序、`P(A)=P₀×10^{-A/10}` 的 dB→mW 换算、缺少正参考功率时的拒绝行为、非 dB 衰减轴的拒绝行为，以及源矩阵/坐标/元数据不被修改。
-- `modularization-preview.yml` 新增独立的 Per-trace feature extraction regression 步骤。完整 CI [40833757747](https://github.com/imasenHF/spinplot/actions/runs/40833757747) 成功；上述六类统计与校准边界测试通过，既有二维集成测试、生产构建、Chromium 回归和 23 个数据文件/13 个图形文件的迁移前对照通过。
-- **第 2 阶段仅部分具备。** 现有 `scanCorrelationData()` 可生成 Variable scan 所需的逐轨迹统计值，并使用 `scanPowerReferenceMW` 进行 dB 到 mW 的换算；目前没有独立的逐轨迹特征与功率元数据表，也没有逐条轨迹的有效/剔除状态、特征提取记录及异常原因。因此，本轮只验证了已有计算路径与输入边界，不将阶段 2 标记为完整验收。
-- **第 3 阶段尚未实现。** 当前源码中未发现 CW EPR 饱和功率拟合模型、拟合参数约束、残差/不确定度诊断或对应 UI/导出。当前只能确认功能缺口，不能声称已通过已知 (P_{1/2}) 的合成拟合、异常输入或保存恢复验收。实施前需先确认信号特征定义、功率参考位置与校准、候选模型及参数约束。
-- 本次只新增回归测试与 CI 步骤；未修改正式 `main` 或 `/spinplot/`，PR #1 仍保持 Draft。公开页面仍为当前已部署预览代码；本轮新增的是开发分支测试，不涉及应用资源更新。
+- `modularization-preview.yml` 新增独立的 Per-trace feature extraction regression 步骤。完整 CI [40834719973](https://github.com/imasenHF/spinplot/actions/runs/40834719973) 成功；上述六类统计与校准边界测试通过，既有二维集成测试、生产构建、Chromium 回归和 23 个数据文件/13 个图形文件的迁移前对照通过。公开预览 Chromium 测试 [40834719822](https://github.com/imasenHF/spinplot/actions/runs/40834719822) 成功，现有 Variable scan 控件显隐、统计区间设置、项目保存和二维导出交互通过。
+- **第 2 阶段仅部分具备。** 现有 `scanCorrelationData()` 可生成 Variable scan 所需的逐轨迹统计值，并使用 `scanPowerReferenceMW` 进行 dB 到 mW 的换算；目前没有独立的逐轨迹特征与功率元数据表、逐条轨迹有效/剔除状态及异常原因。浏览器导出检查还确认，`displayCurvesCSV()` 通过 `processedSubplot()` 导出普通一维曲线，二维 Variable scan 派生子图不进入该 CSV，因此现有显示 CSV 不能作为特征结果表。数值提取与校准边界已测，表格/导出能力仍待开发，阶段 2 尚未完整验收。
+- **第 3 阶段尚未实现。** 当前源码中未发现 CW EPR 饱和功率拟合模型、拟合参数约束、残差/不确定度诊断或对应 UI/导出。当前只能确认功能缺口，不能声称已通过已知 `P₁/₂` 的合成拟合、异常输入或保存恢复验收。实施前需先确认信号特征定义、功率参考位置与校准、候选模型及参数约束。
+- 本轮只新增回归测试、浏览器检查与 CI 步骤；未修改正式 `main` 或 `/spinplot/`，PR #1 仍保持 Draft。公开页面仍为当前已部署应用代码；测试脚本与文档变更不涉及应用资源更新。
 
 ### 已确认的交互要求（2026-10-23）
 
