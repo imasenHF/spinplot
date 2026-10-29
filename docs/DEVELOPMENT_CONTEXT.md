@@ -37,7 +37,7 @@
 - **操作定义：** 对直接二维源数据创建的 Variable scan，`Current data` 中缩进的峰峰幅度、峰峰线宽、Statistic、拟合曲线及排除点系列支持鼠标拖拽排序。列表从上到下对应**从后到前**的绘制次序；下方曲线最后绘制，覆盖上方曲线。原始二维矩阵数据行固定，不参与派生图层排序，源数据、数值提取与拟合参数不变。支持焦点在派生曲线行时以 Alt+↑/↓ 调整次序。
 - **单一数据来源：** `src/twod/scan-order.js` 维护稳定的派生曲线虚拟 ID（−100 至 −106），归一化旧项目缺失的排序信息、忽略非法/重复 ID，并计算有效顺序。`src/twod/ui.js` 在当前数据行上绑定拖拽与键盘事件，同时移动左侧名称和右侧样式控件。排除点显示切换时继续使用已保存的相对顺序。`src/main.js` 在渲染前按相同顺序排序 `derivedTwoDPlotModel` 的派生曲线，Canvas 绘制、图例、PNG/SVG/PDF 等导出均使用排序后的曲线序列，而不仅仅改变左侧列表文本。
 - **保存与兼容：** 用户第一次调整时在子图配置中写入 `scanDerivedOrder`（稳定负 ID 数组），随既有项目/配置 v11/v10 保存、恢复及撤销/重做，不增加版本号。旧项目没有该字段时使用原有默认顺序，隐藏/禁用的派生曲线排序位置不会因切换特征、拟合开关或排除点而丢失。手动 1D 曲线组合的原有 `sp.curves` 顺序行为不受影响。
-- **验收：** 新增 `src/twod/scan-order.test.js`，覆盖默认次序、前后绘制顺序、隐含系列身份、非法排序与源矩阵固定；浏览器回归新增鼠标拖放、Z-order 对应的 SVG 序列、右侧 Style 同步、项目保存重载及 Alt+Arrow 键盘调整。完整 CI/浏览器/旧项目与导出对照 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。发布独立预览的静态 HTML/JS/CSS 已提交主站 `742ef456`；Pages 与公开 URL 复核以对应运行结果为准。正式 `main`、正式站点和阶段 B 画幅控制未改。
+- **验收：** 新增 `src/twod/scan-order.test.js`，覆盖默认次序、前后绘制顺序、隐含系列身份、非法排序与源矩阵固定；浏览器回归新增鼠标拖放、Z-order 对应的 SVG 序列、右侧 Style 同步、项目保存重载及 Alt+Arrow 键盘调整。完整 CI/浏览器/旧项目与导出对照 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。独立预览 HTML/JS/CSS 已提交主站 `742ef456`，Pages [40929364489](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40929364489) 成功，公开 URL Chromium 验收 [40929024041](https://github.com/imasenHF/spinplot/actions/runs/40929024041) 在发布后重跑成功。正式 `main`、正式站点和阶段 B 画幅控制未改。
 
 ## 当前 UI 调整：七项界面与 Linear 刻度修复（2026-10-30）
 
