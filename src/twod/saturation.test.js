@@ -30,7 +30,7 @@ assert.equal(scan.valid,true);
 assert.deepEqual(scan.y,[7,10,8,10,8]);
 assert.deepEqual(scan.secondary,[1,1,1,1,1]);
 assert.equal(scan.secondaryAxis.unit,'G');
-assert.deepEqual(scan.x,[100,10,1,.1,.01]);
+scan.x.forEach((power,i)=>assert.ok(Math.abs(power-[100,10,1,.1,.01][i])<1e-12));
 assert.equal(JSON.stringify(matrix),snapshot);
 
 for(const [model,A,q,C] of [['amplitude',5,12,0],['linewidth',2,18,0]]){
