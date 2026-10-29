@@ -2,6 +2,7 @@ import {create2DData} from '../data/twod.js';
 import {validate2DData as validate} from '../data/twod.js';
 export {validate2DData as validate} from '../data/twod.js';
 import {axisKind,axisInfo} from '../processing/axis.js';
+import {peakFeatures} from './saturation.js';
 export {coordinateScale,axisKind,axisInfo,fieldToGauss} from '../processing/axis.js';
 // Signal storage: rows are Y, columns are X; X varies fastest in BES3T.
 const num=v=>v===null||v===undefined||v===''?NaN:Number(v);
@@ -49,5 +50,17 @@ export function projections(v,xRange,yRange,xMode='mean',yMode='rms'){
  const xi=v.x.values.map((x,i)=>x>=xRange[0]&&x<=xRange[1]?i:-1).filter(i=>i>=0),yi=v.y.values.map((y,i)=>y>=yRange[0]&&y<=yRange[1]?i:-1).filter(i=>i>=0);if(!xi.length||!yi.length)throw Error('Projection range contains no samples');
  function* column(i){for(const j of yi)yield v.z[j][i];}
  function* row(j){for(const i of xi)yield v.z[j][i];}
- const x=v.x.values.map((_,i)=>reduce(column(i),xMode)),y=v.y.values.map((_,j)=>reduce(row(j),yMode));return {xi,yi,x,y};
+ const x=v.x.values.map((_,i)=>reduce(column(i),xMode));
+ // Every Y-coordinate corresponds to a complete X-axis scan. Extract the
+ // peak-to-peak width on that scan, never on the aggregate side profile.
+ const needsWidth=yMode==='linewidth'||yMode==='both';
+ const sideFeatures=needsWidth?v.y.values.map((_,j)=>{
+   const feature=peakFeatures(xi.map(i=>v.x.values[i]),xi.map(i=>v.z[j][i]));
+   return feature;
+ }):null;
+ const y=v.y.values.map((_,j)=>yMode==='linewidth'
+   ?(sideFeatures[j].valid?sideFeatures[j].linewidth:NaN)
+   :reduce(row(j),yMode==='both'?'ptp':yMode));
+ const sideLinewidth=yMode==='both'?sideFeatures.map(feature=>feature.valid?feature.linewidth:NaN):null;
+ return {xi,yi,x,y,sideLinewidth};
 }
