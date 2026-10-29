@@ -36,18 +36,23 @@ export function zRange(rows,xi,yi,settings={}){
    min=Math.min(min,z);max=Math.max(max,z);
  }
  if(!normal(min))throw Error('Z range contains no finite signal samples');
- if(min===max){
-  if(min>0){min/=10;max*=10;}
-  else if(min<0){min*=1.1;max*=0.9;}
-  else{min=-1;max=1;}
+ // Keep measured data extrema separate from the expanded display domain.
+ // Constant signals need a non-degenerate color scale, but dataMin/dataMax
+ // must continue to describe the actual finite samples.
+ const dataMin=min,dataMax=max;
+ let displayMin=min,displayMax=max;
+ if(displayMin===displayMax){
+  if(displayMin>0){displayMin/=10;displayMax*=10;}
+  else if(displayMin<0){displayMin*=1.1;displayMax*=0.9;}
+  else{displayMin=-1;displayMax=1;}
  }
- const lower=settings.zMin===''||settings.zMin==null?min:Number(settings.zMin);
- const upper=settings.zMax===''||settings.zMax==null?max:Number(settings.zMax);
+ const lower=settings.zMin===''||settings.zMin==null?displayMin:Number(settings.zMin);
+ const upper=settings.zMax===''||settings.zMax==null?displayMax:Number(settings.zMax);
  if(!normal(lower)||!normal(upper)||!(upper>lower))
    throw Error('Z min must be less than Z max');
  if(settings.zScale==='log'&&lower>0&&!(upper>0))
    throw Error('Log10 Z needs increasing positive bounds');
- return {min:lower,max:upper,scale:settings.zScale||'linear',dataMin:min,dataMax:max,signed:settings.zScale==='log'&&lower<=0};
+ return {min:lower,max:upper,scale:settings.zScale||'linear',dataMin,dataMax,signed:settings.zScale==='log'&&lower<=0};
 }
 export function zTicks(min,max,scale='linear',count=5){
  const n=Math.max(2,Math.floor(count));
