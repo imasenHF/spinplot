@@ -255,9 +255,9 @@ try {
     const scanCard=page.locator('.subplot').nth(1);
     for(const key of ['xMode','yMode','projectionXMin','projectionXMax','projectionYMin','projectionYMax','showXProjection','showYProjection'])
       assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),false,'Variable scan must not expose 2D projection control '+key);
-    for(const key of ['scanAxisMode','scanStatistic','scanStatisticMin','scanStatisticMax'])
+    for(const key of ['scanAxisMode','scanMeasurement','scanStatisticMin','scanStatisticMax'])
       assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),true,'Variable scan control '+key+' must be visible');
-    await scanCard.locator('[data-twod="scanStatistic"]').selectOption('max');
+    await scanCard.locator('[data-twod="scanMeasurement"]').selectOption('stat:max');
     await scanCard.locator('[data-twod="scanStatisticMin"]').fill('3320');
     await scanCard.locator('[data-twod="scanStatisticMax"]').fill('3350');
     await scanCard.locator('[data-twod="scanStatisticMax"]').press('Tab');
