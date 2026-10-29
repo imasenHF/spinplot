@@ -338,7 +338,7 @@ try {
     assert.match(svg,/Peak-to-peak linewidth/);
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude: P =/);
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
     console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
   }
