@@ -557,7 +557,7 @@ export function controls(card, sp, d, onChange) {
       if(field)field.placeholder=formatNumber(value);
     }
     excludeList.replaceChildren();
-    const excluded=new Set(String(s.scanFitExcluded||'').split(/[,;\\s]+/).filter(Boolean).map(Number));
+    const excluded=new Set(String(s.scanFitExcluded||'').split(/[,;\s]+/).filter(Boolean).map(Number));
     if(data.valid&&Array.isArray(data.points)){
       for(const point of data.points){
         const label=document.createElement('label');
