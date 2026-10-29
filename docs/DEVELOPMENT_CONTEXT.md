@@ -66,7 +66,7 @@
 - 修复提交：`f77ab589`，文件 `src/twod/zscale.js`。恒定信号的显示范围扩展使用独立的 `displayMin/displayMax`，实测极值保存在 `dataMin/dataMax`；正值 5 的显示范围仍为 0.5–50，负值 -5 的显示范围仍为 -5.5–-4.5，原始极值分别保持 5/5 和 -5/-5；恒定零值仍显示 -1–1。
 - 新增 `src/twod/zscale.test.js`，覆盖线性、Log10、跨零 SymLog、可见 X/Y 区域、非有限值、恒定正/负/零信号、非法边界、Scientific 线性映射、刻度和缩放。预览工作流新增该测试步骤。
 - 本次修复只改变返回的原始数据极值元信息，不改变恒定信号的色标显示范围、原始矩阵或项目格式。
-- CI 运行：[40831412790](https://github.com/imasenHF/spinplot/actions/runs/40831412790)。记录更新时该运行处于 queued；最终结论须在任务交付前重新查询。未同步主站预览快照，未修改正式 `main` 或 `/spinplot/`，PR #1 继续保持 Draft。
+- CI 运行：[40831466219](https://github.com/imasenHF/spinplot/actions/runs/40831466219) 成功：13 项 Z-scale 测试、现有二维与其他回归、生产构建、Chromium 浏览器回归及 23 个数据文件/13 个图形文件的迁移前对照均通过。构建产物已同步到主站独立预览路径；主站 Pages 运行 [40831743715](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40831743715) 成功。未修改正式 `main` 或 `/spinplot/`，PR #1 继续保持 Draft。
 
 ## Auto Z 当前功能与维护约束
 
