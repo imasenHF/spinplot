@@ -82,7 +82,7 @@
 - **导出与保存。** Export 中新增 `Export scan features CSV`，包含源轨迹索引、扫描坐标、实际功率或原始扫描 X、峰峰值、线宽及单位、两种拟合预测值/残差/使用状态、拟合参数与指标。拟合开关、偏置、排除索引、边界和分析区间保存在现有二维子图设置中；重载后基于源数据确定性重算，尚未把数值拟合结果作为单独不可变快照序列化。
 - **测试。** 新增 `src/twod/saturation.test.js`，检查极值坐标/线宽、双特征数据、已知参数幅度与线宽模型恢复、浮点功率换算及无效输入；新增排除点/边界测试。预览 Chromium 专项模拟 13 条场扫描谱，检验两项拟合参数、双 Y 轴 SVG、特征 CSV、保存及重载。完整回归 [40891497754](https://github.com/imasenHF/spinplot/actions/runs/40891497754) 成功（数值、构建、Chromium、23 项数据与 14 项图形结构对照）。排除/边界测试及后续文档提交以各自最新 Actions 结果为准。
 - **科学与验收限制。** 特征提取直接在指定区间取全局正负极值，未自动判断两个极值属于同一导数谱线；宽区间多峰、强噪声、重叠信号可能产生不适宜的线宽。未实现参数协方差/置信区间、不确定度估计或真实仪器文件科学验收；不能将模型拟合解释为无条件可比较的真实弛豫时间。此前已验证的 Variable scan 统计量、Heatmap、Overlap 与正式版保持独立。
-- 此次修改仅限 `preview/modularization-phase1-20261009`，Draft PR #1 不合并 `main`。新应用构建产物不会自动更新主站 `/previews/spinplot-modularization/`；预览快照同步与公开页面复核须单独完成并记录。
+- 本轮修改仅限 `preview/modularization-phase1-20261009`，Draft PR #1 仍未合并 `main`。独立预览 JS 静态资源已同步主站提交 `342f1b7`、HTML 已更新于 `e8f0def`，Pages 部署 [40892566215](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40892566215) 成功，公开预览 Chromium 专项验收 [40892808647](https://github.com/imasenHF/spinplot/actions/runs/40892808647) 成功（双 Y 轴、拟合参数、CSV 与项目重载）。正式 `/spinplot/` 未修改；自动回归与真实仪器数值验收分开判断。
 
 ### 已确认的交互要求（2026-10-23）
 
