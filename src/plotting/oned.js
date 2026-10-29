@@ -46,7 +46,7 @@ export const applyStackOffsets = createDisplayCurves;
 export function resolveCurveStyle(sp, index) {
   const configured = sp?.curveStyles?.[index];
   const scanStyle = sp?.derivedFromTwoD && sp.scanCurveStyle;
-  const value = configured || (scanStyle ? { style: sp.scanCurveStyle } : {});
+  const value = index < 0 && configured ? configured : (scanStyle ? { style: sp.scanCurveStyle } : configured || {});
   if (!configured && !scanStyle) return { mode: "line", symbol: "circle", filled: false, lineDash: [], style: "line" };
   const style = value.style;
   if (typeof style === "string") {
