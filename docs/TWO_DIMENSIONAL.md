@@ -68,6 +68,32 @@ Top and right projections each have independent visibility, range-label, and tit
 
 For a subplot containing at least two 1D curves, the Plot mode menu offers exactly four modes: `Stack`, `Overlap`, `Heatmap` and `Variable scan (new subplot)`. Heatmap converts the selected curves into a 2D matrix; Variable scan creates a separate scan-correlation subplot while retaining the source plot. The previous `Overlay (1D)` and `Stack (1D)` return modes are removed from this menu; use Undo to reverse the conversion when needed. The `Scan variable · Heatmap Y axis` editor sits directly below Plot mode and is collapsed by default. It remains available in Heatmap and Variable scan modes. It contains the variable name, optional unit, and either equal spacing (`Start`, `Step`) or an explicit array; fields apply changes directly without a separate Apply button. Defaults are `Subplot index`, blank unit, start 1, step 1. Heatmap displays the Y-axis title by default. For curve-derived Heatmaps, the title uses the scan-variable name. Array values are entered in current curve order, stored by curve ID, and remain attached to their source curves when reordered; heatmap rows are sorted numerically by scan-variable value. A blank unit omits unit parentheses from the axis label.
 
+## Projection features and CW EPR power-saturation fitting (planned)
+
+The following is an agreed implementation plan, not a description of shipped functionality.
+
+### Peak-to-peak amplitude and linewidth
+
+- Projection profiles (top and right) and Variable scan traces should expose two independently selectable features: peak-to-peak amplitude and linewidth.
+- Peak-to-peak amplitude is the vertical signal range within the selected analysis interval:
+  `Spp = max(signal) - min(signal)`.
+- Linewidth is the absolute horizontal-coordinate separation between the coordinates at which those maximum and minimum signal values occur:
+  `Δx = abs(x_at_max - x_at_min)`.
+  For a CW EPR first-derivative spectrum plotted against magnetic field, this is the peak-to-peak linewidth `ΔBpp`, retaining the field-axis unit. The interval used for feature extraction must be explicit and saved with the view settings.
+- Either feature may be displayed alone. When both are shown together, peak-to-peak amplitude uses the left Y axis and linewidth uses the right Y axis. Each axis has independent units, range, visibility and styling. Feature display must not overwrite or mutate the source matrix or projection profile.
+- For Variable scan, extract both features independently from each source trace over the configured signal-axis interval, then plot the feature values against the scan coordinate. Existing mean/max/min/ptp/RMS/sum statistics remain available and must retain their current behavior.
+- For top/right projections, apply the same definitions to the corresponding displayed projection profile over its configured calculation interval. The feature calculation interval is distinct from the display-axis range.
+
+### Power-saturation fitting in Variable scan only
+
+- Power-saturation fitting is available only in Variable scan views. Do not add a separate `Power saturation fit` plot mode.
+- Users can fit peak-to-peak amplitude, linewidth, or both features. When both are selected, show the two data series and their fitted curves together, using the left Y axis for amplitude and the right Y axis for linewidth.
+- The first candidate model for each selected feature is `S(P) = A * sqrt(P) / (1 + P/P_half) + C`, with `P_half > 0`. Treat `P_half` as the model parameter; do not label it as the power at the observed curve maximum.
+- Power is expressed in mW. If the scan axis is microwave attenuation in dB, convert using the configured zero-attenuation reference power `P0`: `P = P0 * 10^(-D/10)`. Require a finite positive reference power; never replace the original attenuation coordinate. If the input is already calibrated power, use it directly and do not convert twice.
+- Fitting must report convergence status, fitted parameters, residual diagnostics and the valid/excluded data points. Parameter uncertainty is only reported when the data and fit diagnostics make its estimate defensible; boundary hits, ill-conditioned fits or insufficient data must be flagged.
+- Persist feature definition, analysis interval, power calibration, model, parameter bounds/initial values, excluded points and fit result in the project. Provide a dedicated feature/fitting CSV export because the existing ordinary display-curve CSV does not include the derived Variable scan subplot.
+- Validate with synthetic data of known parameters, noisy data, invalid/non-positive power, repeated power coordinates, insufficient points, parameter-boundary hits and non-convergence. Verify project save/reload and regression of Heatmap, Overlap, existing Variable scan statistics and exports.
+
 ## Interface organization
 
 The six tabs remain Data, Processing, Subplots, Axes, Style and Export. Figure title and canvas controls are part of the Subplots layout area. File owns project/config operations; existing toolbar shortcuts and file formats remain supported.
