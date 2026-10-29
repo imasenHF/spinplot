@@ -416,15 +416,17 @@ export function controls(card, sp, d, onChange) {
     }
     for (const e of card.querySelectorAll('input[data-twod]')) e.value = s[e.dataset.twod];
   });
-  for (const key of ['xMode', 'yMode'])
-    select(projection, key, key === 'xMode' ? 'Top projection statistic' : 'Right projection statistic', [
-      ['mean', 'Mean'],
-      ['max', 'Maximum'],
-      ['min', 'Minimum'],
-      ['ptp', 'Peak-to-peak (max − min)'],
-      ['rms', 'RMS'],
-      ['sum', 'Sum'],
-    ]);
+  for (const key of ['xMode', 'yMode']) {
+    const options=[
+      ['mean', 'Mean'], ['max', 'Maximum'], ['min', 'Minimum'],
+      ['ptp', 'Peak-to-peak amplitude (max − min)'],
+      ['rms', 'RMS'], ['sum', 'Sum'],
+    ];
+    if(key==='yMode')options.push(
+      ['linewidth','Peak-to-peak linewidth ('+(orient(d,s.component,s.swap).x.unit||'X units')+')'],
+      ['both','Amplitude + linewidth (two scales)']);
+    select(projection,key,key==='xMode'?'Top projection method':'Right projection method',options);
+  }
   const scanAxisSelect=select(scanSettings,'scanAxisMode','Scan X axis',[
     ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
@@ -578,9 +580,8 @@ export function controls(card, sp, d, onChange) {
   select(projection,'topFeatureDisplay','Top projection feature',[
     ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
   ]);
-  select(projection,'sideFeatureDisplay','Right projection feature',[
-    ['none','None'],['amplitude','Peak-to-peak amplitude'],['linewidth','Peak-to-peak linewidth'],['both','Both']
-  ]);
+  // Legacy sideFeatureDisplay is retained in saved projects, but the right
+  // projection now extracts both per-trace measurements through yMode.
   const projectionCoordinateFields = new Map();
   for (const [key, title] of [
     ['projectionXMin', 'Y projection: X min'],
@@ -1530,14 +1531,6 @@ export function render(ctx, d, s, box, font, theme, title, options = {}) {
           Math.max(8, tick - 1),
           'right',
         );
-      if(s.sideFeatureDisplay && s.sideFeatureDisplay!=='none'){
-        const feature=peakFeatures(v.y.values,p.y,yr);
-        const entries=feature.valid?[
-          ...(s.sideFeatureDisplay!=='linewidth'?['PP '+feature.amplitude.toPrecision(4)]:[]),
-          ...(s.sideFeatureDisplay!=='amplitude'?['Δ'+v.y.name+' '+feature.linewidth.toPrecision(4)+(v.y.unit?' '+v.y.unit:'')]:[])
-        ]:['Feature unavailable'];
-        entries.forEach((entry,k)=>text(entry,side.x+side.w/2,side.y+side.h-14-12*(entries.length-1-k),Math.max(8,tick-2)));
-      }
     }
   }
   const g = options.g;
