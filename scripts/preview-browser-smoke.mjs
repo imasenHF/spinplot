@@ -317,6 +317,10 @@ try {
     assert.match(fitText,/Linewidth · Homogeneous power broadening/);
     assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
     assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
+    const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
+      nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
+    assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
+    assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured power:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
@@ -327,7 +331,28 @@ try {
     const derived=scanPanel.locator('.curve-manager.scan-matrix');
     assert.equal(await derived.locator('.scan-derived-name').count(),4,'Both features and both fitted curves are nested below the source');
     assert.equal(await derived.locator('.scan-derived-style').count(),4,'Each derived curve has its own style in the separate right column');
+    const alignment=await derived.locator('.current-order-columns').evaluate(el=>{
+      const names=[...el.querySelectorAll('.scan-derived-name')].map(node=>node.getBoundingClientRect().top);
+      const styles=[...el.querySelectorAll('.scan-derived-style')].map(node=>node.getBoundingClientRect().top);
+      const list=el.querySelector('.order-list'),styleList=el.querySelector('.curve-style-list');
+      return {columnWidth:styleList.getBoundingClientRect().width,
+        heightGap:Math.abs(list.getBoundingClientRect().height-styleList.getBoundingClientRect().height),
+        positions:names.map((y,i)=>Math.abs(y-styles[i]))};
+    });
+    assert.ok(alignment.columnWidth<=38,'Derived styles must use the compact symbol column');
+    assert.ok(alignment.heightGap<=2,'Data and style boxes must have the same height');
+    assert.ok(alignment.positions.every(delta=>delta<=2),'Data rows and style rows must be vertically aligned');
+    assert.match((await derived.locator('[data-curve-style="-101"] option:checked').textContent()).trim(),
+      /^[━┄┈○●□■△▲◇◆]/,'Derived style selectors must use compact graphical symbols');
     assert.equal(await scanPanel.locator('.scan-curve-style').isHidden(),true,'The redundant Scan style is hidden');
+    await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('native');
+    assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),false,
+      'Switching to acquired scan variable must collapse the power fit');
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/not calibrated power/,
+      'An attenuation axis in dB must not be mislabeled as measured mW');
+    await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('power');
+    assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
+      'Returning to power reopens an enabled fit');
     await derived.locator('[data-curve-style="-101"]').selectOption('filled-circle');
     await derived.locator('[data-curve-style="-103"]').selectOption('dotted-line');
     const savePath='browser-preview/synthetic-saturation.json';
@@ -355,6 +380,8 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const excludePanel=scanPanel.locator('.scan-exclude-panel');
     await excludePanel.locator('summary').click();
+    assert.equal(await excludePanel.evaluate(el=>getComputedStyle(el).borderTopWidth),'0px',
+      'Excluded-point controls should match the plain nested details style');
     assert.equal(await excludePanel.locator('.scan-exclude-point').count(),13,'Every measured power has an inclusion checkbox');
     await excludePanel.locator('[data-trace-index="0"]').uncheck();
     const excludedProject=await save('browser-preview/synthetic-saturation-excluded.json');
@@ -388,6 +415,13 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const projectionCard=page.locator('.subplot').first();
     assert.equal(await projectionCard.locator('[data-twod="yMode"]').inputValue(),'both');
+    assert.equal(await projectionCard.locator('.matrix-no-style .curve-style-list').isHidden(),true,
+      'Heatmap has no per-source curve style column');
+    assert.equal(await projectionCard.locator('.scan-curve-style').isHidden(),true,
+      'Heatmap must not show the unrelated Scan style');
+    const heatmapGrid=await projectionCard.locator('.matrix-no-style .current-order-columns').evaluate(el=>
+      getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length);
+    assert.equal(heatmapGrid,1,'Heatmap current data must occupy the whole data box');
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [projectionDownload]=await Promise.all([page.waitForEvent('download'),
       page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);
