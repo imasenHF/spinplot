@@ -116,3 +116,12 @@ npm run build
 - 修改子图的 Local target mode、Local target / GHz 或本地频率确认项，会自动启用 Local alignment，避免目标值已编辑但模式仍处于 Inherit global 的情况。
 - 频率表中的 `ν raw / GHz` 对一维磁场曲线开放编辑。CSV 等缺少源频率元数据的数据，必须先填写源微波频率；缺少源频率时缩放栏显示 `—`，不会伪装成已完成校正。
 - 验收通过：预览分支数值/二维测试、Vite 构建、Chromium 频率校正与迁移前输出对照（[运行 39689863349](https://github.com/imasenHF/spinplot/actions/runs/39689863349)）；主站 Pages 发布（[运行 39690277099](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39690277099)）；公开资源检查（[运行 39690395700](https://github.com/imasenHF/spinplot/actions/runs/39690395700)）和公开 Chromium 频率/二维交互测试（[运行 39690395696](https://github.com/imasenHF/spinplot/actions/runs/39690395696)）均通过。公开临时页面已同步；正式 `/spinplot/` 未修改。
+
+
+## Z scale 恒定信号范围修正（2026-10-29）
+
+- `src/twod/zscale.js` 中，恒定信号为色标生成非退化显示范围时，曾将扩展后的显示边界同时作为 `dataMin/dataMax` 返回。
+- 修复后分别保存原始数据极值与显示范围：恒定正值 5 返回原始极值 5/5，显示范围 0.5–50；恒定负值 -5 返回原始极值 -5/-5，显示范围 -5.5–-4.5；恒定零值仍显示 -1–1。
+- 新增 `src/twod/zscale.test.js`，覆盖 13 组 Z 坐标映射、可见区域范围、恒定信号、非法输入、刻度和缩放断言；预览工作流已加入独立执行步骤。
+- 修复提交：`f77ab589`；测试提交：`276d2be`；工作流提交：`6389322`。CI 运行 [40831412790](https://github.com/imasenHF/spinplot/actions/runs/40831412790) 在本记录创建时排队中，最终验收状态以重新查询结果为准。
+- 仅更新预览分支源码与记录；未同步主站临时预览快照，正式 `main` 和 `/spinplot/` 未修改，PR #1 保持 Draft。
