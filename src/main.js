@@ -16,6 +16,7 @@ import {interp1} from "./processing/interpolation.js";
 import {clamp,mean,median,ptp,robustSigma,diff,finiteNum,parseNumberList,parseRegions} from "./core/numeric.js";
 import {COLOR_SCHEMES,continuousPalettePosition} from "./twod/palettes.js";
 import * as TwoD from "./twod/ui.js";
+import {SCAN_DERIVED_IDS,sortScanDerived} from "./twod/scan-order.js";
 import {axisValue} from "./plotting/axis-scale.js";
 import {organizeSubplot} from "./interface.js";
 import {tickFormatter} from "./twod/ticks.js";
@@ -314,8 +315,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   if(data.valid){
     const feature=data.featureMode&&data.featureMode!=='statistic';
     const makeCurve=(name,values,axis='left',fitLine=false,kind='statistic')=>{
-      const identities={statistic:-100,amplitude:-101,linewidth:-102,amplitudeFit:-103,linewidthFit:-104,excludedAmplitude:-105,excludedLinewidth:-106};
-      const curve={index:identities[kind]??-100,name,source:d.name,freq:frequency,
+      const curve={index:SCAN_DERIVED_IDS[kind]??SCAN_DERIVED_IDS.statistic,name,source:d.name,freq:frequency,
         B:data.x.slice(),y:values.slice(),yd:values.slice(),
         xAxis:{name:xAxis.name,unit:xAxis.unit||''},rightAxis:axis==='right',fitLine};
       return curve;
@@ -350,6 +350,9 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }else notice=data.reason||'No valid scan data';
  }
  else{data=TwoD.overlapData(d,t);xAxis=data.xAxis;yAxis={name:'Signal intensity ('+(t.component||'real')+')',unit:''};curves=data.traces.map(trace=>{const curveIndex=manual?(d.metadata?.curveIndices?.[trace.index]??ids[trace.index]??ids[0]):sourceIndex;return{index:curveIndex,name:data.scanAxis.name+' = '+Number(trace.scan).toPrecision(5)+(data.scanAxis.unit?' '+data.scanAxis.unit:''),source:manual?(state.rawCurves[curveIndex]?.name||d.name):d.name,freq:manual?(state.rawCurves[curveIndex]?.freq??frequency):frequency,B:trace.x.slice(),y:trace.y.slice(),yd:trace.y.slice(),xAxis:{name:xAxis.name,unit:xAxis.unit||''}}});}
+ // The same stored order drives list layout, Canvas, legend and vector exports.
+ // No stored order means the legacy default back-to-front arrangement.
+ if(sp.mode==='scan')curves=sortScanDerived(curves,sp.scanDerivedOrder);
  const derivedStyles={...sp.curveStyles};
  if(sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'){
   for(const curve of curves){
