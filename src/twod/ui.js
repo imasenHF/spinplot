@@ -805,9 +805,10 @@ export function controls(card, sp, d, onChange) {
     row.textContent = sp.twoD.derivedFromCurves ? sp.twoD.curveIndices.length + ' manual 1D curves' : sp.twoD.index + '. ' + d.name;
     row.title = d.name;
     list.replaceChildren(row);
+    const styles=manager.querySelector('.curve-style-list');
     if(sp.mode==='scan'){
-      const styles=manager.querySelector('.curve-style-list');
-      if(styles)styles.style.display='none';
+      manager.classList.add('scan-matrix');
+      styles.style.display='';
       const view=sp.twoD.settings;
       const mode=view.scanFeatureMode||'statistic';
       const entries=mode==='statistic'?
@@ -816,50 +817,55 @@ export function controls(card, sp, d, onChange) {
          ...(mode==='linewidth'||mode==='both'?[[-102,'Peak-to-peak linewidth']]:[]),
          ...(view.scanFitAmplitude&&(mode==='amplitude'||mode==='both')?[[-103,'Amplitude fit']]:[]),
          ...(view.scanFitLinewidth&&(mode==='linewidth'||mode==='both')?[[-104,'Linewidth fit']]:[])];
-      const appended=document.createElement('div');
-      appended.className='scan-derived-curve-list';
-      appended.style.paddingLeft='14px';
-      appended.style.paddingTop='5px';
-      appended.style.display='grid';
-      appended.style.rowGap='5px';
+      const oldStyles=styles.querySelectorAll('.curve-style-row');
+      oldStyles.forEach(e=>e.remove());
+      const baseSpacer=document.createElement('div');
+      baseSpacer.className='curve-style-row scan-source-spacer';
+      baseSpacer.title='The source matrix has no line style; select a derived curve below.';
+      styles.append(baseSpacer);
+      const styleChoices=['line','dashed-line','dotted-line','circle','filled-circle','square','filled-square',
+        'triangle','filled-triangle','diamond','filled-diamond','solid-circle','solid-filled-circle',
+        'dashed-circle','dashed-filled-circle','dotted-circle','dotted-filled-circle'];
       for(const [id,title] of entries){
-        const line=document.createElement('div');
-        line.className='scan-derived-row';
-        line.style.display='grid';
-        line.style.gridTemplateColumns='minmax(0,1fr) 110px';
-        line.style.gap='6px';
-        line.style.alignItems='center';
-        const name=document.createElement('span');
-        name.textContent='↳ '+title;
-        name.title='Derived curve · source data unchanged';
-        name.style.fontSize='11px';
+        const left=document.createElement('div');
+        left.className='order-item scan-derived-name';
+        left.textContent='↳ '+title;
+        left.title='Derived from '+d.name+'; original samples stay unchanged.';
+        list.append(left);
+        const right=document.createElement('div');
+        right.className='curve-style-row scan-derived-style';
         const style=document.createElement('select');
         style.className='curve-style';
         style.dataset.curveStyle=id;
         style.setAttribute('aria-label','Display style for '+title);
-        const stylesList=['line','dashed-line','dotted-line','circle','filled-circle','square','filled-square',
-          'triangle','filled-triangle','diamond','filled-diamond','solid-circle','solid-filled-circle',
-          'dashed-circle','dashed-filled-circle','dotted-circle','dotted-filled-circle'];
-        for(const label of stylesList){
-          const opt=document.createElement('option');opt.value=label;opt.textContent=label.replaceAll('-',' ');
-          style.append(opt);
+        for(const label of styleChoices){
+          const opt=document.createElement('option');opt.value=label;
+          opt.textContent=label.replaceAll('-',' ');style.append(opt);
         }
-        const selected=sp.curveStyles?.[id]?.style||(id===-103||id===-104?'dashed-line':sp.scanCurveStyle||'line');
-        style.value=stylesList.includes(selected)?selected:'line';
+        const defaultStyle=id===-103||id===-104?'dashed-line':
+          id===-100?(sp.scanCurveStyle||'line'):
+          sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle';
+        style.value=sp.curveStyles?.[id]?.style||defaultStyle;
         style.onchange=()=>{
           sp.curveStyles||={};
           sp.curveStyles[id]={style:style.value};
           onChange();
         };
-        line.append(name,style);appended.append(line);
+        right.append(style);styles.append(right);
       }
-      list.append(appended);
+      current.querySelector('.curve-box-label').title='Source matrix and derived curves; choose each derived curve style in the right column.';
+      const sourceLine=24,rows=entries.length+1;
+      list.style.height=styles.style.height=(rows*sourceLine+2)+'px';
+    }else if(styles){
+      styles.style.display='none';
     }
   }
   const derivedView = sp.mode === 'overlap' || sp.mode === 'scan';
   projectionSection.box.querySelector('summary').textContent = 'Projections';
   projectionSection.box.hidden = ['overlap','scan','surface3d'].includes(sp.mode);
   scanSection.box.hidden = sp.mode !== 'scan';
+  const scanStyleControl=card.querySelector('.scan-curve-style');
+  if(scanStyleControl)scanStyleControl.hidden=sp.mode==='scan';
   powerReferenceControls.hidden = sp.mode !== 'scan' || scanAxisSelect.value !== 'power';
   stackInput.closest('label').hidden = sp.mode === 'scan';
   body.querySelector('[data-twod=swap]').closest('label').hidden = sp.mode === 'scan';
