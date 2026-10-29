@@ -84,6 +84,15 @@
 - **科学与验收限制。** 特征提取直接在指定区间取全局正负极值，未自动判断两个极值属于同一导数谱线；宽区间多峰、强噪声、重叠信号可能产生不适宜的线宽。未实现参数协方差/置信区间、不确定度估计或真实仪器文件科学验收；不能将模型拟合解释为无条件可比较的真实弛豫时间。此前已验证的 Variable scan 统计量、Heatmap、Overlap 与正式版保持独立。
 - 本轮修改仅限 `preview/modularization-phase1-20261009`，Draft PR #1 仍未合并 `main`。独立预览 JS 静态资源已同步主站提交 `342f1b7`、HTML 已更新于 `e8f0def`，Pages 部署 [40892566215](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40892566215) 成功，公开预览 Chromium 专项验收 [40892808647](https://github.com/imasenHF/spinplot/actions/runs/40892808647) 成功（双 Y 轴、拟合参数、CSV 与项目重载）。正式 `/spinplot/` 未修改；自动回归与真实仪器数值验收分开判断。
 
+## Variable scan fitting UI refinement (2026-10-29)
+
+- Consolidated the feature selector. The existing statistic selector is visible only when Statistic is the chosen feature. Peak-to-peak amplitude and linewidth retain independent fit switches.
+- Feature interval Start/End and characteristic power Start/End now appear as paired controls. Empty fit power bounds show computed automatic bounds as placeholders without saving them as explicit user values.
+- Fit results show formulas and read-only parameter fields for characteristic power, A, C, RMSE and R². The numerical solver remains the existing bounded logarithmic search; algorithm selection has not been introduced.
+- Derived scan curves appear indented below the source dataset with individual line/marker style selectors, backed by stable virtual IDs and saved subplot style settings. Source data are not replaced.
+- Full regression [40901814549](https://github.com/imasenHF/spinplot/actions/runs/40901814549) succeeded; preview JavaScript bundle index-D-jSbHcJ.js and HTML were published in main-site commit 96012be5. Pages run [40902151391](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40902151391) succeeded. The public browser smoke rerun is tracked separately.
+- Changes are confined to the preview branch and static preview; PR #1 is still draft and the release remains unchanged. Quantitative verification on real spectra and parameter uncertainty remain outstanding.
+
 ### 已确认的交互要求（2026-10-23）
 
 - 二维导入默认只创建原有 Heatmap 子图，不自动生成扫描关联图。
