@@ -624,6 +624,7 @@ export function renderFigure(
         insetT = shared.top;
         insetB = shared.bottom;
       }
+      if (sp.secondaryYAxis) insetR = Math.max(insetR, 78);
       const x0 = cellX + insetL,
         y0 = cellY + insetT,
         pw = cellW - insetL - insetR,
@@ -632,6 +633,10 @@ export function renderFigure(
         throw new Error(`Subplot ${si + 1}: plot area too small`);
       const X = (v) => x0 + ((v - m.xmin) / (m.xmax - m.xmin)) * pw,
         Y = (v) => y0 + ph - axisCoordinate(v,yBottom,yTop,yScale) * ph;
+      const rightSeries=sp.secondaryYAxis?curves.filter(c=>c.rightAxis):[];
+      const rightBounds=rightSeries.length?rangeY(rightSeries,m.xmin,m.xmax):null;
+      const rightMin=rightBounds?.[0],rightMax=rightBounds?.[1];
+      const YRight=(v)=>y0+ph-(v-rightMin)/(rightMax-rightMin)*ph;
       if (!isExport)
         state.plotRegions.push({
           subplot: si,
@@ -777,6 +782,23 @@ export function renderFigure(
         x0 + pw / 2,
         y0 + ph + xTitleDistance,
       );
+      if (sp.secondaryYAxis && rightBounds) {
+        const rightTicks=ticksWithStep(rightMin,rightMax,NaN,5);
+        const rightLabels=tickFormatter(rightTicks,subplotTickFormat(sp,"y"));
+        ctx.fillStyle=theme.text;ctx.font=`${tickSize}px ${font}`;
+        ctx.textAlign="left";ctx.textBaseline="middle";
+        for(const value of rightTicks){
+          const py=YRight(value);
+          if(!Number.isFinite(py)||py<y0-.5||py>y0+ph+.5)continue;
+          drawAxisLine(ctx,x0+pw,py,x0+pw+tickLen,py,theme.axis,1);
+          ctx.fillText(rightLabels.format(value),x0+pw+tickLen+3,py);
+        }
+        ctx.save();ctx.font=`${axisTitleSize}px ${font}`;ctx.fillStyle=theme.text;
+        ctx.translate(x0+pw+Math.min(73,insetR-10),y0+ph/2);
+        ctx.rotate(Math.PI/2);ctx.textAlign="center";ctx.textBaseline="middle";
+        const unit=sp.secondaryYAxis.unit?' ('+sp.secondaryYAxis.unit+')':'';
+        ctx.fillText(sp.secondaryYAxis.name+unit,0,0);ctx.restore();
+      }
       if (showYTitle) {
         const yTitleOffset = yTitleDistance;
         ctx.save();
@@ -858,7 +880,7 @@ export function renderFigure(
             segment = [];
             continue;
           }
-          const px = X(xx), py = Y(yy);
+          const px = X(xx), py = c.rightAxis?YRight(yy):Y(yy);
           if (!Number.isFinite(px) || !Number.isFinite(py)) {
             if (segment.length) segments.push(segment);
             segment = [];
@@ -872,7 +894,7 @@ export function renderFigure(
         if (display.mode !== "symbols") {
           ctx.strokeStyle = color;
           ctx.lineWidth = Number(sp.lineWidth) > 0 ? Number(sp.lineWidth) : lineW;
-          ctx.setLineDash(display.lineDash ?? theme.dashes[ci % theme.dashes.length] ?? []);
+          ctx.setLineDash(c.fitLine?[6,4]:(display.lineDash ?? theme.dashes[ci % theme.dashes.length] ?? []));
           segments.forEach((part) => {
             if (!part.length) return;
             ctx.beginPath();
