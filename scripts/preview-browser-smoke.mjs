@@ -316,11 +316,21 @@ try {
     assert.match(fitText,/Amplitude · Amplitude saturation/);
     assert.match(fitText,/Linewidth · Homogeneous power broadening/);
     assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
+    assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').locator('..').isHidden(),true,'Statistic selector is hidden when a feature is selected');
+    assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
+    assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMax"]').count(),1,'Feature end belongs to the same interval row');
+    assert.equal(await scanPanel.locator('.scan-fit-bounds [data-twod="scanFitPowerMinMW"]').getAttribute('placeholder')!==null,true,'Automatic fit lower bound is displayed as placeholder');
+    const derived=scanPanel.locator('.scan-derived-curve-list');
+    assert.equal(await derived.locator('.scan-derived-row').count(),4,'Both features and both fitted curves are nested below the source');
+    await derived.locator('[data-curve-style="-101"]').selectOption('filled-circle');
+    await derived.locator('[data-curve-style="-103"]').selectOption('dotted-line');
     const savePath='browser-preview/synthetic-saturation.json';
     const saved=await save(savePath);
     const cfg=saved.config.subplots[0].twoD.settings;
     assert.equal(cfg.scanFeatureMode,'both');
     assert.equal(cfg.scanFitAmplitude,true);assert.equal(cfg.scanFitLinewidth,true);
+    assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
+    assert.equal(saved.config.subplots[0].curveStyles['-103'].style,'dotted-line');
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [csvDownload]=await Promise.all([page.waitForEvent('download'),
       page.getByRole('button',{name:'Export scan features CSV'}).click()]);
@@ -339,6 +349,7 @@ try {
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
+    assert.equal(await page.locator('.scan-derived-curve-list [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
     console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
   }
