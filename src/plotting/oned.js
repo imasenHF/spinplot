@@ -17,7 +17,7 @@ import { axisKind, gFromB, BFromG } from "../processing/axis.js";
 import { tickFormatter } from "../twod/ticks.js";
 import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js";
 import * as TwoD from "../twod/ui.js";
-import { applyPlotFootprint, fitMainRows } from "./footprint.js";
+import { fitMainRows, resolveMainInsets } from "./footprint.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -445,9 +445,7 @@ export function renderFigure(
           g: subplotGConfig(m.sp),
           frequency: displayFrequency(m.sp, m.curves),
         },
-        plotSettings = m.sp.twoD
-          ? applyPlotFootprint(m.sp.twoD.settings, m.sp.plotFootprint)
-          : null;
+        plotSettings = m.sp.twoD ? m.sp.twoD.settings : null;
       return {
         index,
         row: cell.row,
@@ -457,6 +455,7 @@ export function renderFigure(
         twoD: !!m.sp.twoD,
         box,
         plotSettings,
+        emptyProjectionSpace: m.sp.emptyProjectionSpace,
         insets: plotSettings
           ? TwoD.plotInsets(m.matrix, plotSettings, box, m.sp.title, options)
           : oneDInsets(
@@ -507,12 +506,12 @@ export function renderFigure(
           vertical = rowPack && entry.rowSpan === 1
             ? rowPack.insets[entry.row - 1]
             : horizontal;
-        return [entry.index, {
+        return [entry.index, resolveMainInsets(entry.insets, {
           left: horizontal.left,
           right: horizontal.right,
           top: vertical.top,
           bottom: vertical.bottom,
-        }];
+        }, entry.emptyProjectionSpace)];
       }));
     model.forEach((m, si) => {
       const sp = m.sp,
