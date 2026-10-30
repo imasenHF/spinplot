@@ -20,7 +20,8 @@ export function resolveMainInsets(natural, shared, value) {
   const flags = emptyProjectionSpaceFlags(value),
     hasTopProjection = natural.hasTopProjection === true,
     hasRightProjection = natural.hasRightProjection === true,
-    resolved = { ...natural, ...shared };
+    { hasTopProjection: _hasTopProjection, hasRightProjection: _hasRightProjection, ...baseInsets } = natural,
+    resolved = { ...baseInsets, ...shared };
   if (flags.top && !hasTopProjection) resolved.top = natural.top;
   if (flags.right && !hasRightProjection) resolved.right = natural.right;
   return resolved;
