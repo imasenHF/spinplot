@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {peakFeatures,traceFeatures,attenuationToPower,saturationModels,fitSaturation} from './saturation.js';
+import {peakFeatures,traceFeatures,attenuationToPower,saturationModels,fitSaturation,amplitudeHalfMaximumPower} from './saturation.js';
 import {defaults,scanCorrelationData} from './ui.js';
 
 const axis=[3300,3301,3302,3303,3304];
@@ -50,6 +50,9 @@ for(const [model,A,q,C] of [['amplitude',5,12,0],['linewidth',2,18,0]]){
 const controlPoints=[.1,.3,1,3,6,10,20,40,80,150].map((power,index)=>({
  index,power,signal:saturationModels.amplitude(power,5,12,0)
 }));
+const halfFit=fitSaturation(controlPoints,{model:'amplitude'});
+assert.ok(halfFit.valid);
+assert.ok(Math.abs(halfFit.parameters.PHalf/halfFit.parameters.P-(2-Math.sqrt(3))**2)<1e-12);
 const excludedFit=fitSaturation(controlPoints,{model:'amplitude',excludedIndices:[0,1],minPower:1,maxPower:40});
 assert.equal(excludedFit.valid,true);
 assert.equal(excludedFit.n,8);
@@ -68,12 +71,16 @@ assert.equal(fitSaturation([1,2,3,4,5].map(i=>({power:i,signal:1})),{model:'inva
 assert.equal(fitSaturation([1,1,1,1].map((i,index)=>({power:i,signal:index}))).valid,false);
 console.log('PASS: peak features, linewidth coordinate separation, dual feature scan and both saturation models');
 
-// For the fixed-exponent amplitude model, P-half is half of the unsaturated
-// sqrt(P) extrapolation and coincides with the fitted signal maximum.
-// It is not an operational definition of the low-power linear-range endpoint.
+// P_sat is the amplitude model peak; P_1/2 is the ascending-branch
+// half-peak power after subtracting the fitted offset.
 const characteristic=17.52736;
+const halfPower=amplitudeHalfMaximumPower(characteristic);
+assert.ok(halfPower>0&&halfPower<characteristic);
+assert.ok(Math.abs(halfPower/characteristic-(2-Math.sqrt(3))**2)<1e-12);
+assert.ok(Number.isNaN(amplitudeHalfMaximumPower(-1)));
 const unsaturated=power=>7*Math.sqrt(power);
 const saturated=power=>saturationModels.amplitude(power,7,characteristic,0);
+assert.ok(Math.abs(saturated(halfPower)/saturated(characteristic)-0.5)<1e-12);
 assert.ok(Math.abs(saturated(characteristic)/unsaturated(characteristic)-0.5)<1e-12);
 assert.ok(saturated(characteristic)>saturated(characteristic/2));
 assert.ok(saturated(characteristic)>saturated(characteristic*2));
