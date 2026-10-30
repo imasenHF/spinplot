@@ -359,10 +359,10 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
  const derivedStyles={...sp.curveStyles};
  if(sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'){
   for(const curve of curves){
-   if(derivedStyles[curve.index])continue;
-   derivedStyles[curve.index]={style:curve.fitLine?'dashed-line':
+   const existing=derivedStyles[curve.index]||{};
+   derivedStyles[curve.index]={...existing,style:existing.style||(curve.fitLine?'dashed-line':
       curve.index===-105||curve.index===-106?'diamond':
-      (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle')};
+      (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle'))};
   }
  }
  const renderSp={...sp,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
