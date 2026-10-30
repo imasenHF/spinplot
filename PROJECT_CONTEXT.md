@@ -6,7 +6,7 @@
 ## 1. 定位与发布
 
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
-- Variable scan Power fit 使用单个 `Show fit results` 开关（默认关闭），同时显示模型公式及 P½/Psat、A、C、R²、RMSE、n。可选四角或自定义 X/Y 百分比位置、字体（继承绘图字体或独立选择）及 8–24 px 字号，默认右下角、继承绘图字体、12 px。设置保存在 `twoD.settings.scanFitShow/scanFitLabelPosition/scanFitLabelSize`，旧版逐项显示设置在加载时转换为总开关。Amplitude 与 Linewidth 分组，只有有效拟合显示数值；图形导出共用绘图路径。`P½` 按当前 ε=1 幅度模型表示相对未饱和外推信号下降 50% 的特征功率，同时也是该模型的幅度峰值功率，与低功率线性区终点不同。
+- Variable scan Power fit 使用单个 `Show results on plot` 开关（默认关闭），同时显示模型公式及 Psat/P½、A、C、R²、RMSE、No. of points。可选九宫格或自定义 X/Y 百分比位置、字体（继承绘图字体或独立选择）及 8–24 px 字号，默认右下角、继承绘图字体、12 px。设置保存在 `twoD.settings.scanFitShow/scanFitLabelPosition/scanFitLabelSize`，旧版逐项显示设置在加载时转换为总开关。Amplitude 与 Linewidth 分组，只有有效拟合显示数值；图形导出共用绘图路径。幅度拟合优化参数显示为 `Psat`，即当前模型的峰值功率；另计算上升段基线扣除后的半峰值功率 `P½=(2−√3)²Psat`。线宽拟合具有独立 `Psat`。参与点数标为 `No. of points`，排除点不计入。图内拟合结果默认右下角、背景完全透明且无边框，可调九宫格或自定义位置、字体、字号、背景不透明度和边框；曲线 legend 默认留在绘图区内。
 - Variable scan 功率拟合面板采用简短标签：Power fit、Amplitude、Linewidth、Offset C、Fit range；测量功率范围保留为单行数据读数，排除点说明段落已删除，Fit range 的空值规则通过控件提示说明。
 
 - Export 页按钮采用紧凑两列布局；图形/CSV 操作按钮最小高度 44 px，行列间距统一。投影与 Variable scan 导出选择器独立成组，按钮不再随选择器标签换行而纵向拉伸。
@@ -43,7 +43,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 - Top 投影从聚合后的一维曲线提取峰峰幅度、横坐标极值间距或二者读数。Right 投影从每一条扫描变量值对应的**完整磁场谱**提取峰峰幅度或物理磁场线宽，支持同时显示两条扫描曲线及各自的水平刻度（线宽单位跟随磁场 X 轴，例如 G）；不再将右侧聚合曲线极值间距误认为磁场线宽。
 - Variable scan 只有一个 `Measurement` 选择器：Mean/Max/Min/RMS/Sum、Peak-to-peak amplitude、Peak-to-peak linewidth、Both。旧 Statistic/PTP 项目保持既有统计结果，直到用户主动启用新饱和拟合。振幅曲线使用左 Y 轴，线宽在双特征模式下使用右 Y 轴。
-- 饱和/展宽拟合只在 Variable scan：幅度模型 `A√P/(1+P/P_half)+C`、线宽模型 `A√(1+P/P_sat)+C`，分别计算，不默认二者参数相等。使用有界对数搜索（求解器说明在问号帮助），公式通过 MathML 展示，参数与 RMSE/R² 使用只读字段。默认特征功率上下界收敛到拟合有效点实际测量范围，可按需手动改写并得到边界警告。
+- 饱和/展宽拟合只在 Variable scan：幅度模型 `A√P/(1+P/P_sat)+C`、线宽模型 `A√(1+P/P_sat)+C`，分别计算，不默认二者参数相等。使用有界对数搜索（求解器说明在问号帮助），公式通过 MathML 展示，参数与 RMSE/R² 使用只读字段。默认特征功率上下界收敛到拟合有效点实际测量范围，可按需手动改写并得到边界警告。
 - 排除点改为逐轨迹复选框，未参与拟合的测量值单独以符号标识，保留原始记录及导出纳入状态。直接二维来源的 Current data 左侧缩进显示衍生曲线，右列独立设置每条线型/符号；多条原始一维曲线生成的旧扫描视图保留原 Style 控件兼容。拟合曲线默认虚线、实测特征默认点线，图例默认置于绘图区外侧上方。设置随项目保存，拟合重载后重算；正式数据及基线不修改。
 - **2026-10-30 界面修订：** 普通二维 Heatmap 不显示无用的 Scan style 或 Current data 空白样式列；直接二维 Variable scan 的衍生曲线恢复 34 px 纯符号 Style 列，数据/样式列表等高、逐行对应。非功率扫描自动折叠拟合设置且不将 dB 误显示为 mW；排除点设置恢复一致的折叠外观；MathML 括号禁止随分式拉伸。Linear 模式下的主图 Y、Top/Right 投影和 Z 色标均用十进制刻度，只有明确选 Scientific 才使用科学计数法。原始数值/项目格式/二维基线均不变。完整回归与浏览器/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 成功，主站独立预览 Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功；真实谱线科学适用性与参数不确定度尚未独立验收。
 - **2026-10-30 派生曲线 Z-order：** 直接二维 Variable scan 的 Current data 中，缩进的派生曲线可鼠标拖拽调整前后绘制次序（下方在上层），也可通过 Alt+↑/↓ 调整。原始矩阵行固定；右侧线型/符号控制跟随条目移动。使用稳定虚拟 ID 和子图 `scanDerivedOrder` 记录顺序，旧项目缺省时保留原始默认顺序；Canvas/图例/SVG/其他图形导出与保存重载采用同一排序。新增纯函数测试 `src/twod/scan-order.test.js`，完整回归 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。此功能不改变谱线数值、拟合、二维基线、项目格式版本或正式分支。
