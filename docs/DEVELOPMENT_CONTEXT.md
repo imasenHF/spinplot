@@ -55,7 +55,7 @@
 - **控件外观：** `Exclude points from fit` 改用现有嵌套 `advanced-layout` 折叠栏风格，去除额外方框。MathML 中函数参数括号明确 `stretchy="false"`，缩小公式默认字号；不修改数学表达式和拟合算法。
 - **轴格式：** 当 Y、Top/Right 投影强度轴或 Z 色标处于 `linear` 模式时，刻度使用十进制格式，不再从全局 Auto/Scientific 偏好或 `Number.toPrecision()` 的自动指数形式隐式切换为科学计数法。用户显式选择 `scientific` 仍显示科学计数法；Log10/SymLog 保持原数值映射与标签规则。普通 X 轴尚无该三模式设置，其原有手动 Tick notation 行为保持不变。
 - **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开预览页面 Chromium [40923593239](https://github.com/imasenHF/spinplot/actions/runs/40923593239) 在 Pages 发布后重跑成功，已独立完成线上浏览器验收。
-- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 的四种 Plot footprint 画幅范围和跨列对齐已于 2026-10-30 实现并合并正式版。
+- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 初版 `plotFootprint` 已随 PR #1 合并，但其语义控制了投影可见性，与用户要求不符；当前修正分支以 `emptyProjectionSpace` 重新实现，见本文件上方“阶段 B 修正”。
 
 ## 历史预览交付与验收（2026-10-29）
 
@@ -64,7 +64,7 @@
 - **Auto Z：** `TwoD.autoZBounds(d,s)` 以当前可见 X/Y 数据范围内的有效 Z 为依据。Auto Z 按钮及色标双击都将数值写回子图 `zMin/zMax`、禁用继承；热图主体双击复原 X/Y 不抹除已经拟合的 Z。轮滚色标仍可缩放 Z。
 - **基线边界：** 本轮不新增、修改或设定默认的二维基线扣除。已有一维 Region/其他基线方式及原始二维数据与投影统计保持不变，Auto Z 不是基线校正。
 - **界面：** Current order 左列和独立 34 px 符号列并排，标题简短，必要说明使用问号图标；模式及已计算范围随项目保存/恢复。
-- **测试与发布：** 源代码数值、项目兼容、生产构建、Chromium 和旧版对照通过 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。构建 HTML、JS 及现有 CSS 已同步主站隔离预览，Pages 部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。公开预览的最新三模式浏览器检查待最新 Actions 结果确认。正式 `main` 与 `/spinplot/` 不修改，Draft PR #1 不合并。
+- **测试与发布：** 源代码数值、项目兼容、生产构建、Chromium 和旧版对照通过 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。构建 HTML、JS 及现有 CSS 已同步主站隔离预览，Pages 部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。公开预览的最新三模式浏览器检查待最新 Actions 结果确认。当时正式 `main` 与 `/spinplot/` 不修改、Draft PR #1 未合并；该历史状态已于 2026-10-30 被 PR #1 合并取代。
 
 ## 最近一次已核查的基线
 
@@ -75,7 +75,7 @@
 - 代码回归与构建：[`39684319918`](https://github.com/imasenHF/spinplot/actions/runs/39684319918) 成功，包含现有数值/CSV/项目兼容/二维测试、TypeScript 检查、Vite 生产构建、Chromium 交互测试及与迁移前导出结果对照。
 - 公开预览浏览器检查配置提交：[`1b3e328`](https://github.com/imasenHF/spinplot/commit/1b3e328af054c9ef79818193e902ca78c1a3fe41)，为已发布临时快照启用 colorbar 双击测试；模块化预览工作流 `39684871649` 成功。该 SHA 仅用于追溯配置变更，不代表当前 HEAD；每次任务开始时重新查询最新分支状态。
 - 主站临时快照已更新：主站仓库提交 [`0f238ea`](https://github.com/imasenHF/imasenhf.github.io/commit/0f238ea62a1be5a8bcb4fd30c4665cb8a087e465)，新应用脚本为 `assets/index-DAzGls40.js`。主站 Pages 发布 [`39684696016`](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39684696016) 成功；更新后的公开 HTTP 检查 [`39684871606`](https://github.com/imasenHF/spinplot/actions/runs/39684871606) 和公开 Chromium 浏览器测试 [`39684871564`](https://github.com/imasenHF/spinplot/actions/runs/39684871564) 均成功。
-- 正式 `main` 分支与 `/spinplot/` 未修改；新行为只存在于隔离预览分支及 `/previews/spinplot-modularization/` 快照。
+- 当时正式 `main` 与 `/spinplot/` 未修改；该预览分支后来通过 PR #1 合并。当前阶段 B 修正只存在于 `preview/modularization-phase-b-empty-projection-20261030`，尚未合并。
 
 
 ## 频率校正 Target 模式修复
@@ -204,7 +204,7 @@ npm run build
 - 数值、CSV/插值、一维处理、项目版本兼容、手动曲线矩阵、现有二维回归、显示/坐标/导出测试、生产构建及浏览器测试脚本语法检查均通过。完整浏览器回归与迁移前对照已在提交 `60ba4c85f4d229aa72ec126b877e9ef921620199` 通过，模块化预览工作流为 [40060236078](https://github.com/imasenHF/spinplot/actions/runs/40060236078)，HTTP 检查为 [40060236132](https://github.com/imasenHF/spinplot/actions/runs/40060236132)。
 - 2026-10-24 对用户提供的本地 CIQTEK `.epr` 归档完成静态数据契约检查：6 个文件均可解析为项目当前声明支持的 1D Field/Time Sweep、2D Field-Power、Field-Delay、Field-Modulation Amplitude 与 Time-Field 类型；检查了各轨迹 X 坐标一致性、实部/虚部维度、信号有限值、逐轨迹频率及第二坐标单调性，均通过。Time-Field 数据符合默认转置为 Field-horizontal 的规则。归档未上传至公开仓库。此项为本地数据结构检查，尚未在真实浏览器中对这 6 个文件完成导入、绘图、投影 CSV 与项目保存/重载全流程。
 - 其中 Field-Delay 文件未声明延迟轴单位，解析器按现有规则保留数值并提示单位未声明；不推定为 ms 或 μs。文件级 `setting.frequency` 与轨迹级 `line.freq` 存在小幅差异，当前解析器使用轨迹级频率，后续如做频率对齐需继续核对来源定义。
-- `scripts/preview-browser-smoke.mjs` 已新增专门的 SVG 浏览器断言：在 `SPINPLOT_TEST_PROJECTION_TITLE_SIZE=1` 时将投影标题字号设为 23 px、刻度字号设为 9 px，检查导出 SVG 中投影标题采用 23 px 且刻度仍使用 9 px。该测试只由模块化预览回归显式启用，避免对仍运行旧版静态快照的公开预览检查造成误报。最新完整工作流 [40060098623](https://github.com/imasenHF/spinplot/actions/runs/40060098623) 已通过，包含该项投影标题字号与刻度字号独立性断言。正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并。
+- `scripts/preview-browser-smoke.mjs` 已新增专门的 SVG 浏览器断言：在 `SPINPLOT_TEST_PROJECTION_TITLE_SIZE=1` 时将投影标题字号设为 23 px、刻度字号设为 9 px，检查导出 SVG 中投影标题采用 23 px 且刻度仍使用 9 px。该测试只由模块化预览回归显式启用，避免对仍运行旧版静态快照的公开预览检查造成误报。最新完整工作流 [40060098623](https://github.com/imasenHF/spinplot/actions/runs/40060098623) 已通过，包含该项投影标题字号与刻度字号独立性断言。当时正式 `main` 和 `/spinplot/` 未修改，Draft PR #1 未合并；此后 PR #1 已于 2026-10-30 合并。
 
 
 ## 过往核查记录
@@ -235,7 +235,7 @@ npm run build
 
 - 新建子图的频率对齐默认固定为 `freqMode: local`、`localFreqMode: mean`；全局频率下拉菜单原有默认值已是 `local_mean`，不改变用户显式选择全局模式时的传播逻辑，也不覆盖载入的旧项目设置。
 - 1D 曲线派生的 Heatmap 保留原 Data 面板的 Available curves、Current order、逐曲线样式菜单和管理工具栏，不再替换为 `Current data: N manual 1D curves` 单项；直接导入的二维数据仍使用矩阵数据摘要。相关代码位于 `src/main.js`、`src/twod/ui.js`；新增 Chromium 检查验证切换后控件数量、曲线排序与样式选项。
-- 完整数值、构建、Chromium 回归与迁移前对照通过 [Actions 40695773639](https://github.com/imasenHF/spinplot/actions/runs/40695773639)；新版静态预览已同步主站，Pages 部署通过 [40696290984](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40696290984)，公开预览浏览器回归在部署后复测通过 [40696141839（第 2 次运行）](https://github.com/imasenHF/spinplot/actions/runs/40696141839)。正式 SpinPlot `main`、`/spinplot/` 和 Draft PR #1 的未合并状态均保持不变。
+- 完整数值、构建、Chromium 回归与迁移前对照通过 [Actions 40695773639](https://github.com/imasenHF/spinplot/actions/runs/40695773639)；新版静态预览已同步主站，Pages 部署通过 [40696290984](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40696290984)，公开预览浏览器回归在部署后复测通过 [40696141839（第 2 次运行）](https://github.com/imasenHF/spinplot/actions/runs/40696141839)。当时正式 SpinPlot `main`、`/spinplot/` 和 Draft PR #1 均未变化；PR #1 后续已于 2026-10-30 合并。
 
 ## 最新验收记录（2026-10-27）
 
@@ -244,4 +244,4 @@ npm run build
 - 切换到 Heatmap 时，折叠 2D 坐标/投影设置面板；从选中 1D 曲线转换为 Heatmap 时也默认保持折叠，避免切换视图后自动展开轴选项。
 - 完整 Chromium 回归与迁移前对照在提交 `ac6551faf400cf2bb15d6ca75b36a779f590897c` 通过 [40531478449](https://github.com/imasenHF/spinplot/actions/runs/40531478449)。新增回归将扫描值从 `1, 2, 3` 改为非均匀的 `2, 30, 6`，检查子图 Y 轴范围为 2–30、投影 CSV 数值和曲线映射，以及保存/重载结果。
 - 2026-10-28 增加切换 Heatmap 后投影轴选项保持折叠的处理，并为 1D 曲线转换延迟重绘，避免模式选择事件误触新出现的折叠面板。完整 Chromium 回归及迁移前对照通过 [40626095521](https://github.com/imasenHF/spinplot/actions/runs/40626095521)。静态资源已同步至主站独立预览目录，Pages 部署状态以 [40626290185](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40626290185) 为准。正式 SpinPlot `main` 与 `/spinplot/` 不得修改或合并。
-- 2026-10-28 曲线样式设置已合并为单一下拉菜单，提供实线、虚线、点线、空心/实心圆形、方形、三角形、菱形及线条+符号组合。新增子图线宽覆盖（留空继承全局设置）、符号大小和 Variable scan 独立曲线样式；旧项目的 mode/symbol 字段继续兼容，未配置样式的曲线默认实线。Canvas 与 SVG 均按曲线颜色填充实心符号。单元测试、生产构建、完整 Chromium 回归与迁移前对照通过 [40668486468](https://github.com/imasenHF/spinplot/actions/runs/40668486468)。主站独立预览资源已同步并部署成功 [40668931440](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40668931440)，公开预览浏览器回归通过 [40669120554](https://github.com/imasenHF/spinplot/actions/runs/40669120554)。正式 SpinPlot `main` 与 `/spinplot/` 保持不变，Draft PR #1 未合并。
+- 2026-10-28 曲线样式设置已合并为单一下拉菜单，提供实线、虚线、点线、空心/实心圆形、方形、三角形、菱形及线条+符号组合。新增子图线宽覆盖（留空继承全局设置）、符号大小和 Variable scan 独立曲线样式；旧项目的 mode/symbol 字段继续兼容，未配置样式的曲线默认实线。Canvas 与 SVG 均按曲线颜色填充实心符号。单元测试、生产构建、完整 Chromium 回归与迁移前对照通过 [40668486468](https://github.com/imasenHF/spinplot/actions/runs/40668486468)。主站独立预览资源已同步并部署成功 [40668931440](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40668931440)，公开预览浏览器回归通过 [40669120554](https://github.com/imasenHF/spinplot/actions/runs/40669120554)。当时正式 SpinPlot `main` 与 `/spinplot/` 保持不变，Draft PR #1 未合并；该状态已于 2026-10-30 结束。
