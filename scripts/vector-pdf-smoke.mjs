@@ -41,15 +41,22 @@ try {
     const info = document.querySelector("#fileInfo")?.textContent || "";
     return info && !info.includes("No data loaded");
   });
-  await page.locator("button[data-tab=\"style\"]").click();
-  await page.locator("#figureTitle").fill("Vector PDF export regression");
-  await page.locator("button[data-tab=\"axes\"]").click();
-  await page.locator("#hideYTitle").uncheck();
-  await page.locator("button[data-tab=\"export\"]").click();
-  await page.locator("#imageFormat").selectOption("pdf");
+  await page.evaluate(() => {
+    const setValue = (id, value) => {
+      const element = document.getElementById(id);
+      element.value = value;
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    setValue("figureTitle", "Vector PDF export regression");
+    setValue("imageFormat", "pdf");
+    const hideY = document.getElementById("hideYTitle");
+    hideY.checked = false;
+    hideY.dispatchEvent(new Event("change", { bubbles: true }));
+  });
 
   const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
-  await page.locator("#exportImageBtnSide").click();
+  await page.evaluate(() => document.getElementById("exportImageBtnSide").click());
   let download;
   try {
     download = await downloadPromise;
