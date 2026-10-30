@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Replace per-parameter scan-fit display checkboxes with a single all-results toggle; add equation, plot-corner selection and 8–24 px text sizing. Retain the existing epsilon=1 amplitude model while clarifying that P½ indicates half suppression relative to low-power extrapolation, not the end of the low-power linear range.
+- Replace per-parameter scan-fit display checkboxes with a single all-results toggle; add equation, plot-corner/custom percentage positioning, independent font-family selection and 8–24 px text sizing. Retain the existing epsilon=1 amplitude model while clarifying that P½ indicates half suppression relative to low-power extrapolation, not the end of the low-power linear range.
 
 - Add individually selectable power-fit results (P, A, C, R², RMSE, n) as compact annotation text inside Variable scan subplots; hidden by default, drawn through the shared Canvas/SVG/PDF plot path.
 
