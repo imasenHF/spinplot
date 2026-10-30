@@ -3,11 +3,22 @@ import { orient, projections, reduce, validate, axisKind, fieldToGauss } from '.
 import { peakFeatures, fitSaturation } from './saturation.js';
 import { tickFormatter } from './ticks.js';
 import {moveScanDerivedOrder,sortScanDerived} from './scan-order.js';
-import { COLOR_SCHEMES } from './palettes.js';
+import { COLOR_SCHEMES, continuousPalettePosition } from './palettes.js';
 import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
 import { contourSegments } from './contours.js';
 import { renderSurface } from './surface3d.js';
 import { positiveAxisDomain, axisCoordinate, axisValue, scaledTicks } from '../plotting/axis-scale.js';
+function scanCurvePaletteColor(order,count,sp){
+  const local=sp?.colorSchemeOverride;
+  const key=local&&local!=='inherit'?local:(document.getElementById('colorScheme')?.value||'matplotlib_tab10');
+  const scheme=COLOR_SCHEMES[key]||COLOR_SCHEMES.matplotlib_tab10;
+  if(scheme.gradient?.length){
+    const stops=scheme.gradient,t=continuousPalettePosition(order,count),position=t*(stops.length-1),i=Math.min(stops.length-2,Math.floor(position)),u=position-i;
+    const a=stops[i].slice(1).match(/../g).map(v=>parseInt(v,16)),b=stops[i+1].slice(1).match(/../g).map(v=>parseInt(v,16));
+    return '#'+a.map((v,k)=>Math.round(v+(b[k]-v)*u).toString(16).padStart(2,'0')).join('');
+  }
+  return scheme.palette?.[order%scheme.palette.length]||'#1f77b4';
+}
 export function defaults(d) {
   const setting = d.metadata?.setting || {},
     settingPower = Number(setting.lineEdit_MB_Power),
@@ -827,6 +838,17 @@ export function controls(card, sp, d, onChange) {
       const style=styles.querySelector('[data-derived-id="'+row.dataset.derivedId+'"]');
       if(style)styles.append(style);
     }
+    syncDerivedStyleColors();
+  }
+  function syncDerivedStyleColors(){
+    const rows=[...card.querySelectorAll('.curve-manager.scan-matrix .scan-derived-style')];
+    rows.forEach((row,index)=>{
+      const id=Number(row.dataset.derivedId),config=sp.curveStyles?.[id]||{};
+      const color=/^#[0-9a-f]{6}$/i.test(config.color||'')?config.color:scanCurvePaletteColor(index,rows.length,sp);
+      const select=row.querySelector('.curve-style'),input=row.querySelector('.curve-color');
+      select?.style.setProperty('--curve-color',color);
+      if(input)input.value=color;
+    });
   }
   function attachDerivedDrag(row){
     const id=Number(row.dataset.derivedId);
@@ -945,10 +967,21 @@ export function controls(card, sp, d, onChange) {
         style.value=sp.curveStyles?.[id]?.style||defaultStyle;
         style.onchange=()=>{
           sp.curveStyles||={};
-          sp.curveStyles[id]={style:style.value};
+          sp.curveStyles[id]={...(sp.curveStyles[id]||{}),style:style.value};
           onChange();
         };
-        right.append(style);styles.append(right);
+        const color=document.createElement('input');
+        color.type='color';color.className='curve-color';color.dataset.derivedColor=String(id);
+        color.setAttribute('aria-label','Color for '+title);
+        color.title='Curve color · '+title;
+        color.value=sp.curveStyles?.[id]?.color||scanCurvePaletteColor(entries.indexOf(entries.find(entry=>entry[0]===id)),entries.length,sp);
+        color.addEventListener('input',()=>{
+          sp.curveStyles||={};
+          sp.curveStyles[id]={...(sp.curveStyles[id]||{}),color:color.value};
+          style.style.setProperty('--curve-color',color.value);
+          onChange();
+        });
+        right.append(style,color);styles.append(right);
       }
       current.querySelector('.curve-box-label').title='Source matrix is fixed; drag derived curves to change their Z-order. The bottom curve is drawn last (on top).';
       sortDerivedRows();
@@ -991,8 +1024,14 @@ export function controls(card, sp, d, onChange) {
       select.dataset.curveStyle=String(id);
       select.setAttribute('aria-label','Display style for '+title);
       select.value=sp.curveStyles?.[id]?.style||'diamond';
-      select.onchange=()=>{sp.curveStyles||={};sp.curveStyles[id]={style:select.value};onChange();};
-      row.append(select);
+      select.onchange=()=>{sp.curveStyles||={};sp.curveStyles[id]={...(sp.curveStyles[id]||{}),style:select.value};onChange();};
+      const color=document.createElement('input');
+      color.type='color';color.className='curve-color';color.dataset.derivedColor=String(id);
+      color.setAttribute('aria-label','Color for '+title);
+      color.title='Curve color · '+title;
+      color.value=sp.curveStyles?.[id]?.color||'#1f77b4';
+      color.addEventListener('input',()=>{sp.curveStyles||={};sp.curveStyles[id]={...(sp.curveStyles[id]||{}),color:color.value};select.style.setProperty('--curve-color',color.value);onChange();});
+      row.append(select,color);
       list.append(label);styles.append(row);
     }
     sortDerivedRows();
