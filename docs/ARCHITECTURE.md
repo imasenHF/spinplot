@@ -1,20 +1,23 @@
 # SpinPlot — ARCHITECTURE
 
-更新日期：2026-10-13（Asia/Shanghai）
-维护范围：代码架构、数据表示、模块职责、科学处理约束、兼容性与验证方式。已完成状态与待办概览见 [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)；界面规则见 [STYLE_GUIDE.md](STYLE_GUIDE.md)。
+更新日期：2026-10-30（Asia/Shanghai）
+维护范围：代码架构、数据表示、模块职责、科学处理约束、兼容性与验证方式。已完成状态与待办概览见 [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)；界面规则见 [STYLE_GUIDE.md](STYLE_GUIDE.md)；后续架构整理顺序与验收边界见 [ARCHITECTURE_IMPROVEMENT_PLAN.md](ARCHITECTURE_IMPROVEMENT_PLAN.md)。
 
 ## 1. 当前部署与代码结构
 
 ```text
-index.html               入口、CSS、应用状态、主要交互/绘图与保存逻辑
-src/interface.js         子图控件组织、局部显隐与面板层级
-src/twod/core.js         CIQTEK/BES3T 解析、轴语义、二维矩阵基础操作
-src/twod/ui.js           二维视图与图形/控件整合
-src/twod/palettes.js     共用调色板注册
-src/twod/ticks.js        坐标刻度格式化
-src/twod/*.test.js       解析、集成、大数据及刻度测试
-public/legacy/           旧路径跳转
-.github/workflows/pages.yml  构建与 Pages 发布
+index.html                  页面结构，加载样式与 src/main.js
+src/main.js                 应用状态、事件、数据导入协调、子图模型和应用调度
+src/interface.js            子图控件组织、局部显隐与面板层级
+src/styles/app.css           应用界面样式
+src/core/                    通用数值函数
+src/data/                    CSV、曲线矩阵和二维数据结构
+src/processing/              坐标、频率、信号处理与插值
+src/plotting/                一维绘图、坐标缩放和布局几何
+src/twod/                    二维解析、模型、分析、控件、渲染与测试
+src/project/                 项目格式校验、兼容与恢复
+src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
+.github/workflows/            构建、Pages、预览和发布检查
 ```
 
 - 正式 `main` 当前版本为 **0.10.0**，发布标签 [`v0.10.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0)。
@@ -84,18 +87,22 @@ SVG、PDF 和屏幕绘图复用同一个 renderer。二维渲染仍由 `twod/ui.
 
 ## 6. 后续模块化目标（尚未全部实施）
 
-| 拟议模块 | 后续职责 |
-| --- | --- |
-| data | 文件解析、原始曲线/矩阵、坐标和频率来源 |
-| processing | 可复现的基线、幅度与频率处理，尽可能使用可单测的纯函数 |
-| analysis | 峰、积分与相对量等独立分析，严格分离显示偏移 |
-| project | 项目和配置的版本检查、恢复与迁移 |
-| graphics | 共用绘图模型与 Canvas/SVG/PDF 导出 |
-| ui | 工具栏、曲线列表、子图与参数控制 |
-| workers | 大型计算异步执行及取消协议；当前不等同于已建成的 worker 子系统 |
-| storage | 可恢复的本地草稿能力（如 IndexedDB）；当前不应宣称已经提供自动草稿 |
+具体阶段、当前风险、目标职责、实施顺序及验收要求统一记录在 [ARCHITECTURE_IMPROVEMENT_PLAN.md](ARCHITECTURE_IMPROVEMENT_PLAN.md)。当前优先事项为统一质量检查入口、逐步收缩 `src/main.js`、拆分 `src/twod/ui.js` 的模型/分析/控件/渲染职责，并解除项目恢复模块对二维 UI 的依赖。
 
-迁移过程先建立行为回归测试，再按边界提取模块；禁止以迁移名义改变数据语义或已有项目格式。优先从已分离的 `src/twod/` 测试基础出发，逐步移除根页面的重复解析和渲染职责。
+以下为目标职责，不表示对应目录和模块均已实现：
+
+| 层 | 目标职责 |
+| --- | --- |
+| app / ui | 应用初始化、状态协调、命令、DOM 事件与控件 |
+| data | 文件读取器、统一数据结构和元数据 |
+| processing | 坐标、频率、基线、幅度和插值处理 |
+| analysis | 峰特征、投影统计、拟合和定量分析 |
+| plotting / rendering | 绘图模型、布局、Canvas 与矢量场景 |
+| project | 项目/配置序列化、校验、迁移与恢复 |
+| export | CSV、SVG、PDF 和栅格格式序列化 |
+| workers | 经性能测量确认需要异步执行的计算，当前尚未建立 |
+
+迁移先建立行为回归，再按职责提取模块；不以迁移名义改变数据语义、用户操作或项目文件格式。暂不进行全面 React 迁移、后端化或无性能依据的 Worker 化。
 
 ## 7. 检查与验收
 
