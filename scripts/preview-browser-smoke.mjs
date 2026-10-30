@@ -254,6 +254,13 @@ try {
       assert.equal(await card.locator('[data-twod="showXProjection"]').isDisabled(),!['top','full'].includes(footprint),'Top projection control follows footprint '+footprint);
       assert.equal(await card.locator('[data-twod="showYProjection"]').isDisabled(),!['right','full'].includes(footprint),'Right projection control follows footprint '+footprint);
     }
+    const firstFootprintCard=page.locator('.subplot').nth(0);
+    await firstFootprintCard.locator('details.advanced-layout').evaluate(el=>{el.open=true});
+    await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('top');
+    assert.equal(await firstFootprintCard.locator('details.advanced-layout').evaluate(el=>el.open),true,'Changing footprint keeps the layout panel open');
+    assert.equal(await firstFootprintCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Top projection becomes available immediately');
+    assert.equal(await firstFootprintCard.locator('[data-twod="showYProjection"]').isDisabled(),true,'Right projection remains excluded immediately');
+    await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('main');
     const savedFootprints=await save('browser-preview/plot-footprints.json');
     assert.deepEqual(savedFootprints.config.subplots.map(sp=>sp.plotFootprint),footprints,'Footprint settings persist in project files');
     await page.locator('button.tab-btn[data-tab="export"]').click();
@@ -269,6 +276,7 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Footprint settings restore after project reload');
     await page.screenshot({path:'browser-preview/plot-footprints.png',fullPage:true});
+    console.log('BROWSER PASS: per-subplot Plot footprint, row/column allocation, project restore and SVG canvas size');
   }
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
