@@ -1350,6 +1350,8 @@ export function plotInsets(d, s, box, title = '', options = {}) {
     topH,
     gSpace,
     rightFraction: hasSide ? 0.14 : 0,
+    hasTopProjection: hasTop,
+    hasRightProjection: hasSide,
   };
 }
 export function sharedMainInsets(entries) {
