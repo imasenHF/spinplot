@@ -5,7 +5,7 @@
 
 ## Power fit 结果显示
 
-- 扫描子图拟合结果默认隐藏，Power fit 下的 `Show on plot` 允许分别显示 P、A、C、R²、RMSE、n。结果按 Amplitude 与 Linewidth 分组，置于扫描子图内部左上侧，采用浅色半透明背景并随主题变更；图形导出与屏幕使用相同布局，不自动增加未选择的统计量。
+- 扫描子图拟合结果默认隐藏；Power fit 的 `Show fit results` 一次性显示公式及全部拟合参数。位置支持四角，默认右下角；字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组，半透明背景随主题变更，导出与屏幕使用相同绘图路径。
 
 ## 1. 产品视觉定位
 
