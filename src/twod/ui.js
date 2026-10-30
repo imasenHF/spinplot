@@ -62,6 +62,7 @@ export function defaults(d) {
     scanFitExcluded: '',
     scanFitPowerMinMW: '',
     scanFitPowerMaxMW: '',
+    scanFitDisplay: [],
     topFeatureDisplay: 'none',
     sideFeatureDisplay: 'none',
     scanStatisticMin: xMin,
@@ -531,6 +532,30 @@ export function controls(card, sp, d, onChange) {
   fitBounds.append(fitBoundTitle);
   input(fitBounds,'scanFitPowerMinMW','Start','number');
   input(fitBounds,'scanFitPowerMaxMW','End','number');
+  const displayPanel=document.createElement('div');
+  displayPanel.className='scan-fit-display';
+  displayPanel.style.gridColumn='1 / -1';
+  const displayTitle=document.createElement('div');
+  displayTitle.textContent='Show on plot';
+  displayPanel.append(displayTitle);
+  const displayChoices=document.createElement('div');
+  displayChoices.className='grid2';
+  for(const [key,label] of [['P','P (mW)'],['A','A'],['C','C'],['r2','R²'],['rmse','RMSE'],['n','n']]){
+    const choice=document.createElement('label'),checkbox=document.createElement('input');
+    choice.className='switch';
+    checkbox.type='checkbox';
+    checkbox.checked=Array.isArray(s.scanFitDisplay)&&s.scanFitDisplay.includes(key);
+    checkbox.onchange=()=>{
+      const selected=new Set(Array.isArray(s.scanFitDisplay)?s.scanFitDisplay:[]);
+      if(checkbox.checked)selected.add(key);else selected.delete(key);
+      s.scanFitDisplay=[...selected];
+      onChange();
+    };
+    choice.append(checkbox,document.createTextNode(label));
+    displayChoices.append(choice);
+  }
+  displayPanel.append(displayChoices);
+  fitBody.append(displayPanel);
   const results=document.createElement('div');
   results.className='scan-fit-results';
   results.style.gridColumn='1 / -1';
