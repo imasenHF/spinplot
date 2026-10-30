@@ -41,9 +41,11 @@ try {
     const info = document.querySelector("#fileInfo")?.textContent || "";
     return info && !info.includes("No data loaded");
   });
-  await page.locator("button[data-tab=\"export\"]").click();
+  await page.locator("button[data-tab=\"style\"]").click();
   await page.locator("#figureTitle").fill("Vector PDF export regression");
-  await page.locator("#yLabel").fill("Intensity");
+  await page.locator("button[data-tab=\"axes\"]").click();
+  await page.locator("#hideYTitle").uncheck();
+  await page.locator("button[data-tab=\"export\"]").click();
   await page.locator("#imageFormat").selectOption("pdf");
 
   const downloadPromise = page.waitForEvent("download");
