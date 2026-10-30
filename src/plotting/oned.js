@@ -18,6 +18,7 @@ import { tickFormatter } from "../twod/ticks.js";
 import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js";
 import * as TwoD from "../twod/ui.js";
 import { fitMainRows, resolveMainInsets } from "./footprint.js";
+import { resolveLegendPosition } from "./legend-position.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -207,7 +208,7 @@ export function renderFigure(
     const size = Number($("legendSize").value) || 11,
       b = legendBoxSize(ctx, curves, size, font),
       [bx, by] = legendXY(
-        sp.legendPosition || "upper_right",
+        resolveLegendPosition(sp.legendPosition, $("globalLegendPosition")?.value),
         geom.x0,
         geom.y0,
         geom.pw,
@@ -314,9 +315,9 @@ export function renderFigure(
         Number($("legendSize").value) || 11,
         font,
       );
-      if (sp.legendPosition === "outside_right")
+      if (resolveLegendPosition(sp.legendPosition, $("globalLegendPosition")?.value) === "outside_right")
         q.right = Math.min(cellW * 0.48, b.w + 18);
-      if (sp.legendPosition === "outside_top")
+      if (resolveLegendPosition(sp.legendPosition, $("globalLegendPosition")?.value) === "outside_top")
         q.top += Math.min(cellH * 0.35, b.h + 10);
     }
     return q;
@@ -697,9 +698,9 @@ export function renderFigure(
               font,
             )
           : null;
-      if (legendPreview && sp.legendPosition === "outside_right")
+      if (legendPreview && resolveLegendPosition(sp.legendPosition, $("globalLegendPosition")?.value) === "outside_right")
         insetR = Math.min(cellW * 0.48, legendPreview.w + 18);
-      if (legendPreview && sp.legendPosition === "outside_top")
+      if (legendPreview && resolveLegendPosition(sp.legendPosition, $("globalLegendPosition")?.value) === "outside_top")
         insetT += Math.min(cellH * 0.35, legendPreview.h + 10);
       const shared = mixedInsets.get(si);
       if (shared) {
