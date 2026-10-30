@@ -1,3 +1,10 @@
+
+## 2026-10-30 PDF 矢量导出恢复
+
+- 正式 PDF 导出改为复用 `vectorScene` → `svgFromScene`，再由 `svg2pdf.js` 与 `jsPDF` 转换；不再把 Canvas 位图嵌入 PDF。
+- PDF 页面尺寸按设计画布 px 值以 96 px/in 换算为 pt；Export DPI 不影响 PDF，仍只作用于 PNG/JPEG 等栅格格式。
+- `src/export/pdf.test.js` 检查输入与 SVG 解析错误；Pages 工作流通过 Chromium 对矢量路径、文本对象、字体资源、页面框和无图像 XObject 做浏览器回归。真实复杂图、中文字体嵌入和 Acrobat/Edge/Firefox 阅读器视觉验收仍待完成。
+- 依赖版本固定为 `jspdf@4.2.1` 与 `svg2pdf.js@2.8.1`。Pages 工作流先生成并提交与 `package.json` 一致的 lockfile，再执行 `npm ci`。
 # SpinPlot 持续开发上下文
 
 更新日期：2026-10-30（Asia/Shanghai）
@@ -131,7 +138,7 @@
 2. 对应投影在目标子图自身可见时，设置不覆盖该投影；投影控件不被禁用。
 3. 右侧占位保留本子图的色标、g 轴与标题边距；上方占位保留标题、g 轴和图例所需边距。
 4. 设置对 1D、2D、Variable scan 均可操作，项目保存/载入后逐子图恢复；旧项目 9/10/11 和配置格式 10 仍可读取。
-5. 屏幕绘图与 SVG/PNG/PDF 导出采用相同几何计算；原始数据、投影计算、扫描统计和物理量不发生变化。
+5. 屏幕绘图与 SVG/PDF 共用矢量场景，PNG 等栅格输出使用同一 renderer 的 Canvas 路径；原始数据、投影计算、扫描统计和物理量不发生变化。
 6. 单元测试、生产构建、旧版导出对照、Chromium 交互、屏幕几何、SVG 导出及公开预览 HTTP/浏览器检查均已通过；PR #2 已按用户要求合并。
 
 
