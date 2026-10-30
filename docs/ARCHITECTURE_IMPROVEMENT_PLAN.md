@@ -2,7 +2,7 @@
 
 更新日期：2026-10-30（Asia/Shanghai）
 
-状态：**规划已记录，尚未实施。** 本文件定义后续源码整理的目标、顺序和验收边界，不代表相关模块已经拆分，也不授权改变现有功能、科学数据语义或项目文件格式。
+状态：**阶段 0 已开始实施。** 已建立统一 lint、格式检查、单元测试和构建入口，并在正式 Pages CI 中执行；PR 检查和浏览器统一入口仍需继续完善。阶段 1–4 尚未开始。 本文件定义后续源码整理的目标、顺序和验收边界，不代表相关模块已经拆分，也不授权改变现有功能、科学数据语义或项目文件格式。
 
 审查基线：正式 `main`，HEAD `5759d756d56daaefbbf9f8caab4c40bcd13ab964`；应用版本 **0.10.0**，项目格式 **11**，配置格式 **10**。后续执行前必须重新读取最新代码、分支、测试和工作流状态。
 
@@ -42,7 +42,7 @@
 
 **文件读取路径需要统一。** 常规导入和批量作图分别组织文件解析流程，CIQTEK、BES3T、CSV 等读取逻辑分布在应用入口和二维模块。增加格式时容易出现重复处理和行为差异。
 
-**质量检查入口不统一。** `package.json` 目前只有 `dev`、`build`、`preview` 脚本，没有统一的 lint、format、test 命令。完整数值测试和浏览器基线对照主要位于 `modularization-preview.yml`，其触发范围为 `preview/modularization-*`；正式 Pages 工作流目前执行安装和生产构建，生产 HTTP 检查主要验证已部署页面版本及脚本资源。
+**质量检查入口已开始统一。** `package.json` 已增加 `lint`、`format:check`、`test:unit`、`check`；格式检查暂限质量管理文件，浏览器测试仍沿用现有工作流。完整数值测试和浏览器基线对照主要位于 `modularization-preview.yml`，其触发范围为 `preview/modularization-*`；正式 Pages 工作流目前执行安装和生产构建，生产 HTTP 检查主要验证已部署页面版本及脚本资源。
 
 **JavaScript 类型检查覆盖有限。** `tsconfig.json` 设置了 TypeScript strict，但未启用 `allowJs` / `checkJs`，不能据此认为主体 JavaScript 已经过严格类型检查。
 
@@ -104,6 +104,9 @@ Canvas / SVG / PDF 渲染
 ## 4. 分阶段实施路线
 
 ### 阶段 0：建立统一质量基线
+
+**当前实施记录（2026-10-30）：** 已添加 ESLint 9、Prettier 3 配置与脚本，`scripts/run-unit-tests.mjs` 逐一执行所有 `src/**/*.test.js` 文件；正式 Pages 运行 `npm run check`。现有浏览器专项工作流与真实仪器数据验证保持独立；历史源码暂不重新格式化。后续仍需 PR 检查、浏览器入口统一与 JSDoc 类型检查试点。
+
 
 **优先级：最高；不改变应用行为。**
 
