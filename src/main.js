@@ -1,6 +1,6 @@
 import {axisEps,niceTicks,ticksWithStep,configuredGTicks} from './processing/axis.js';
 import {svgFromScene} from './export/svg.js';
-import {pdfFromCanvas} from './export/pdf.js';
+import {pdfFromSvg} from './export/pdf.js';
 import {vectorScene} from './export/scene.js';
 import {canvasBlob,bmpBlob,tiffBlob,pngWithDpi,jpegWithDpi} from './export/image.js';
 import {exportProjectPayload,exportConfigPayload} from './export/project.js';
@@ -441,7 +441,7 @@ if(scanPlots.length){
 }
 }
 function renderExportCanvas(){const d=getDesignSize(),dpi=currentDpi(),scale=dpi/96,c=document.createElement('canvas');renderPlot(c,d.width,d.height,scale,true);return{canvas:c,design:d,dpi,scale}}
-async function makeCurrentFigureBlob(){const fmt=$('imageFormat').value;if(fmt==='svg'){const scene=vectorScene(getDesignSize(),document.createElement('canvas').getContext('2d'),renderPlot),blob=new Blob([svgFromScene(scene)],{type:'image/svg+xml'});return{blob,ext:fmt,dpi:currentDpi()}}const{canvas,design,dpi}=renderExportCanvas();if(fmt==='pdf'){const blob=await pdfFromCanvas({canvas,design,dpi});return{blob,ext:fmt,dpi}}const q=clamp(Number($('imageQuality').value)||.95,.1,1);let blob,ext=fmt;if(fmt==='png'||fmt==='jpeg'||fmt==='webp'){blob=await canvasBlob(canvas,fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',q);if(fmt==='png')blob=await pngWithDpi(blob,dpi);if(fmt==='jpeg'){blob=await jpegWithDpi(blob,dpi);ext='jpg'}}else if(fmt==='bmp')blob=bmpBlob(canvas,dpi);else if(fmt==='tiff')blob=tiffBlob(canvas,dpi);return{blob,ext,dpi}}
+async function makeCurrentFigureBlob(){const fmt=$('imageFormat').value;if(fmt==='svg'||fmt==='pdf'){const scene=vectorScene(getDesignSize(),document.createElement('canvas').getContext('2d'),renderPlot),svg=svgFromScene(scene);if(fmt==='svg')return{blob:new Blob([svg],{type:'image/svg+xml'}),ext:fmt,dpi:currentDpi()};const blob=await pdfFromSvg({svg,design:scene.design});return{blob,ext:fmt,dpi:currentDpi()}}const{canvas,design,dpi}=renderExportCanvas();const q=clamp(Number($('imageQuality').value)||.95,.1,1);let blob,ext=fmt;if(fmt==='png'||fmt==='jpeg'||fmt==='webp'){blob=await canvasBlob(canvas,fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png',q);if(fmt==='png')blob=await pngWithDpi(blob,dpi);if(fmt==='jpeg'){blob=await jpegWithDpi(blob,dpi);ext='jpg'}}else if(fmt==='bmp')blob=bmpBlob(canvas,dpi);else if(fmt==='tiff')blob=tiffBlob(canvas,dpi);return{blob,ext,dpi}}
 async function exportFigure(){if(!state.rawCurves.length)return alert('No data loaded');try{const base=safeBaseName(),r=await makeCurrentFigureBlob();downloadBlob(`${base}.${r.ext}`,r.blob);logAction(`Figure exported: ${base}.${r.ext}${['svg','pdf'].includes(r.ext)?' (vector)':` (${r.dpi} DPI)`}`)}catch(e){setStatus(e.message,'bad');logAction('Export error: '+e.message)}}
 
 function batchLog(msg,clear=false){const e=$('batchLog');if(clear)e.textContent='';e.textContent+=(e.textContent?'\n':'')+msg;e.scrollTop=e.scrollHeight}
