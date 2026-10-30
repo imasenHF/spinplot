@@ -6,9 +6,9 @@
 
 ## 2026-10-31 Variable scan 拟合显示与饱和功率解释
 
-- Power fit 显示从逐参数复选框改为单个 `Show fit results`，开启时同时显示幅度/线宽拟合公式和全部结果；可选四角或自定义 X/Y 百分比位置、字体（Plot font / Arial / Times New Roman / Georgia / Consolas / Courier New）与 8–24 px 字号，默认右下角与 12 px。未打开时不显示，旧 `scanFitDisplay` 有选中值时迁移为开启状态。
+- Power fit 显示从逐参数复选框改为单个 `Show results on plot`，开启时同时显示幅度/线宽拟合公式和全部结果；可选九宫格或自定义 X/Y 百分比位置、字体（Plot font / Arial / Times New Roman / Georgia / Consolas / Courier New）与 8–24 px 字号，默认右下角与 12 px。未打开时不显示，旧 `scanFitDisplay` 有选中值时迁移为开启状态。
 - 绘图摘要由 `src/twod/fit-summary.js` 生成，通过 `src/plotting/oned.js` 绘制，PNG/SVG/PDF 共用绘图路径。增补格式化与饱和模型解析单元测试；复杂页面视觉验收仍单独进行。
-- 当前幅度模型固定为 `S(P)=A√P/(1+P/P½)+C`，等效于幂指数 ε=1 的特例。此模型的 `P½` 是相对低功率外推幅度下降 50% 的功率，且满足 `Ppeak=P½`；它不表示线性区末端。按模型规定 5% 偏差阈值时 `P5%=P½/19`，该阈值是约定判据，未作为新的实验拟合参数。
+- 当前幅度模型固定为 `S(P)=A√P/(1+P/Psat)+C`，等效于幂指数 ε=1 的特例。优化得到的 `Psat` 是该模型的峰值功率；半峰值 `P½=(2−√3)²Psat` 取基线扣除后的上升段。按模型规定 5% 低功率外推偏差阈值时 `P5%=Psat/19`，此判据与半峰值不同，并未作为新拟合参数。
 - 尚未引入可调 ε（非均匀/均匀展宽模型族），也没有用截图替代原始实验数据开展新模型选择。需要数据拟合对照后再讨论更换模型。
 
 ## 2026-10-31 Variable scan 拟合结果子图显示
