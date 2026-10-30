@@ -48,9 +48,16 @@ try {
   await page.locator("button[data-tab=\"export\"]").click();
   await page.locator("#imageFormat").selectOption("pdf");
 
-  const downloadPromise = page.waitForEvent("download");
+  const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
   await page.locator("#exportImageBtnSide").click();
-  const download = await downloadPromise;
+  let download;
+  try {
+    download = await downloadPromise;
+  } catch (error) {
+    const status = await page.locator("#statusMain").textContent().catch(() => "unavailable");
+    const log = await page.locator("#log").textContent().catch(() => "unavailable");
+    throw new Error(`PDF download did not start; status=${status}; log=${log}; ${error.message}`);
+  }
   const pdfPath = join(temp, "vector-export.pdf");
   await download.saveAs(pdfPath);
   const bytes = await readFile(pdfPath);
