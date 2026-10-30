@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh Current order and Variable scan derivative color swatches when the global or subplot palette changes, preserving explicitly assigned per-curve colors.
+
 - Condense Variable scan power-fit UI copy: shorten section and checkbox labels, remove the long exclusion hint, compact measured-range/status text, and rename search bounds to Fit range / Min / Max while preserving blank-as-measured-range behavior in a tooltip.
 
 - Center the selected line/marker glyph in Variable scan style controls by removing the scan-specific right padding and applying `text-align-last: center`; keep regular curve controls unchanged.
