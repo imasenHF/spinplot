@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pdfFromCanvas } from "./pdf.js";
+import { pdfFromCanvas } from "./pdf-utils.js";
 
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
 async function makePdf({ width = 600, height = 400, design = { width: 200, height: 120 } } = {}) {
