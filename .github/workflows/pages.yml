@@ -29,9 +29,59 @@ jobs:
             git commit -m "chore: refresh npm lockfile"
             git push
           fi
+      - name: Refresh and commit npm lockfile
+        run: |
+          npm install --package-lock-only
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: refresh npm lockfile"
+            git push
+          fi
       - run: npm ci
       - name: PDF export regression
         run: node --test src/export/pdf.test.js
+      - name: Install vector PDF browser test runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start Vite development server
+        run: npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/spinplot-vite.log 2>&1 &
+      - name: Wait for Vite
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/spinplot/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/spinplot-vite.log
+          exit 1
+      - name: Vector PDF browser regression
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          try {
+            const page = await browser.newPage();
+            await page.goto('http://127.0.0.1:4173/spinplot/');
+            const result = await page.evaluate(async () => {
+              const { pdfFromSvg } = await import('/spinplot/src/export/pdf.js');
+              const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160"><path d="M10 10 L200 10 L200 140 Z" fill="#d8f4a2"/><text x="20" y="40" style="font:14px Arial">Vector text</text><text x="30" y="100" transform="rotate(-90 30 100)" style="font:12px Arial">Rotated label</text></svg>';
+              const blob = await pdfFromSvg({ svg, design: { width: 240, height: 160 } });
+              const bytes = new Uint8Array(await blob.arrayBuffer());
+              const text = new TextDecoder('latin1').decode(bytes);
+              return { size: bytes.length, signature: text.startsWith('%PDF-'), hasText: text.includes('Vector text'), hasImage: text.includes('/Subtype /Image'), hasFont: text.includes('/Font'), hasPage: text.includes('/MediaBox') };
+            });
+            assert.ok(result.signature, 'PDF signature');
+            assert.ok(result.size > 500, 'PDF content');
+            assert.ok(result.hasText, 'PDF retains text objects');
+            assert.equal(result.hasImage, false, 'PDF must not contain raster image XObjects');
+            assert.ok(result.hasFont, 'PDF font resources');
+            assert.ok(result.hasPage, 'PDF page box');
+            console.log(JSON.stringify(result));
+          } finally { await browser.close(); }
+          NODE
       - name: Install vector PDF browser test runtime
         run: |
           npm install --no-save playwright
