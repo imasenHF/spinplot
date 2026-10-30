@@ -1,5 +1,5 @@
 export async function pdfFromCanvas({ canvas, design, dpi, quality = 0.98 }) {
-  if (!canvas || !design?.width || !design?.height) {
+  if (!canvas || !canvas.width || !canvas.height || typeof canvas.toBlob !== "function" || !design?.width || !design?.height) {
     throw new Error("PDF export requires a rendered canvas and design dimensions");
   }
   const jpeg = await new Promise((resolve, reject) => {
