@@ -6,7 +6,7 @@
 ## 1. 定位与发布
 
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
-- Variable scan Power fit 使用单个 `Show fit results` 开关（默认关闭），同时显示模型公式及 P½/Psat、A、C、R²、RMSE、n。可选四角位置与 8–24 px 字号，默认右下角、12 px。设置保存在 `twoD.settings.scanFitShow/scanFitLabelPosition/scanFitLabelSize`，旧版逐项显示设置在加载时转换为总开关。Amplitude 与 Linewidth 分组，只有有效拟合显示数值；图形导出共用绘图路径。`P½` 按当前 ε=1 幅度模型表示相对未饱和外推信号下降 50% 的特征功率，同时也是该模型的幅度峰值功率，与低功率线性区终点不同。
+- Variable scan Power fit 使用单个 `Show fit results` 开关（默认关闭），同时显示模型公式及 P½/Psat、A、C、R²、RMSE、n。可选四角或自定义 X/Y 百分比位置、字体（继承绘图字体或独立选择）及 8–24 px 字号，默认右下角、继承绘图字体、12 px。设置保存在 `twoD.settings.scanFitShow/scanFitLabelPosition/scanFitLabelSize`，旧版逐项显示设置在加载时转换为总开关。Amplitude 与 Linewidth 分组，只有有效拟合显示数值；图形导出共用绘图路径。`P½` 按当前 ε=1 幅度模型表示相对未饱和外推信号下降 50% 的特征功率，同时也是该模型的幅度峰值功率，与低功率线性区终点不同。
 - Variable scan 功率拟合面板采用简短标签：Power fit、Amplitude、Linewidth、Offset C、Fit range；测量功率范围保留为单行数据读数，排除点说明段落已删除，Fit range 的空值规则通过控件提示说明。
 
 - Export 页按钮采用紧凑两列布局；图形/CSV 操作按钮最小高度 44 px，行列间距统一。投影与 Variable scan 导出选择器独立成组，按钮不再随选择器标签换行而纵向拉伸。
