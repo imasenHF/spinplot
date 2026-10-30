@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restore the Export tab’s Config / Project panel, which had previously been moved outside the sidebar and hidden. Save/Load Config and project file controls are visible again without adding low-frequency buttons to the top toolbar; Chromium and PDF regressions cover the repaired path.
+
 - Simplify the primary toolbar to seven standalone actions: Open Data, Open Project, Save Project, Undo, Redo, Clear Data, and Export Figure. Replace similar file-operation icons with distinct folder/package/floppy/image glyphs, keep Export text, and unify icon sizing. Remove the redundant top Plot and Config buttons and all Reset Config UI; retain File menu and Export panel Config save/load, Tools → Recalculate, and automatic redrawing. Preserve project/config formats and update browser regression coverage.
 
 - Restore `Legend & labels` for Variable scan subplots, including user-controlled Legend / Direct / Both / None and visible local legend-position settings. Add global legend position under Style with nine inside locations and two outside placements. New subplots inherit the global setting; explicit local positions override it in both drawing and plot-margin calculations. Migrate legacy default upper-right placement to inherited settings without changing initial appearance. Add unit and Chromium persistence regressions.

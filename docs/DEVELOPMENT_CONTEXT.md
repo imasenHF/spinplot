@@ -1,8 +1,8 @@
-## 2026-10-31 Export 页恢复 Config / Project 面板（PR #8，待验收）
+## 2026-10-31 Export 页恢复 Config / Project 面板（PR #8，已合并 main）
 
 - 工具栏精简后发现原有 `organizeGlobalUI()` 曾将 `#fileOperationsCard` 隐藏并搬离 Export 页；此前顶部 Config 操作使这一问题不易察觉。
 - 修复后让 Export 页直接显示 Config / Project 面板，保留 Save Config、Load Config、Save Project 与 Open Project，避免把低频配置入口移回顶部。现有 JSON 处理函数、数据格式和自动绘图保持不变。
-- Chromium 回归增加 Export 面板可见性及配置 JSON/SVG 下载。正式验收区分 CI、Pages 和浏览器实际操作。
+- Chromium 回归增加 Export 面板可见性及配置 JSON/SVG 下载。[PR #8](https://github.com/imasenHF/spinplot/pull/8) 已合并；[质量检查](https://github.com/imasenHF/spinplot/actions/runs/41112803755)、[Chromium 操作回归](https://github.com/imasenHF/spinplot/actions/runs/41112803677) 和 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41112803713) 均成功。正式 Pages 与生产 HTTP 状态另行检查。
 
 ## 2026-10-31 顶部常用工具栏整理（PR #7 已合并 main）
 
