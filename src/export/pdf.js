@@ -8,17 +8,27 @@ export function pdfFromScene({ design, scene }) {
     chunks.push(b);
     length += b.length;
   };
-  const color = (v) => {
-    let m = String(v || "").match(/^#([0-9a-f]{6})$/i);
-    if (m)
-      return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255);
-    m = String(v || "").match(/rgba?\(([^)]+)\)/);
-    if (m)
-      return m[1]
-        .split(",")
-        .slice(0, 3)
-        .map((n) => Math.max(0, Math.min(255, Number(n))) / 255);
-    return [0, 0, 0];
+  const color = (value) => {
+    const source = String(value ?? "").trim();
+    let hex = source.match(/^#([\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i)?.[1];
+    if (hex) {
+      if (hex.length <= 4) hex = [...hex].map((v) => v + v).join("");
+      return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    }
+
+    const rgb = source.match(/^rgba?\((.*)\)$/i);
+    if (rgb) {
+      const channels = rgb[1].trim().replace(/\s*\/\s*/, " ").split(/[\s,]+/);
+      if (channels.length >= 3) {
+        return channels.slice(0, 3).map((channel) => {
+          const percent = channel.endsWith("%");
+          const number = Number(percent ? channel.slice(0, -1) : channel);
+          if (!Number.isFinite(number)) throw new Error(`Unsupported PDF color: ${source}`);
+          return Math.max(0, Math.min(255, percent ? number * 2.55 : number)) / 255;
+        });
+      }
+    }
+    throw new Error(`Unsupported PDF color: ${source || "(empty)"}`);
   };
   const rgb = (v, op) =>
     color(v)

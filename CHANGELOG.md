@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- No unreleased changes recorded.
+- Fix PDF vector export color parsing for short/long hexadecimal and RGB(A) values, including the `#fff` light-theme background; unsupported color strings now raise an explicit export error.
 
 ## 0.10.0 — 2026-10-30
 
