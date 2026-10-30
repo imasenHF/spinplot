@@ -265,9 +265,9 @@ try {
     assert.deepEqual(await page.locator('[data-field="emptyProjectionSpace"]').evaluateAll(els=>els.map(el=>el.value)),['none','none','none','none'],'All subplot types expose the empty projection-space setting');
     const targetCard=page.locator('.subplot').nth(1);
     if(await targetCard.evaluate(el=>el.classList.contains('collapsed')))await targetCard.locator('[data-action="collapse"]').click();
-    const targetLayout=targetCard.locator('details.advanced-layout');
-    if(!await targetLayout.evaluate(el=>el.open))await targetLayout.locator('summary').click();
     const occupancy=targetCard.locator('[data-field="emptyProjectionSpace"]');
+    const targetLayout=occupancy.locator('xpath=ancestor::details[1]');
+    if(!await targetLayout.evaluate(el=>el.open))await targetLayout.locator('summary').click();
     assert.equal(await occupancy.isVisible(),true,'1D subplots can occupy unused projection space');
     const topProjectionCard=page.locator('.subplot').nth(0);
     assert.equal(await topProjectionCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Projection visibility remains independently editable');
