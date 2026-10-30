@@ -385,7 +385,20 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
       (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle'))};
   }
  }
- const renderSp={...sp,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
+ const selectedFitFields=Array.isArray(t.scanFitDisplay)?t.scanFitDisplay:[];
+ const fitResults=[];
+ if(sp.mode==='scan'&&data?.valid&&selectedFitFields.length){
+  const fmt=value=>Number.isFinite(value)?Number(value.toPrecision(5)).toString():'—';
+  for(const [name,fit] of [['Amplitude',data.amplitudeFit],['Linewidth',data.linewidthFit]]){
+   if(!fit?.valid)continue;
+   fitResults.push(name);
+   for(const key of selectedFitFields){
+    const item=key==='P'?['P',fit.parameters.P,' mW']:key==='A'?['A',fit.parameters.A,'']:key==='C'?['C',fit.parameters.C,'']:key==='r2'?['R2',fit.r2,'']:key==='rmse'?['RMSE',fit.rmse,'']:key==='n'?['n',fit.n,'']:null;
+    if(item)fitResults.push(item[0]+' = '+fmt(item[1])+item[2]);
+   }
+  }
+ }
+ const renderSp={...sp,fitResultLines:fitResults,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
     legendPosition:sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'&&sp.legendPosition==='upper_right'
       ?'outside_top':sp.legendPosition,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
