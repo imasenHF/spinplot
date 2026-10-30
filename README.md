@@ -19,16 +19,16 @@
 
 具体实验类型、二维轴单位和异常输入限制见 [二维数据说明](docs/TWO_DIMENSIONAL.md)。当前并未声明支持所有 EPR 厂商或序列；其他来源的谱图需先验证解析结果。
 
-## 模块化预览（未合并正式版）
+## 正式版本与独立预览
 
-[SpinPlot 独立预览](https://plastocyanin.org/previews/spinplot-modularization/) 包含 Heatmap、Contour、可旋转 3D surface 等模块化功能；正式 `main` 和 `/spinplot/` 未合并这些变更。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
+[SpinPlot 独立预览](https://plastocyanin.org/previews/spinplot-modularization/) 包含 Heatmap、Contour、可旋转 3D surface、二维坐标模式及阶段 B Plot footprint 等功能。模块化代码与阶段 B 已合并正式 `main` 并部署至 `/spinplot/`；独立预览保留用于后续试验。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
 - **Linear**：线性连续坐标；**Scientific**：仍是线性坐标，只把刻度标签改成科学计数法；**Log10 / SymLog**：全正值采用 Log10，含零或负信号使用保留零点与正负号的对称对数。三者不修改原始数组。
 - 选择一种模式时，应用按对应子图的实际数据自动拟合坐标范围，将数值写入子图 Y/Z、投影 min/max。**Auto Z** 按当前可见 X/Y 区域计算 Z min/max 并填写数值，双击色标同样处理；双击热图主体复原 X/Y 时不覆盖 Z。
 - 原有的一维 Region 等基线、二维源矩阵和二维投影统计不做隐式校正或全矩阵均值扣除；**此次没有修改任何二维基线处理**。
 - 等高线沿物理 X/Y 坐标插值；3D 使用可旋转三角网格。界面使用 34 px 的独立符号列、简短标题与问号帮助，3D 视角面板默认折叠。
 
-阶段 B 新增 Plot footprint（Main / Top / Right / Full）及跨列主坐标框对齐、行高分配；项目保存恢复、SVG 输出和浏览器交互均有专门回归。阶段 B 完整数值、构建、Chromium 与迁移前对照通过 [Actions #40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。此前三模式坐标与二维预览的回归见 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
+阶段 B 新增 Plot footprint（Main / Top / Right / Full）及跨列主坐标框对齐、行高分配；项目保存恢复、SVG 输出和浏览器交互均有专门回归。阶段 B 完整数值、构建、Chromium 与迁移前对照通过 [Actions #41001606843](https://github.com/imasenHF/spinplot/actions/runs/41001606843)，并已合并 PR #1。正式 Pages 部署通过 [Actions #41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341)。此前三模式坐标与二维预览的回归见 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
 
 ## 使用与科研限制
 
