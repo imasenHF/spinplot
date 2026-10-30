@@ -44,7 +44,7 @@ try {
   assert.equal(dataChooser.isMultiple(),true);
   await dataChooser.setFiles({
     name: 'legend-fixture.csv', mimeType: 'text/csv',
-    buffer: Buffer.from('B,Trace A,Trace B\\n3300,0,0\\n3310,1,2\\n3320,2,4\\n3330,-1,-2\\n3340,0,0\\n')
+    buffer: Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,2,4\n3330,-1,-2\n3340,0,0\n')
   });
   await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
   const [projectChooser] = await Promise.all([
@@ -59,12 +59,6 @@ try {
   await page.locator('#globalLegendPosition').selectOption('lower_left');
 
   await page.locator('button.tab-btn[data-tab="data"]').click();
-  await page.locator('#dataFiles').setInputFiles({
-    name: 'legend-fixture.csv', mimeType: 'text/csv',
-    buffer: Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,2,4\n3330,-1,-2\n3340,0,0\n')
-  });
-  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
-
   await page.locator('button.tab-btn[data-tab="subplots"]').click();
   const source = page.locator('.subplot').first();
   if (await source.evaluate(el => el.classList.contains('collapsed'))) {
@@ -100,6 +94,21 @@ try {
   const hiddenProject = JSON.parse(await fs.readFile(await noneDownload.path(), 'utf8'));
   assert.equal(hiddenProject.config.subplots[1].labelMode, 'none',
     'Variable scan label visibility must remain user-controlled');
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  const [configDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#saveConfigBtnSide').click()
+  ]);
+  const config = JSON.parse(await fs.readFile(await configDownload.path(),'utf8'));
+  assert.equal(config.version,10);
+  await page.locator('#imageFormat').selectOption('svg');
+  const [figureDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#exportImageBtn').click()
+  ]);
+  assert.match(figureDownload.suggestedFilename(),/\\.svg$/i);
+  await page.locator('#clearDataBtn').click();
+  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '0');
   assert.deepEqual(pageErrors, []);
   console.log('PASS: global legend position, scan labels, local override and persistence');
 } finally {
