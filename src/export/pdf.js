@@ -1,3 +1,56 @@
+import notoRegularUrl from "notosans-fontface/fonts/NotoSans-Regular.ttf?url";
+import notoBoldUrl from "notosans-fontface/fonts/NotoSans-Bold.ttf?url";
+
+let notoFontFilesPromise;
+
+async function addUnicodeFont(doc) {
+  if (!notoFontFilesPromise) {
+    notoFontFilesPromise = Promise.all([notoRegularUrl, notoBoldUrl].map(async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Could not load the embedded Unicode font for PDF export");
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      let binary = "";
+      for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+      }
+      return btoa(binary);
+    }));
+  }
+  const [regular, bold] = await notoFontFilesPromise;
+  doc.addFileToVFS("NotoSans-Regular.ttf", regular);
+  doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+  doc.addFileToVFS("NotoSans-Bold.ttf", bold);
+  doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+}
+
+function prepareUnicodeText(root) {
+  const textNodes = [...root.querySelectorAll("text")];
+  const allText = textNodes.map((node) => node.textContent || "").join("");
+  if (/[\\u2e80-\\u9fff\\uac00-\\ud7af\\uf900-\\faff]/i.test(allText)) {
+    throw new Error("Vector PDF currently embeds Latin and Greek text; CJK labels should be exported as SVG or printed to PDF from the browser");
+  }
+  const hasUnicode = /[^\\x00-\\x7f]/.test(allText);
+  if (!hasUnicode) return false;
+
+  const namespace = "http://www.w3.org/2000/svg";
+  for (const node of textNodes) {
+    const value = node.textContent || "";
+    if (!/[^\\x00-\\x7f]/.test(value)) continue;
+    const bold = /(?:^|\\s)bold(?:\\s|$)/i.test(node.getAttribute("style") || "");
+    const parts = value.match(/[^\\x00-\\x7f]+|[\\x00-\\x7f]+/g) || [];
+    node.replaceChildren(...parts.map((part) => {
+      const span = node.ownerDocument.createElementNS(namespace, "tspan");
+      if (/[^\\x00-\\x7f]/.test(part)) {
+        span.setAttribute("font-family", "NotoSans");
+        if (bold) span.setAttribute("font-weight", "bold");
+      }
+      span.textContent = part;
+      return span;
+    }));
+  }
+  return true;
+}
+
 export function pdfPageDimensions(design) {
   const width = Number(design?.width);
   const height = Number(design?.height);
@@ -25,6 +78,7 @@ export async function pdfFromSvg({ svg, design }) {
     throw new Error("Could not parse the vector figure as SVG");
   }
 
+  const needsUnicodeFont = prepareUnicodeText(root);
   const { jsPDF } = await import("jspdf");
   await import("svg2pdf.js");
   const doc = new jsPDF({
@@ -35,6 +89,7 @@ export async function pdfFromSvg({ svg, design }) {
     precision: 12,
     putOnlyUsedFonts: true,
   });
+  if (needsUnicodeFont) await addUnicodeFont(doc);
   doc.setProperties({
     title: "SpinPlot figure",
     subject: "Vector scientific plot exported from SpinPlot",
