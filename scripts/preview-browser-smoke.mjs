@@ -12,7 +12,7 @@ try {
   page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
   const response = await page.goto(url,{waitUntil:'networkidle',timeout:45000});
   assert.equal(response.status(),200,'Preview HTML must be served');
-  assert.match(await page.title(),/SpinPlot 0\.9\.2/);
+  assert.match(await page.title(),/SpinPlot 0\.10\.0/);
   assert.equal(await page.locator('.tab-btn').count(),6,'Six tabs are required');
   try {
     await page.waitForFunction(() => document.querySelector('#statusMain')?.textContent?.includes('Waiting for data'),null,{timeout:15000});
@@ -237,47 +237,78 @@ try {
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
-  if (process.env.SPINPLOT_TEST_FOOTPRINT === '1') {
+  if (process.env.SPINPLOT_TEST_EMPTY_PROJECTION_SPACE === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
-    const footprints=['main','right','top','full'];
-    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false,xMode:'mean',yMode:'mean',xProjectionTitle:'TopPanel',yProjectionTitle:'RightPanel'};
-    const footprintSubplots=footprints.map((footprint,index)=>{
-      const subplot=JSON.parse(JSON.stringify(source2D));
-      return {...subplot,title:'Footprint '+footprint,mode:'heatmap',plotFootprint:footprint,gridRow:Math.floor(index/2)+1,gridCol:index%2+1,rowSpan:1,colSpan:1,twoD:{...subplot.twoD,index:2,settings:{...footprintSettings}}};
+    const oneD=mixed.config.subplots.find(sp=>!sp.twoD);
+    const matrixSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showColorbar:false,swap:false};
+    const make2D=(title,row,col,top,right)=>({
+      ...JSON.parse(JSON.stringify(source2D)),
+      title,mode:'heatmap',gridRow:row,gridCol:col,rowSpan:1,colSpan:1,
+      emptyProjectionSpace:'none',
+      twoD:{...source2D.twoD,index:2,settings:{...matrixSettings,showProjections:true,showXProjection:top,showYProjection:right}}
     });
-    const footprintProject={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:2,spans:'1,1 / 1,1',gapX:20,gapY:20},subplots:footprintSubplots}};
-    await load(footprintProject,'plot-footprints.spinplot.json');
+    const make1D=(title,row,col)=>({
+      ...JSON.parse(JSON.stringify(oneD)),
+      title,gridRow:row,gridCol:col,rowSpan:1,colSpan:1,
+      twoD:undefined,emptyProjectionSpace:'none'
+    });
+    const spaceSubplots=[
+      make2D('Top projection',1,1,true,false),
+      make1D('Target 1D',1,2),
+      make1D('Row filler',2,1),
+      make2D('Right projection',2,2,false,true)
+    ];
+    const spaceProject={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:2,spans:'1,1 / 1,1',gapX:20,gapY:20},subplots:spaceSubplots}};
+    await load(spaceProject,'empty-projection-space.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Each 2D subplot exposes its saved footprint preset');
-    for(let index=0;index<footprints.length;index++){
-      const card=page.locator('.subplot').nth(index),footprint=footprints[index];
-      assert.equal(await card.locator('[data-twod="showXProjection"]').isDisabled(),!['top','full'].includes(footprint),'Top projection control follows footprint '+footprint);
-      assert.equal(await card.locator('[data-twod="showYProjection"]').isDisabled(),!['right','full'].includes(footprint),'Right projection control follows footprint '+footprint);
-    }
-    const firstFootprintCard=page.locator('.subplot').nth(0);
-    const footprintSelect=firstFootprintCard.locator('[data-field="plotFootprint"]');
-    await footprintSelect.evaluate(el=>{if(el.closest('details'))el.closest('details').open=true});
-    await footprintSelect.selectOption('top');
-    assert.equal(await footprintSelect.evaluate(el=>el.closest('details')?.open===true),true,'Changing footprint keeps the layout panel open');
-    assert.equal(await firstFootprintCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Top projection becomes available immediately');
-    assert.equal(await firstFootprintCard.locator('[data-twod="showYProjection"]').isDisabled(),true,'Right projection remains excluded immediately');
-    await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('main');
-    const savedFootprints=await save('browser-preview/plot-footprints.json');
-    assert.deepEqual(savedFootprints.config.subplots.map(sp=>sp.plotFootprint),footprints,'Footprint settings persist in project files');
-    await page.locator('button.tab-btn[data-tab="export"]').click();
-    await page.locator('#imageFormat').selectOption('svg');
-    const [footprintDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
-    await footprintDownload.saveAs('browser-preview/plot-footprints.svg');
-    const footprintSvg=fs.readFileSync('browser-preview/plot-footprints.svg','utf8');
-    assert.equal([...footprintSvg.matchAll(/TopPanel/g)].length,2,'Only Top and Full footprints draw top projections');
-    assert.equal([...footprintSvg.matchAll(/RightPanel/g)].length,2,'Only Right and Full footprints draw right projections');
-    const footprintSize=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return [doc.documentElement.getAttribute('width'),doc.documentElement.getAttribute('height')];},footprintSvg);
-    assert.deepEqual(footprintSize,['1000','1000'],'SVG export retains the selected design canvas size');
-    await load(savedFootprints,'plot-footprints-reload.spinplot.json');
+    assert.deepEqual(await page.locator('[data-field="emptyProjectionSpace"]').evaluateAll(els=>els.map(el=>el.value)),['none','none','none','none'],'All subplot types expose the empty projection-space setting');
+    const targetCard=page.locator('.subplot').nth(1);
+    const occupancy=targetCard.locator('[data-field="emptyProjectionSpace"]');
+    assert.equal(await occupancy.isVisible(),true,'1D subplots can occupy unused projection space');
+    const topProjectionCard=page.locator('.subplot').nth(0);
+    assert.equal(await topProjectionCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Projection visibility remains independently editable');
+    assert.equal(await topProjectionCard.locator('[data-twod="showYProjection"]').isDisabled(),false,'A footprint choice never disables projection controls');
+
+    await page.evaluate(()=>{
+      const proto=CanvasRenderingContext2D.prototype;
+      const originalClear=proto.clearRect,originalStroke=proto.strokeRect;
+      window.__emptyProjectionFrames=[];
+      proto.clearRect=function(...args){
+        if(this.canvas?.id==='plotCanvas')window.__emptyProjectionFrames=[];
+        return originalClear.apply(this,args);
+      };
+      proto.strokeRect=function(x,y,w,h){
+        if(this.canvas?.id==='plotCanvas')window.__emptyProjectionFrames.push({x,y,w,h});
+        return originalStroke.call(this,x,y,w,h);
+      };
+    });
+    const captureTargetFrame=async()=>{
+      await page.waitForTimeout(180);
+      const frames=await page.evaluate(()=>window.__emptyProjectionFrames||[]);
+      assert.ok(frames.length>=6,'Mixed 2D/1D layout must draw all expected frames: '+JSON.stringify(frames));
+      return frames[2];
+    };
+    const setOccupancy=async value=>{
+      await occupancy.selectOption(value);
+      return captureTargetFrame();
+    };
+    const noneFrame=await captureTargetFrame();
+    const topFrame=await setOccupancy('top');
+    const rightFrame=await setOccupancy('right');
+    const bothFrame=await setOccupancy('both');
+    assert.ok(topFrame.y<noneFrame.y&&topFrame.h>noneFrame.h,'Top occupancy extends the no-projection subplot upward');
+    assert.ok(rightFrame.w>noneFrame.w&&Math.abs(rightFrame.y-noneFrame.y)<0.05,'Right occupancy extends the no-projection subplot rightward only');
+    assert.ok(bothFrame.y<noneFrame.y&&bothFrame.h>noneFrame.h&&bothFrame.w>noneFrame.w,'Full occupancy consumes both unused projection regions');
+
+    const savedSpace=await save('browser-preview/empty-projection-space.json');
+    assert.deepEqual(savedSpace.config.subplots.map(sp=>sp.emptyProjectionSpace),['none','both','none','none'],'Empty projection-space settings persist per subplot');
+    assert.equal(savedSpace.config.subplots[0].twoD.settings.showXProjection,true,'Top projection state remains unchanged');
+    assert.equal(savedSpace.config.subplots[0].twoD.settings.showYProjection,false,'Right projection state remains unchanged');
+    await load(savedSpace,'empty-projection-space-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Footprint settings restore after project reload');
-    await page.screenshot({path:'browser-preview/plot-footprints.png',fullPage:true});
-    console.log('BROWSER PASS: per-subplot Plot footprint, row/column allocation, project restore and SVG canvas size');
+    assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="emptyProjectionSpace"]').inputValue(),'both','Occupancy setting restores after project reload');
+    await page.screenshot({path:'browser-preview/empty-projection-space.png',fullPage:true});
+    console.log('BROWSER PASS: opt-in top/right/both empty projection-space occupancy, independent projection controls and project restore');
   }
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
