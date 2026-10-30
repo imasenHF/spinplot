@@ -1,6 +1,6 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-10-29（Asia/Shanghai）
+更新日期：2026-10-30（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
@@ -41,7 +41,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 排除点改为逐轨迹复选框，未参与拟合的测量值单独以符号标识，保留原始记录及导出纳入状态。直接二维来源的 Current data 左侧缩进显示衍生曲线，右列独立设置每条线型/符号；多条原始一维曲线生成的旧扫描视图保留原 Style 控件兼容。拟合曲线默认虚线、实测特征默认点线，图例默认置于绘图区外侧上方。设置随项目保存，拟合重载后重算；正式数据及基线不修改。
 - **2026-10-30 界面修订：** 普通二维 Heatmap 不显示无用的 Scan style 或 Current data 空白样式列；直接二维 Variable scan 的衍生曲线恢复 34 px 纯符号 Style 列，数据/样式列表等高、逐行对应。非功率扫描自动折叠拟合设置且不将 dB 误显示为 mW；排除点设置恢复一致的折叠外观；MathML 括号禁止随分式拉伸。Linear 模式下的主图 Y、Top/Right 投影和 Z 色标均用十进制刻度，只有明确选 Scientific 才使用科学计数法。原始数值/项目格式/二维基线均不变。完整回归与浏览器/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 成功，主站独立预览 Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功；真实谱线科学适用性与参数不确定度尚未独立验收。
 - **2026-10-30 派生曲线 Z-order：** 直接二维 Variable scan 的 Current data 中，缩进的派生曲线可鼠标拖拽调整前后绘制次序（下方在上层），也可通过 Alt+↑/↓ 调整。原始矩阵行固定；右侧线型/符号控制跟随条目移动。使用稳定虚拟 ID 和子图 `scanDerivedOrder` 记录顺序，旧项目缺省时保留原始默认顺序；Canvas/图例/SVG/其他图形导出与保存重载采用同一排序。新增纯函数测试 `src/twod/scan-order.test.js`，完整回归 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。此功能不改变谱线数值、拟合、二维基线、项目格式版本或正式分支。
-- 本次**未实施**阶段 B 的按子图选择主图区/顶部/右侧/全画幅与跨列重新排版；亦未完成多峰线宽判读、真实仪器校准或拟合不确定度估计。详细内容与测试入口见 `docs/DEVELOPMENT_CONTEXT.md` 和 `docs/TWO_DIMENSIONAL.md`。
+- 阶段 B Plot footprint 与跨列排版已在 2026-10-30 实现：四种画幅预设、投影可用性控制、单行子图主框等高、单列子图主框等宽、跨行/跨列布局回退、项目保存恢复及 SVG 设计尺寸保持。自动化测试和本地 Chromium 浏览器回归见 `docs/DEVELOPMENT_CONTEXT.md`；公开预览快照已提交主站，Pages 部署与公开浏览器复测仍待最终确认。多峰线宽判读、真实仪器校准及拟合不确定度估计仍未完成。
 
 ### 二维查看与导出
 
@@ -74,6 +74,8 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 软件可用于整理与可视化，但重要定量结论仍应与原始谱图、已知标准数据及独立计算对照。
 
 ## 5. 预览分支与待办
+
+**2026-10-30 阶段 B Plot footprint 与跨列排版：** 预览分支已实现 `Main / Top / Right / Full` 四种子图画幅范围。单行布局按各行最大顶部/底部附属空间重新分配行高，单列布局按各列左右附属空间与比例宽度重新分配列宽，使主坐标框分别保持等高/等宽；跨行或跨列子图走共享边距路径。每个二维子图的预设独立保存，投影开关随画幅范围约束，切换时保留布局面板状态。测试覆盖四种预设、开关状态、画幅几何、跨列主框对齐、项目保存/恢复、SVG 投影内容与画布设计尺寸。代码及本地浏览器回归已通过 [Actions 40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。公开预览静态快照已更新，Pages 发布及公开浏览器复测待完成；正式 `main` 与 `/spinplot/` 尚未合并。
 
 **2026-10-29 独立预览状态（非正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。正式 `/spinplot/`、`main` 未修改，Draft PR #1 未合并。
 
