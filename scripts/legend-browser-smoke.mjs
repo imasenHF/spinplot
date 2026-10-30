@@ -107,6 +107,16 @@ try {
   await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
   const configHandler=await toolbarPage.locator('#saveConfigBtnSide').evaluate(e=>String(e.onclick));
   console.log('CONFIG_HANDLER',configHandler.slice(0,350));
+  console.log('CONFIG_PROBE',JSON.stringify(await toolbarPage.evaluate(()=>{
+    const btn=document.querySelector('#saveConfigBtnSide');
+    const before=document.querySelector('#log')?.textContent;
+    let threw=null;
+    try {btn.click();}catch(error){threw=String(error);}
+    return {disabled:btn.disabled,visible:!!btn.getClientRects().length,
+      before,after:document.querySelector('#log')?.textContent,threw,
+      type:btn.type}
+  })));
+  console.log('CONFIG_ERRORS',JSON.stringify(pageErrors));
   let configDownload;
   try {
     [configDownload] = await Promise.all([
