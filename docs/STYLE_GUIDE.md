@@ -3,6 +3,11 @@
 更新日期：2026-10-30（Asia/Shanghai）
 适用范围：SpinPlot 独立软件界面、图表预览及导出。以下区分**现有实现**与**后续修改必须保留的规则**；实际值以 `index.html` CSS、`src/interface.js`、`src/twod/ui.js`、`src/twod/palettes.js` 和绘图/导出代码为准。本文件不要求将主站的页面布局直接覆盖本工具。
 
+## Legend 位置与局部覆盖
+
+- Style → Legend 提供全局 Position、Opacity 与 Border，位置默认 Upper right，可选九宫格或图外顶部/右侧；子图 Subplots → Legend & labels 提供局部 Label mode 与 Legend position（Use global 或单独选择），默认位置继承全局。Variable scan 使用一维曲线图例体系，Labels 默认展开；普通 Heatmap、Contour 和 3D surface 使用各自色标，不显示曲线 legend。仅在确有曲线图例的模式下显示位置设置。
+- 位置继承适用于绘图区边距计算与实际绘制，导出与屏幕采用同一有效位置。旧配置默认 Upper right 的迁移不改变其初始视觉结果。
+
 ## Power fit 结果显示
 
 - 扫描子图拟合结果默认隐藏；Power fit 的 `Show results on plot` 一次性显示公式及全部拟合参数。位置支持九宫格或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组；幅度同时显示 Psat 与上升段半峰值 P½（采用 S−C），拟合点数显示为 No. of points。拟合结果注释采用九宫格或自定义坐标、可开关边框、背景不透明度 0–1，默认图内右下角、无背景、无边框。Variable scan 的普通曲线 legend 默认保留在绘图区内，导出与屏幕沿用同一绘图路径。
