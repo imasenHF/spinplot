@@ -4,7 +4,7 @@
 
 作者：**hyphoon** · 联系：wuhaifeng@ustc.edu.cn
 
-[打开 SpinPlot](https://plastocyanin.org/spinplot/) · [当前项目状态](PROJECT_CONTEXT.md) · [界面风格](docs/STYLE_GUIDE.md) · [架构](docs/ARCHITECTURE.md) · [版本记录](CHANGELOG.md)
+[打开 SpinPlot](https://plastocyanin.org/spinplot/) · [当前项目状态](PROJECT_CONTEXT.md) · [界面风格](docs/STYLE_GUIDE.md) · [架构](docs/ARCHITECTURE.md) · [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md) · [版本记录](CHANGELOG.md)
 
 ## 功能概览
 
@@ -76,7 +76,7 @@ node src/data/curve-matrix.test.js
 
 ## 源码、部署和维护
 
-正式 main 的主要应用逻辑和 CSS 仍在根目录 `index.html`；`src/interface.js` 管理子图控件重组，`src/twod/` 包含二维解析、显示、调色板、刻度及测试。Vite 用于构建，React/TypeScript 依赖尚未对应完整的前端模块迁移。预览分支已将实际一维绘图、坐标、导出和处理流水线接入独立模块，详见 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 与 [预览验收记录](docs/MODULARIZATION_PREVIEW.md)。
+正式 `main` 以根目录 `index.html` 保存页面结构，通过 ES module 加载 `src/main.js`，并引用 `src/styles/app.css`。`src/main.js` 仍承担应用状态、事件、数据导入协调、子图模型和应用调度；`src/interface.js` 管理子图控件组织，`src/` 下已包含数据、处理、绘图、二维、项目和导出模块。Vite 用于构建；React 依赖尚未对应完整的 React 界面迁移。当前模块职责见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)，后续拆分顺序与验收条件见 [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)，既有模块化验收见 [MODULARIZATION_PREVIEW.md](docs/MODULARIZATION_PREVIEW.md)。
 
 提交至 `main` 通过 GitHub Actions 构建和发布 GitHub Pages，Vite 的基础路径为 `/spinplot/`。正式入口是 [plastocyanin.org/spinplot/](https://plastocyanin.org/spinplot/)；旧 `/spinplot/legacy/` 用于兼容跳转，主站另维护旧大写路径的跳转。
 
@@ -85,6 +85,7 @@ node src/data/curve-matrix.test.js
 - [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)：当前有效状态、功能边界、未验证事项与待办。
 - [docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md)：应用专属视觉与交互约束。
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：源码结构、数据与迁移设计。
+- [docs/ARCHITECTURE_IMPROVEMENT_PLAN.md](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)：架构维护现状、分阶段优化规划和验收要求。
 - [docs/TWO_DIMENSIONAL.md](docs/TWO_DIMENSIONAL.md)：二维格式、坐标定义、算法和回归说明。
 - [CHANGELOG.md](CHANGELOG.md)：逐版本变动。
 
