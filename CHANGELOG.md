@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Widen the per-curve style column and use a compact custom dropdown arrow so line/marker symbols remain visible. Add an adjacent per-curve color picker; explicit colors are stored in the existing subplot `curveStyles` settings and override the palette for rendering and vector export while unset curves retain the selected palette.
+
 - Compact the Export tab action area: use evenly spaced two-column buttons with a 44 px minimum height and consistent line spacing; align projection/scan export selectors and their buttons without stretching the buttons to the full selector-row height.
 
 - Replace the raster PDF fallback with SVG-to-PDF vector conversion using `svg2pdf.js` and `jsPDF`. PDF retains vector paths and text objects, uses the design canvas physical dimensions, and is independent of raster DPI. Embed a subset Noto Sans SC font on demand for GB2312 Chinese, Greek, and common scientific symbols.
