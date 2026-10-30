@@ -1,3 +1,9 @@
+## 2026-10-31 Power fit 参数和布局整理（待合并分支）
+
+- 幅度模型的数值求解器不变，优化的 P 改称 Psat；上升段净幅度 S(P)−C 等于峰值净幅度一半时的功率为 P½=(2−√3)²Psat。线宽拟合有独立的 Psat，P½ 仅为幅度拟合计算量。
+- No. of points 统计有效拟合点数，不含排除点。面板顺序为 Models、测量范围和排除点、Fit parameter range、Fit results、Plot annotation；注释九宫格和自定义位置，背景不透明度 0–1（默认 0）、边框（默认关）。Variable scan 原有曲线 legend 不再强制挪到绘图区外。
+- 变更在独立分支，尚未合并、发布或完成正式站点验收。保留原始 EPR 数据、功率拟合优化算法、项目格式 11 和配置格式 10。
+
 ## 2026-10-31 Variable scan 拟合显示与饱和功率解释
 
 - Power fit 显示从逐参数复选框改为单个 `Show fit results`，开启时同时显示幅度/线宽拟合公式和全部结果；可选四角或自定义 X/Y 百分比位置、字体（Plot font / Arial / Times New Roman / Georgia / Consolas / Courier New）与 8–24 px 字号，默认右下角与 12 px。未打开时不显示，旧 `scanFitDisplay` 有选中值时迁移为开启状态。
