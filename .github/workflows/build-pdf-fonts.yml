@@ -47,7 +47,7 @@ jobs:
               output = f"src/assets/fonts/NotoSansSC-{suffix}.ttf"
               subprocess.run([
                   "fonttools", "varLib.instancer", source,
-                  f"wght={weight}", "--output-file", static,
+                  f"wght={weight}", "-o", static,
               ], check=True)
               subprocess.run([
                   "pyftsubset", static,
