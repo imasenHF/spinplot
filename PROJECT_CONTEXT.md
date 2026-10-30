@@ -84,7 +84,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
-手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。正式 `main` 与 `/spinplot/` 未修改。详细状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前 0.10.0 候选修正状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。
