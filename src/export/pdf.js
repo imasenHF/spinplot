@@ -1,3 +1,4 @@
+import { pdfPageDimensions } from "./pdf-utils.js";
 import notoRegularUrl from "../assets/fonts/NotoSansSC-Regular.ttf?url";
 import notoBoldUrl from "../assets/fonts/NotoSansSC-Bold.ttf?url";
 
@@ -26,18 +27,18 @@ async function addUnicodeFont(doc) {
 function prepareUnicodeText(root) {
   const textNodes = [...root.querySelectorAll("text")];
   const allText = textNodes.map((node) => node.textContent || "").join("");
-  const hasUnicode = /[^\\x00-\\x7f]/.test(allText);
+  const hasUnicode = /[^\x00-\x7f]/.test(allText);
   if (!hasUnicode) return false;
 
   const namespace = "http://www.w3.org/2000/svg";
   for (const node of textNodes) {
     const value = node.textContent || "";
-    if (!/[^\\x00-\\x7f]/.test(value)) continue;
-    const bold = /(?:^|\\s)bold(?:\\s|$)/i.test(node.getAttribute("style") || "");
-    const parts = value.match(/[^\\x00-\\x7f]+|[\\x00-\\x7f]+/g) || [];
+    if (!/[^\x00-\x7f]/.test(value)) continue;
+    const bold = /\bbold\b/i.test(node.getAttribute("style") || "");
+    const parts = value.match(/[^\x00-\x7f]+|[\x00-\x7f]+/g) || [];
     node.replaceChildren(...parts.map((part) => {
       const span = node.ownerDocument.createElementNS(namespace, "tspan");
-      if (/[^\\x00-\\x7f]/.test(part)) {
+      if (/[^\x00-\x7f]/.test(part)) {
         span.setAttribute("font-family", "NotoSansSC");
         if (bold) span.setAttribute("font-weight", "bold");
       }
@@ -48,7 +49,6 @@ function prepareUnicodeText(root) {
   return true;
 }
 
-import { pdfPageDimensions } from "./pdf-utils.js";
 
 export async function pdfFromSvg({ svg, design }) {
   if (typeof svg !== "string" || !svg.trim()) {
