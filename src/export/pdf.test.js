@@ -1,44 +1,65 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pdfFromScene } from "./pdf.js";
+import { pdfFromCanvas } from "./pdf.js";
 
-async function contentFor(scene) {
-  const blob = pdfFromScene({ design: { width: 100, height: 80 }, scene });
-  return new TextDecoder().decode(await blob.arrayBuffer());
+const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+async function makePdf({ width = 600, height = 400, design = { width: 200, height: 120 } } = {}) {
+  const canvas = {
+    width,
+    height,
+    toBlob(callback, type, quality) {
+      assert.equal(type, "image/jpeg");
+      assert.equal(quality, 0.98);
+      callback(new Blob([jpeg], { type: "image/jpeg" }));
+    },
+  };
+  return new Uint8Array(
+    await (await pdfFromCanvas({ canvas, design, dpi: 300 })).arrayBuffer(),
+  );
 }
 
-test("PDF preserves three-digit light plot backgrounds instead of converting them to black", async () => {
-  const pdf = await contentFor([
-    { type: "path", d: "M 0 0 L 100 0 L 100 80 Z", fill: "#fff", dash: [] },
-    { type: "text", text: "Axis", x: 5, y: 10, font: "12px Arial", fill: "#262626", m: [1, 0, 0, 1, 0, 0] },
-  ]);
-  assert.match(pdf, /1\.0000 1\.0000 1\.0000 rg/);
-  assert.match(pdf, /0\.1490 0\.1490 0\.1490 rg/);
+test("PDF is a valid raster-image page with the requested physical dimensions", async () => {
+  const bytes = await makePdf();
+  const text = new TextDecoder().decode(bytes);
+  assert.ok(text.startsWith("%PDF-1.4"));
+  assert.match(text, /\/Subtype \/Image \/Width 600 \/Height 400/);
+  assert.match(text, /\/Filter \/DCTDecode/);
+  assert.match(text, /\/MediaBox \[0 0 150\.000 90\.000\]/);
+  assert.match(text, /\/Im0 Do/);
+  assert.ok(text.endsWith("%%EOF\n"));
 });
 
-test("PDF parses short, long, alpha-suffixed hex and RGB percentage colors", async () => {
-  const pdf = await contentFor([
-    { type: "path", d: "M 0 0 L 1 0", stroke: "#abc", width: 1, dash: [] },
-    { type: "path", d: "M 0 1 L 1 1", stroke: "#12345678", width: 1, dash: [] },
-    { type: "path", d: "M 0 2 L 1 2", stroke: "rgb(100% 0% 50%)", width: 1, dash: [] },
-  ]);
-  assert.match(pdf, /0\.6667 0\.7333 0\.8000 RG/);
-  assert.match(pdf, /0\.0706 0\.2039 0\.3373 RG/);
-  assert.match(pdf, /1\.0000 0\.0000 0\.5000 RG/);
+test("PDF cross-reference offsets point to the actual object byte positions", async () => {
+  const bytes = await makePdf();
+  const text = new TextDecoder().decode(bytes);
+  const xrefIndex = text.indexOf("xref\n");
+  assert.notEqual(xrefIndex, -1);
+  const lines = text.slice(xrefIndex).split("\n");
+  assert.equal(lines[1], "0 6");
+  for (let id = 1; id <= 5; id++) {
+    const offset = Number(lines[id + 2].slice(0, 10));
+    assert.equal(new TextDecoder().decode(bytes.slice(offset, offset + 8)), `${id} 0 obj`);
+  }
+  const startXref = Number(text.match(/startxref\n(\d+)/)?.[1]);
+  assert.equal(startXref, xrefIndex);
 });
 
-test("PDF reports unsupported colors rather than silently substituting black", async () => {
+test("PDF rejects missing or invalid canvas image data", async () => {
   await assert.rejects(
-    contentFor([{ type: "path", d: "M 0 0 L 1 1", stroke: "var(--plot-color)", width: 1, dash: [] }]),
-    /Unsupported PDF color/,
+    pdfFromCanvas({ canvas: { width: 0, height: 0 }, design: { width: 100, height: 80 } }),
+    /requires a rendered canvas/,
   );
-});
-
-test("PDF keeps dark plot styles dark", async () => {
-  const pdf = await contentFor([
-    { type: "path", d: "M 0 0 L 100 0 L 100 80 Z", fill: "#11181b", dash: [] },
-    { type: "text", text: "Axis", x: 5, y: 10, font: "12px Arial", fill: "#dbe5e7", m: [1, 0, 0, 1, 0, 0] },
-  ]);
-  assert.match(pdf, /0\.0667 0\.0941 0\.1059 rg/);
-  assert.match(pdf, /0\.8588 0\.8980 0\.9059 rg/);
+  await assert.rejects(
+    pdfFromCanvas({
+      canvas: {
+        width: 100,
+        height: 80,
+        toBlob(callback) {
+          callback(new Blob(["not jpeg"], { type: "image/jpeg" }));
+        },
+      },
+      design: { width: 100, height: 80 },
+    }),
+    /valid JPEG image/,
+  );
 });
