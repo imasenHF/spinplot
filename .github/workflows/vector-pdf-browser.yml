@@ -1,0 +1,35 @@
+name: SpinPlot vector PDF browser regression
+on:
+  push:
+    branches: [fix/vector-pdf-export]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/export/**'
+      - 'src/main.js'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/vector-pdf-smoke.mjs'
+      - '.github/workflows/vector-pdf-browser.yml'
+permissions:
+  contents: read
+jobs:
+  vector-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Run export unit tests
+        run: node --test src/export/pdf.test.js src/export/export.test.js
+      - run: npm run build
+      - name: Test vector PDF export in Chromium
+        run: node scripts/vector-pdf-smoke.mjs

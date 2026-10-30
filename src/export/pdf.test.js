@@ -1,21 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pdfFromSvg } from "./pdf.js";
+import { pdfPageDimensions } from "./pdf-utils.js";
 
-test("vector PDF export validates SVG input and page dimensions", async () => {
-  await assert.rejects(pdfFromSvg({ svg: "", design: { width: 200, height: 100 } }), /requires SVG markup/);
-  await assert.rejects(pdfFromSvg({ svg: "<svg></svg>", design: { width: 0, height: 100 } }), /requires SVG markup/);
+test("PDF page dimensions preserve the design canvas physical size", () => {
+  assert.deepEqual(pdfPageDimensions({ width: 800, height: 500 }), {
+    width: 600,
+    height: 375,
+  });
+  assert.deepEqual(pdfPageDimensions({ width: 354, height: 500 }), {
+    width: 265.5,
+    height: 375,
+  });
 });
 
-test("vector PDF export reports malformed SVG", async () => {
-  const original = globalThis.DOMParser;
-  globalThis.DOMParser = class {
-    parseFromString() { return { querySelector: () => ({}), documentElement: { localName: "parsererror" } }; }
-  };
-  try {
-    await assert.rejects(pdfFromSvg({ svg: "<svg", design: { width: 200, height: 100 } }), /Could not parse the vector SVG/);
-  } finally {
-    if (original === undefined) delete globalThis.DOMParser;
-    else globalThis.DOMParser = original;
+test("PDF page dimensions reject invalid design sizes", () => {
+  for (const design of [null, {}, { width: 0, height: 100 }, { width: 100, height: -1 }, { width: NaN, height: 10 }]) {
+    assert.throws(() => pdfPageDimensions(design), /positive design dimensions/);
   }
 });
