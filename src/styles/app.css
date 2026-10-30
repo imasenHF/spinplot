@@ -176,7 +176,7 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .curve-manager.scan-matrix .scan-derived-name{padding-left:12px;color:var(--text,#26383f);font-size:11px}
 .curve-manager.scan-matrix .curve-style-list{width:56px;min-width:0;max-height:250px;padding:2px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto;border-color:transparent}
 .curve-manager.scan-matrix .curve-style-row{min-height:24px;height:24px;display:flex;align-items:center;gap:3px;padding:0 1px}
-.curve-manager.scan-matrix .curve-style{flex:0 0 28px;min-width:28px;width:28px;max-width:28px;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif;text-align:center;font-size:11px;padding:0 7px 0 0}
+.curve-manager.scan-matrix .curve-style{flex:0 0 28px;min-width:28px;width:28px;max-width:28px;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif;text-align:center;text-align-last:center;text-indent:0;font-size:11px;padding:0}
 .scan-source-spacer{pointer-events:none}
 .scan-fit-equation{background:var(--panel-bg,#f2f4f5);border:1px solid #b7c4c8;border-radius:3px;padding:10px 7px;margin:8px 0;overflow-x:auto}
 .scan-fit-equation math{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:15px;min-width:0}
