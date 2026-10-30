@@ -1,6 +1,6 @@
 # SpinPlot — STYLE_GUIDE
 
-更新日期：2026-10-29（Asia/Shanghai）
+更新日期：2026-10-30（Asia/Shanghai）
 适用范围：SpinPlot 独立软件界面、图表预览及导出。以下区分**现有实现**与**后续修改必须保留的规则**；实际值以 `index.html` CSS、`src/interface.js`、`src/twod/ui.js`、`src/twod/palettes.js` 和绘图/导出代码为准。本文件不要求将主站的页面布局直接覆盖本工具。
 
 ## 1. 产品视觉定位
@@ -42,6 +42,7 @@ SpinPlot 保留桌面科学软件式的紧凑工作区：深蓝标题栏、浅�
 - 桌面区域由左侧参数栏、可拖动分隔条和右侧绘图区组成。默认左栏宽度 **320px**；主绘图区依据剩余宽度填充；侧栏可以收起。
 - 左侧保留 **Data / Processing / Subplots / Axes / Style / Export** 六个选项卡；不因一维或二维切换而改变顶层选项卡个数。不可用的局部选项根据数据和显示模式隐藏或禁用。
 - 子图区的逻辑顺序：Data → Plot mode → Axes（X/Y/Z）→ g axis → Colors → Legend & labels → Projections（仅二维）→ Annotations → Processing parameters → Advanced layout。下级参数采用缩进和折叠层级，避免重复分隔线。
+- Advanced layout 对所有子图显示 `Empty projection space`：Keep reserved space（默认）、Occupy top area、Occupy right area、Occupy top + right。该设置只让无对应投影的子图使用同一行/列共享的投影空白；投影可见性控件保持独立，色标、标题、g 轴和图例的自然边距不得被占用。
 - Variable scan 是派生的一维曲线，使用独立的 Variable scan settings（扫描轴、统计方式、统计区间及可选功率换算），不显示二维 Top/Right projection 控件。
 - 通用输入行将相关参数组成成对/三列布局：标题与距离、`min/max/tick step`、投影计算区间与显示强度区间分别成组；标签换行时输入框基线保持对齐。无关参数不强制挤入同一行。
 - 原生复选框统一 **14×14px**、文字同行，`accent-color: #173f5f`；控件有明确选中、禁用及键盘焦点状态。不采用仅靠颜色区分的交互反馈。

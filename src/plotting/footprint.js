@@ -1,31 +1,34 @@
-export const PLOT_FOOTPRINTS = Object.freeze({
-  main: Object.freeze({ top: false, right: false }),
+export const EMPTY_PROJECTION_SPACES = Object.freeze({
+  none: Object.freeze({ top: false, right: false }),
   top: Object.freeze({ top: true, right: false }),
   right: Object.freeze({ top: false, right: true }),
-  full: Object.freeze({ top: true, right: true }),
+  both: Object.freeze({ top: true, right: true }),
 });
 
-export function normalizePlotFootprint(value) {
-  return Object.hasOwn(PLOT_FOOTPRINTS, value) ? value : "full";
+export function normalizeEmptyProjectionSpace(value) {
+  return Object.hasOwn(EMPTY_PROJECTION_SPACES, value) ? value : "none";
 }
 
-export function footprintProjectionFlags(value) {
-  return PLOT_FOOTPRINTS[normalizePlotFootprint(value)];
+export function emptyProjectionSpaceFlags(value) {
+  return EMPTY_PROJECTION_SPACES[normalizeEmptyProjectionSpace(value)];
 }
 
-export function applyPlotFootprint(settings, value) {
-  const flags = footprintProjectionFlags(value);
-  const enabled = settings?.showProjections !== false;
-  return {
-    ...settings,
-    showProjections: enabled && (flags.top || flags.right),
-    showXProjection: enabled && flags.top && settings?.showXProjection !== false,
-    showYProjection: enabled && flags.right && settings?.showYProjection !== false,
-  };
+// Shared row/column insets keep subplot axes aligned by default. A subplot may
+// opt into the unused projection area, but only when that projection is absent
+// from this subplot. Natural insets retain titles, g axes, colorbars and legends.
+export function resolveMainInsets(natural, shared, value) {
+  const flags = emptyProjectionSpaceFlags(value),
+    hasTopProjection = natural.hasTopProjection === true,
+    hasRightProjection = natural.hasRightProjection === true,
+    { hasTopProjection: _hasTopProjection, hasRightProjection: _hasRightProjection, ...baseInsets } = natural,
+    resolved = { ...baseInsets, ...shared };
+  if (flags.top && !hasTopProjection) resolved.top = natural.top;
+  if (flags.right && !hasRightProjection) resolved.right = natural.right;
+  return resolved;
 }
 
 // Allocate row-specific auxiliary space while keeping every single-row
-// subplot's main plotting frame at the same height.
+// subplot's main plotting frame at the same height by default.
 export function fitMainRows(entries, rowCount, totalHeight) {
   const rows = Math.max(1, Math.floor(Number(rowCount) || 1));
   if (entries.some((entry) => Number(entry.rowSpan ?? 1) !== 1)) return null;

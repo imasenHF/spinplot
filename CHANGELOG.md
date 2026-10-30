@@ -2,49 +2,17 @@
 
 ## Unreleased
 
-- Preview: three peer axis modes, Linear / Log10 (signed data auto-SymLog) / Scientific, for main Y, Heatmap/Contour/3D Z and projection intensities. Switching modes auto-fits and writes numerical limits; Auto Z and colorbar double-click populate visible Z bounds and X/Y reset leaves Z unchanged. Scientific labels do not warp linear data coordinates; bipolar signal is not shifted or discarded. Existing 2D baseline handling is unchanged. Numerical, build and Chromium regression passed in [Actions 40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984).
+- No unreleased changes recorded.
 
-- Preview: add contour (marching-squares) and rotatable triangulated 3D surface modes; 3D camera controls are collapsed by default under Plot and allow azimuth, elevation, Z exaggeration and zoom. Retain original matrix coordinates, project settings and SVG/PNG export behavior.
-- Preview: compress the independent Current order symbol column to 34 px, shorten line/marker glyphs and section labels, and replace the verbose scan-variable explanation with a `?` help tooltip. Dynamically inserted help icons now work.
-- Regression: add logarithmic axis and triangulated surface unit checks, Chromium save/reload and feature-mode tests, and repair references to renamed sections; run the existing project-format and pre-migration comparison suite.
+## 0.10.0 — 2026-10-30
 
-- Put the Current order names and glyph-only line/marker style selectors into two genuinely separate side-by-side columns with synchronized scrolling; no menu overlays the data-list component. The style choices retain their existing semantic values for saved projects.
-
-- Keep new subplots on Local mean frequency alignment by default, even when the global frequency mode has previously been edited; explicit global-mode changes still apply through their existing propagation mechanism.
-- Preserve the Available curves, Current order, curve-style selectors, and curve-management toolbar when converting selected 1D curves from Overlap to a curve-derived Heatmap; native 2D matrices continue to use the compact data display.
-
-- Simplify curve-derived 2D plotting modes to `Stack`, `Overlap`, `Heatmap` and `Variable scan`; remove `Overlay (1D)` / `Stack (1D)` menu options. Move the single scan-variable editor directly below Plot mode, collapse it by default, and show the Y-axis title by default on Heatmaps.
-- When scan-variable values change, automatically update the curve-derived Heatmap Y-axis range and its Y-projection range to the new minimum and maximum; preserve curve-index mapping for non-uniform custom arrays.
-- When switching to Heatmap, keep the 2D axis/projection settings panel collapsed by default, including when converting selected 1D curves into a Heatmap.
-- Replace separate per-curve mode and marker-shape selectors with one style selector for solid, dashed and dotted lines; hollow or filled circle, square, triangle and diamond markers; and line-plus-marker combinations. Add per-subplot line-width overrides (blank inherits the global width), symbol-size control and an independent Variable scan curve style. Filled markers render in the interactive canvas and SVG export; older saved mode/shape settings remain readable.
-- Reset runtime `sharedControls` state when returning a curve-derived Heatmap to 1D so recreating the Heatmap restores its 2D axis ranges; add regression coverage through projection CSV export.
-- Validate project references for curve-derived Heatmap and Variable scan subplots separately from original 2D matrix references; add save/load and invalid-reference tests.
-- Add browser verification that projection titles use 23 px while tick labels remain 9 px, and normalize the new typography control only in old-version baseline comparisons.
-- Add an explicit Variable scan subplot for 2D EPR sweeps. It is created from the 2D Plot mode menu, starts beside the source map when the layout permits, and preserves the original Y projection.
-- Add 2D Overlap plotting to draw selected scan traces on a shared coordinate axis.
-- Convert dB attenuation sweeps to microwave power from a single zero-dB reference power P₀ using P(A) = P₀ × 10^(-A/10); migrate legacy paired reference-power/attenuation settings to equivalent P₀.
-- Give Variable scan an independent statistic and X-coordinate interval; hide the 2D top/right projection controls in scan mode and keep the source map's projection settings unchanged.
-- Start Variable scan subplots without a title, wrap oversized right-projection titles into a variable-name line and a projection/statistic line, and use the starting color of continuous palettes for single-curve subplots.
-
-
-## Unreleased (preview branch)
-
-- Fix Label mode / Legend position label and control alignment in narrow and desktop sidebars.
-- Initialize empty manual scan-variable maps from the configured linear start and interval; add regression tests for manual-curve matrix ordering, axis units, and invalid scan values.
-- Add an independent Projection titles font-size control (default 11 px) shared by top and right projections, separate from tick labels; preserve right-title wrapping and reserve additional top spacing for larger titles.
-
-
-- Preserve Local mean as the default for new subplots; when the global frequency mode or target is changed, subplots without an explicit local override inherit the global setting, while explicit local overrides remain active.
-- Make the source microwave frequency editable for 1D magnetic-field datasets, including CSV files without frequency metadata; show no scale until a valid source frequency is supplied.
-- Add Chromium coverage for default Local mean, global Manual target, local Manual target, and CSV source-frequency entry.
-
-- Restore automatic Z limits when double-clicking the 2D colorbar after wheel zoom; preserve the existing heatmap-body double-click behavior for X/Y axes.
-- Add Chromium regression coverage for colorbar wheel zoom, colorbar double-click reset, and heatmap X/Y reset on both the local preview build and published temporary preview.
-
-## Unreleased (preview verification status, 2026-10-24)
-
-- The Typography panel includes an independent `Projection titles` size control (default 11 px, range 7–40 px), passed separately from tick-label size to 1D and 2D plot renderers.
-- Latest preview workflow [`40016524070`](https://github.com/imasenHF/spinplot/actions/runs/40016524070) passes numerical/data regressions and production build, but Chromium regression fails at the existing manual-curves-to-Heatmap path while waiting for the `Export projection CSV` download (15 s timeout at `scripts/preview-browser-smoke.mjs:385`). Root cause and full browser acceptance remain unresolved; the static preview HTTP check [`40016524252`](https://github.com/imasenHF/spinplot/actions/runs/40016524252) passes. No change to formal `main` or `/spinplot/`.
+- Add per-subplot `Empty projection space` occupancy: `none / top / right / both`. A subplot without a corresponding projection can opt into the unused top margin shared by its row, the unused right margin shared by its column, or both.
+- Keep projection visibility independent from layout occupancy. Occupancy never hides/disables a visible projection and preserves the subplot's natural title, g-axis, colorbar and legend margins.
+- Apply the occupancy setting to 1D, 2D and Variable scan subplots. Default to `none` to preserve existing mixed-layout alignment; persist the setting per subplot.
+- Retire the previous `plotFootprint` behavior, which coupled layout selection to projection visibility. Legacy `plotFootprint` values are discarded on load; project format 11 and config format 10 remain unchanged.
+- Version the application as 0.10.0 through `package.json` and the Vite-injected titlebar version. Add a dedicated release record; project/config schema versions remain independent.
+- Include the previously merged 2D Contour/3D Surface views, axis display modes, Variable scan feature extraction, power-saturation fitting, derived-curve Z-order and interface corrections in the 0.10.0 release record.
+- Add unit and browser regression coverage for top/right/both occupancy, mixed 2D/1D row-column geometry, independent projection controls, legacy config migration, save/reload and export geometry.
 
 ## 0.9.2
 
