@@ -151,7 +151,7 @@ try {
   assert.equal(project.version,11);
   assert.equal(project.config.version,10);
   assert.equal(project.rawCurves.length,2);
-  const [configDownload] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#saveConfigBtn').click()]);
+  const [configDownload] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#saveConfigBtnSide').click()]);
   const configPath='browser-preview/synthetic-config.json';
   await configDownload.saveAs(configPath);
   const config=JSON.parse(fs.readFileSync(configPath,'utf8'));
@@ -296,7 +296,8 @@ try {
       await occupancy.selectOption(value);
       return captureTargetFrame();
     };
-    await page.locator('#renderBtnTop').click();
+    await page.locator('.menu-item[data-menu="tools"]').click();
+    await page.locator('button[data-menu-action="recalculate"]').click();
     const noneFrame=await captureTargetFrame();
     const topFrame=await setOccupancy('top');
     const rightFrame=await setOccupancy('right');
