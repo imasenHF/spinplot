@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Replace the custom PDF vector serializer with a standards-based raster-image PDF page rendered from the same Canvas scene as PNG export. This avoids reader-specific PDF parsing and text-transform artifacts; PDF resolution follows the selected DPI, while SVG remains vector.
+- Replace the raster PDF fallback with SVG-to-PDF vector conversion using `svg2pdf.js` and `jsPDF`. PDF retains vector paths and text objects, uses the design canvas physical dimensions, and is independent of raster DPI.
 - Add a low-emphasis `dev` link beside the copyright/contact text in the bottom status bar, opening the isolated development preview without changing the formal entry.
 
 ## 0.10.0 — 2026-10-30
