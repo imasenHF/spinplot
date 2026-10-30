@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Condense Variable scan power-fit UI copy: shorten section and checkbox labels, remove the long exclusion hint, compact measured-range/status text, and rename search bounds to Fit range / Min / Max while preserving blank-as-measured-range behavior in a tooltip.
+
 - Center the selected line/marker glyph in Variable scan style controls by removing the scan-specific right padding and applying `text-align-last: center`; keep regular curve controls unchanged.
 
 - Restyle per-curve line/marker selectors as compact curve-colored raised buttons without dropdown arrows; match the raised bevel treatment of the adjacent color picker and retain keyboard focus indication. Keep the style column at 56 px. Add independent color pickers to direct-2D Variable scan derived rows, including fit and excluded traces; preserve style/color settings when either control changes. Keep palette-derived colors when no override is stored.
