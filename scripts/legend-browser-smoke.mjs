@@ -95,10 +95,18 @@ try {
   assert.equal(hiddenProject.config.subplots[1].labelMode, 'none',
     'Variable scan label visibility must remain user-controlled');
   await page.locator('button.tab-btn[data-tab="export"]').click();
-  const [configDownload] = await Promise.all([
-    page.waitForEvent('download'),
-    page.locator('#saveConfigBtnSide').click()
-  ]);
+  const configDownloadPromise=page.waitForEvent('download',{timeout:8000});
+  await page.locator('#saveConfigBtnSide').click();
+  let configDownload;
+  try { configDownload=await configDownloadPromise; }
+  catch(error) {
+    const diagnostics=await page.evaluate(()=>({
+      handler: String(document.querySelector('#saveConfigBtnSide')?.onclick),
+      status: document.querySelector('#status')?.textContent,
+      log: document.querySelector('#log')?.textContent?.slice(-550)
+    }));
+    throw new Error('Config download unavailable: '+JSON.stringify({diagnostics,pageErrors}),{cause:error});
+  }
   const config = JSON.parse(await fs.readFile(await configDownload.path(),'utf8'));
   assert.equal(config.version,10);
   await page.locator('#imageFormat').selectOption('svg');
