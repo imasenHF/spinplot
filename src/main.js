@@ -386,7 +386,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
       (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle'))};
   }
  }
- const fitResults=scanFitResultLines(data,t.scanFitDisplay);
+ const fitResults=scanFitResultLines(data,t.scanFitShow===true?['formula','P','A','C','r2','rmse','n']:[]);
  const renderSp={...sp,fitResultLines:fitResults,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
     legendPosition:sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'&&sp.legendPosition==='upper_right'
       ?'outside_top':sp.legendPosition,
