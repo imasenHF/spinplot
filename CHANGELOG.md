@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Replace the raster PDF fallback with SVG-to-PDF vector conversion using `svg2pdf.js` and `jsPDF`. PDF retains vector paths and text objects, uses the design canvas physical dimensions, and is independent of raster DPI.
+- Replace the raster PDF fallback with SVG-to-PDF vector conversion using `svg2pdf.js` and `jsPDF`. PDF retains vector paths and text objects, uses the design canvas physical dimensions, and is independent of raster DPI. Embed a subset Noto Sans SC font on demand for GB2312 Chinese, Greek, and common scientific symbols.
 - Add a low-emphasis `dev` link beside the copyright/contact text in the bottom status bar, opening the isolated development preview without changing the formal entry.
 
 ## 0.10.0 — 2026-10-30
