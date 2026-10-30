@@ -1,8 +1,8 @@
-## 2026-10-31 Power fit 参数和布局整理（待合并分支）
+## 2026-10-31 Power fit 参数和布局整理（已合并 main，PR #5）
 
 - 幅度模型的数值求解器不变，优化的 P 改称 Psat；上升段净幅度 S(P)−C 等于峰值净幅度一半时的功率为 P½=(2−√3)²Psat。线宽拟合有独立的 Psat，P½ 仅为幅度拟合计算量。
 - No. of points 统计有效拟合点数，不含排除点。面板顺序为 Models、测量范围和排除点、Fit parameter range、Fit results、Plot annotation；注释九宫格和自定义位置，背景不透明度 0–1（默认 0）、边框（默认关）。Variable scan 原有曲线 legend 不再强制挪到绘图区外。
-- 变更在独立分支，尚未合并、发布或完成正式站点验收。保留原始 EPR 数据、功率拟合优化算法、项目格式 11 和配置格式 10。
+- 变更已通过 [PR #5](https://github.com/imasenHF/spinplot/pull/5) 合并至 `main`（`c394daf`），合并前 [quality](https://github.com/imasenHF/spinplot/actions/runs/41094969127) 与 [vector PDF](https://github.com/imasenHF/spinplot/actions/runs/41094968602) 检查通过。正式站点部署及生产 HTTP 应与代码检查分开核对；真实 EPR 数据的科学数值与复杂图的人工视觉验收仍需完成。原始 EPR 数据、拟合优化算法、项目格式 11 和配置格式 10 保持不变。
 
 ## 2026-10-31 Variable scan 拟合显示与饱和功率解释
 
