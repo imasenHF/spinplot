@@ -4,6 +4,13 @@
 
 ## 用途与优先级
 
+## 最新状态（2026-10-30：阶段 B 验收与正式合并）
+
+- 阶段 B Plot footprint / 跨列布局已完成软件验收；完整回归 [41001606843](https://github.com/imasenHF/spinplot/actions/runs/41001606843)、公开预览 Pages [41001626603](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001626603)、预览 HTTP [41001606803](https://github.com/imasenHF/spinplot/actions/runs/41001606803) 均成功。
+- 用户授权在阶段 B 验收后合并；PR #1 已由 merge commit `163a539c59964271f75055663c82db2974785478` 合并至 `main`。正式 Pages 构建与部署 [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341) 成功，正式入口为 `/spinplot/`。
+- 当前正式代码以 `main` 为准；`preview/modularization-phase1-20261009` 保留作后续试验分支。未来代码任务仍须先读取主站 `SITE_CONTEXT.md`、`PROJECT_INDEX.md`，再读取本文件、项目上下文、架构、二维说明和目标源码。
+- 阶段 B 的几何分配对单行/单列布局采用等高/等宽优化；含跨行/跨列跨度的复杂组合采用共享边距回退。真实复杂谱线、仪器校准、多组分线宽判读及拟合不确定度仍须独立科学验证。
+
 本文是 SpinPlot 持续开发的远程交接记录，用于跨会话保存已确认决定、当前任务、实现位置、验收标准和发布边界，避免仅依赖对话历史推断项目状态。
 
 本文不是代码状态的替代品。每次任务开始时，当前 GitHub 分支、最新 HEAD、文件内容、测试结果和用户最新要求优先于本文。本文中的 SHA、CI 结果均为记录时的基线，继续工作前必须重新查询，不得直接当作当前状态。
@@ -19,15 +26,15 @@
 5. 仅做有明确边界的修改。文件内容较长时，可按行段或 blob 读取定位；不得用被截断的展示内容覆盖完整源码，不得为小功能重写无关模块。
 6. 分开报告代码修改、单元测试、生产构建、远程 CI、预览快照同步、公开 URL 浏览器验收和正式发布状态。一个阶段通过不能替代其他阶段。
 7. 实际代码或有效决定发生变化后，更新本文及相关正式记录。只更新本文件不代表代码功能已经实现；未运行的测试、未完成的部署不得描述为已完成。
-8. 未经用户明确要求，不合并到正式 `main`，不触发正式 SpinPlot 发布，不覆盖正式入口。
+8. 正式合并与发布按用户明确授权执行；本次 PR #1 已按阶段 B 验收条件合并。后续独立功能仍须遵循用户当前授权范围。
 
 ## 仓库与发布边界
 
 - 仓库：`imasenHF/spinplot`。
-- 当前持续开发分支：`preview/modularization-phase1-20261009`。
+- 后续试验分支：`preview/modularization-phase1-20261009`；当前正式基线为 `main`。
 - 正式入口：<https://plastocyanin.org/spinplot/>，由仓库 `main` 的正式发布流程管理。
 - 临时预览入口：<https://plastocyanin.org/previews/spinplot-modularization/>，由主站仓库中单独保存的静态构建快照提供。
-- PR #1：<https://github.com/imasenHF/spinplot/pull/1>，用途为模块化预览，保持 Draft，未经明确授权不合并。
+- PR #1：<https://github.com/imasenHF/spinplot/pull/1>，已于 2026-10-30 合并至 `main`；合并提交 `163a539c59964271f75055663c82db2974785478`。
 - 应用版本基线为 `0.9.2`；项目文件格式为 11；配置格式为 10。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
 - 预览分支 Actions 生成的构建产物不会自动替换主站仓库里的预览快照。必须单独检查快照同步提交、主站 Pages 发布结果和公开 URL；不可将分支 CI 成功等同于线上页面已更新。
 - 公开预览禁止使用客户数据、内部文件或其他未经授权的材料。
@@ -37,7 +44,7 @@
 - **操作定义：** 对直接二维源数据创建的 Variable scan，`Current data` 中缩进的峰峰幅度、峰峰线宽、Statistic、拟合曲线及排除点系列支持鼠标拖拽排序。列表从上到下对应**从后到前**的绘制次序；下方曲线最后绘制，覆盖上方曲线。原始二维矩阵数据行固定，不参与派生图层排序，源数据、数值提取与拟合参数不变。支持焦点在派生曲线行时以 Alt+↑/↓ 调整次序。
 - **单一数据来源：** `src/twod/scan-order.js` 维护稳定的派生曲线虚拟 ID（−100 至 −106），归一化旧项目缺失的排序信息、忽略非法/重复 ID，并计算有效顺序。`src/twod/ui.js` 在当前数据行上绑定拖拽与键盘事件，同时移动左侧名称和右侧样式控件。排除点显示切换时继续使用已保存的相对顺序。`src/main.js` 在渲染前按相同顺序排序 `derivedTwoDPlotModel` 的派生曲线，Canvas 绘制、图例、PNG/SVG/PDF 等导出均使用排序后的曲线序列，而不仅仅改变左侧列表文本。
 - **保存与兼容：** 用户第一次调整时在子图配置中写入 `scanDerivedOrder`（稳定负 ID 数组），随既有项目/配置 v11/v10 保存、恢复及撤销/重做，不增加版本号。旧项目没有该字段时使用原有默认顺序，隐藏/禁用的派生曲线排序位置不会因切换特征、拟合开关或排除点而丢失。手动 1D 曲线组合的原有 `sp.curves` 顺序行为不受影响。
-- **验收：** 新增 `src/twod/scan-order.test.js`，覆盖默认次序、前后绘制顺序、隐含系列身份、非法排序与源矩阵固定；浏览器回归新增鼠标拖放、Z-order 对应的 SVG 序列、右侧 Style 同步、项目保存重载及 Alt+Arrow 键盘调整。完整 CI/浏览器/旧项目与导出对照 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。独立预览 HTML/JS/CSS 已提交主站 `742ef456`，Pages [40929364489](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40929364489) 成功，公开 URL Chromium 验收 [40929024041](https://github.com/imasenHF/spinplot/actions/runs/40929024041) 在发布后重跑成功。正式 `main`、正式站点和阶段 B 画幅控制未改。
+- **验收：** 新增 `src/twod/scan-order.test.js`，覆盖默认次序、前后绘制顺序、隐含系列身份、非法排序与源矩阵固定；浏览器回归新增鼠标拖放、Z-order 对应的 SVG 序列、右侧 Style 同步、项目保存重载及 Alt+Arrow 键盘调整。完整 CI/浏览器/旧项目与导出对照 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。独立预览 HTML/JS/CSS 已提交主站 `742ef456`，Pages [40929364489](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40929364489) 成功，公开 URL Chromium 验收 [40929024041](https://github.com/imasenHF/spinplot/actions/runs/40929024041) 在发布后重跑成功。当时正式 `main`、正式站点和阶段 B 画幅控制未改（历史记录）。
 
 ## 当前 UI 调整：七项界面与 Linear 刻度修复（2026-10-30）
 
@@ -47,7 +54,7 @@
 - **控件外观：** `Exclude points from fit` 改用现有嵌套 `advanced-layout` 折叠栏风格，去除额外方框。MathML 中函数参数括号明确 `stretchy="false"`，缩小公式默认字号；不修改数学表达式和拟合算法。
 - **轴格式：** 当 Y、Top/Right 投影强度轴或 Z 色标处于 `linear` 模式时，刻度使用十进制格式，不再从全局 Auto/Scientific 偏好或 `Number.toPrecision()` 的自动指数形式隐式切换为科学计数法。用户显式选择 `scientific` 仍显示科学计数法；Log10/SymLog 保持原数值映射与标签规则。普通 X 轴尚无该三模式设置，其原有手动 Tick notation 行为保持不变。
 - **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开预览页面 Chromium [40923593239](https://github.com/imasenHF/spinplot/actions/runs/40923593239) 在 Pages 发布后重跑成功，已独立完成线上浏览器验收。
-- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 的四种 Plot footprint 画幅范围和跨列对齐仍未实施。
+- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 的四种 Plot footprint 画幅范围和跨列对齐已于 2026-10-30 实现并合并正式版。
 
 ## 当前预览交付与验收（2026-10-29）
 
@@ -95,7 +102,7 @@
 - **投影控制：** 画幅预设决定顶部/右侧投影控件的可用状态；子图原有 `showProjections`、`showXProjection`、`showYProjection` 的显式关闭状态继续有效。改变预设后布局折叠面板保持展开，设置随项目保存/恢复。
 - **几何分配：** `src/plotting/footprint.js` 计算单行子图的行高分配；`src/twod/ui.js` 的 `fitMainColumns()` 计算单列子图列宽分配。分配依据包括顶部/底部标题与投影、左侧轴标题、右侧投影及色标空间，目标是同一行主坐标框等高、同一列主坐标框等宽。无跨行/跨列跨度时采用行列独立分配；存在跨度时使用共享边距回退路径，保留现有网格布局语义。
 - **回归范围：** `src/plotting/footprint.test.js` 覆盖四种预设、投影开关保留、行高分配、跨行回退、画布不足错误及列宽分配；`scripts/preview-browser-smoke.mjs` 覆盖预设控件、即时切换、SVG 顶/右投影出现次数、设计画布尺寸及项目重载；`scripts/preview-regression.mjs` 已启用 `SPINPLOT_TEST_FOOTPRINT`。完整数值/构建/Chromium/迁移前对照 [40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550) 成功。
-- **当前发布状态：** 预览分支静态构建已生成 `index-Dhp_8wZQ.js`，主站独立预览 HTML 与 JS 资源已更新；主站 Pages 发布 [41001497581](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001497581) 正在执行。公开 URL 的阶段 B 浏览器复测尚未完成。正式 `main` 与 `/spinplot/` 未修改。
+- **当前发布状态：** 预览分支静态构建已生成 `index-Dhp_8wZQ.js`，主站独立预览 HTML 与 JS 资源已更新；主站 Pages 发布 [41001497581](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001497581) 正在执行。公开 URL 的阶段 B 浏览器复测尚未完成。正式 `main` 与 `/spinplot/` 后续已于 2026-10-30 更新部署。
 - **限制：** 目前的等高/等宽分配针对单行/单列子图；含跨行/跨列跨度的复杂组合采用共享边距回退，尚未实现任意跨度约束下的全局最优几何求解。此项不影响现有布局表达能力，但极复杂混排需作为独立验收样例。
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合
@@ -109,7 +116,7 @@
 - **排除测量点。** 原 0-based 索引文本输入换为 `Exclude points from fit` 折叠点表，逐项显示轨迹编号、原始扫描变量及实际功率，以勾选决定是否纳入拟合。保留 `scanFitExcluded` 项目兼容字段。被排除的实测值不删除，Variable scan 中独立显示为菱形符号，并在特征 CSV 中记录拟合纳入状态。勾选/取消时直接更新当前派生曲线样式列表。
 - **衍生曲线与默认样式。** 直接二维扫描的 Current data 恢复左右两列：左侧为源矩阵及缩进的派生信号/线宽/拟合/排除点条目，右侧一一对应独立 Style 下拉；重复的 Scan style 控件隐藏。旧手动多条一维曲线组成的 Variable scan 保留既有 Scan style 控件，以免失去操作入口。默认实测点使用线+符号，拟合使用虚线；默认图例移到绘图区上方。每条样式随项目恢复；原始 `rawCurves` 不改动。阶段 B 的可选画幅占用范围和跨列重排**不包含在本次实施中**。
 - **测试。** 合成 `src/twod/projection-linewidth.test.js`、`src/twod/saturation.test.js`、既有数值/旧项目及 Chromium 浏览器测试均纳入工作流；浏览器增加右侧双曲线 CSV、拟合公式、排除点交互与纳入状态、曲线样式保存恢复。完整回归 [40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) 已通过。公开自动化验收只包含合成数据；真实仪器数据的独立科学验收尚未完成。
-- **未完成项。** 真正复杂多组分谱的峰识别、真实仪器校准、不确定度/协方差、阶段 B Plot footprint 选项，以及正式版本合并仍待后续任务。不得把已通过的构建与合成数据回归等同于这些验收。
+- **未完成项。** 真正复杂多组分谱的峰识别、真实仪器校准、不确定度/协方差、阶段 B Plot footprint 已完成并合并；真实多组分谱线峰识别、真实仪器校准及拟合不确定度/协方差仍待科学验收。不得把已通过的构建与合成数据回归等同于这些验收。
 
 ### 已确认的交互要求（2026-10-23）
 
@@ -120,7 +127,7 @@
 - 2D Overlap 将各扫描轨迹绘制在共同 X 坐标轴上，轨迹标签显示扫描变量及其单位；每隔 N 条轨迹的设置控制显示抽样。原始二维矩阵不受显示偏移影响。
 - 对 dB 衰减轴，功率扫描只要求零衰减参考功率 P₀，按 P(A) = P₀ × 10^(-A/10) 换算为 mW。界面不再要求输入 A₀；旧项目保存的 (P_ref, A_ref) 会迁移为等效 P₀ = P_ref × 10^(A_ref/10)。
 - 对手动选入同一子图的两条及以上 1D 曲线，提供与导入二维数据一致的 Heatmap 和 Variable scan 操作。扫描变量默认名为 `Subplot index`、单位留空、数值从 1 开始按步长 1 等间距生成；可编辑变量名和单位，选择等间距（Start/Step）或手动数组。数组按当前曲线顺序逐一对应，热图行仍按数值排序，变量值按曲线 ID 保存，避免重排后错配。变量单位为空时坐标标题不显示单位括号。
-- 峰峰幅度与峰峰线宽饱和拟合已经在隔离预览分支实现。模型、边界、诊断及验收限制以本文件上方“当前预览”节和 `docs/TWO_DIMENSIONAL.md` 为准；正式 `main` 仍未合并。
+- 峰峰幅度与峰峰线宽饱和拟合已经在隔离预览分支实现。模型、边界、诊断及验收限制以本文件上方“当前预览”节和 `docs/TWO_DIMENSIONAL.md` 为准；现已于 2026-10-30 合并正式 `main`。
 
 ### 当前实施与验收状态（2026-10-24）
 
@@ -129,7 +136,7 @@
 - 上一轮自动化运行 39951954898 全部通过：数值、CSV/插值、一维处理、项目版本兼容、现有二维回归、显示/坐标/导出测试、生产构建、Chromium 浏览器回归与迁移前对照均成功。浏览器测试验证扫描子图创建、源 Heatmap 保留、右侧布局、项目保存的布局信息及包含 Variable scan / Overlap 的 SVG 导出。
 - 静态预览构建提交 d1e478f 已同步到主站，主站提交 3e50725 更新预览快照与资源检查页；Pages 发布运行 39953758517 成功，公开浏览器检查运行 39951955041 的第二次尝试通过。第一次公开检查使用旧快照，部署新资源后重跑通过。
 - 用户此前上传的 exp(1).zip 计划用于 CIQTEK Field–Power、Field–Delay、Field–Modulation Amplitude、Time–Field 等二维样本检查；当前对话附件与可检索 Library 中仍未找到该 ZIP。真实仪器样本的坐标、单位、信号分量和项目保存验收仍待重新取得文件后执行。不得声称真实样本验收通过，也不得将样本复制到公开仓库。
-- 本轮代码继续保持在 preview/modularization-phase1-20261009 和 Draft PR #1；未经明确授权不合并 main，正式 /spinplot/ 未修改。主站临时快照不会随预览分支自动同步。
+- 本轮代码已通过 PR #1 合并至正式 main；正式 /spinplot/ Pages 部署于 2026-10-30 完成。预览分支保留供后续试验。主站临时快照不会随预览分支自动同步。
 
 
 
