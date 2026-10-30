@@ -55,7 +55,7 @@
 - **控件外观：** `Exclude points from fit` 改用现有嵌套 `advanced-layout` 折叠栏风格，去除额外方框。MathML 中函数参数括号明确 `stretchy="false"`，缩小公式默认字号；不修改数学表达式和拟合算法。
 - **轴格式：** 当 Y、Top/Right 投影强度轴或 Z 色标处于 `linear` 模式时，刻度使用十进制格式，不再从全局 Auto/Scientific 偏好或 `Number.toPrecision()` 的自动指数形式隐式切换为科学计数法。用户显式选择 `scientific` 仍显示科学计数法；Log10/SymLog 保持原数值映射与标签规则。普通 X 轴尚无该三模式设置，其原有手动 Tick notation 行为保持不变。
 - **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开预览页面 Chromium [40923593239](https://github.com/imasenHF/spinplot/actions/runs/40923593239) 在 Pages 发布后重跑成功，已独立完成线上浏览器验收。
-- **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 初版 `plotFootprint` 已随 PR #1 合并，但其语义控制了投影可见性，与用户要求不符；当前修正分支以 `emptyProjectionSpace` 重新实现，见本文件上方“阶段 B 修正”。
+- **发布边界：** 本节七项 UI 修复、Linear 刻度修复及 Z-order 功能已随 PR #1 合并正式 `main`；正式发布见 Actions `41001804341`。本次阶段 B 修正只在 `preview/modularization-phase-b-empty-projection-20261030` 开发，尚未合并或部署到正式 `/spinplot/`。
 
 ## 历史预览交付与验收（2026-10-29）
 

@@ -98,7 +98,7 @@ These capabilities were developed on `preview/modularization-phase1-20261009` an
 - The source matrix is displayed once under `Current data`. Derived Statistic, amplitude, linewidth, fitted curves and any excluded-point marker series appear as indented left-hand entries, with independent line/symbol selectors in the *right* Style column (stable virtual IDs −100 to −106). The original raw matrix is not replaced. The redundant `Scan style` selector is hidden for direct 2D scan sources; old manual-1D-derived scans keep their original style control for compatibility until their own derived-curve inventory can be refactored. Default measured features use line+symbols, fits use dashed lines; the default legend is placed outside the top of the plot to avoid obscuring data.
 - Export includes the dedicated `Export scan features CSV` with source index, scan and power coordinate, both physical features, fit values/residuals, inclusion flags, fitted parameters and diagnostics. Project save/reload preserves chosen measurements and settings; numerical fits are deterministically recomputed and are not separately serialized as immutable snapshots.
 
-### Variable scan derived-curve Z-order (2026-10-30 preview)
+### Variable scan derived-curve Z-order (merged into main, 2026-10-30)
 
 For directly imported 2D datasets, the Current data source matrix is fixed. Every indented derived Statistic/amplitude/linewidth/fit/excluded-point row supports HTML5 drag/drop, as in ordinary Current order, and keyboard Alt+ArrowUp/Down. Rows from top to bottom form the actual back-to-front drawing sequence; a lower entry is painted later and is visible on top of overlapping earlier curves. Its compact Style selection stays linked to the same negative virtual curve identity and moves with the row.
 
@@ -106,7 +106,7 @@ The pure `src/twod/scan-order.js` module normalizes and updates stable ID order 
 
 Numerical tests `src/twod/scan-order.test.js` and the Chromium project test cover drag/drop, keyboard reorder, right style column synchronization, actual SVG/legend order, project serialization and reload. Full preview CI: [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040).
 
-### Compact Curve Style and explicit Linear notation (2026-10-30 preview)
+### Compact Curve Style and explicit Linear notation (merged into main, 2026-10-30)
 
 - Directly imported 2D Heatmap/Contour/3D source datasets do not have an individual 1D line style. Their `Current data` list therefore has **one full-width column** and the otherwise unrelated `Scan style` control is hidden. This does not remove the palette, Z scale, Top/Right projection settings, or source matrix.
 - In direct-2D Variable scan mode, every derived statistic/feature/fit curve has an individual compact **34 px glyph selector** in the right Style column. The selector uses the same line/marker glyph options as ordinary 1D curves instead of text labels. Both data and style columns use 24 px rows, 2 px inner padding, equal visible heights, and synchronized scrolling. Saved per-curve styles and the existing derived virtual IDs are retained. Legacy manual-1D-derived scan mode keeps its existing Scan style control.
