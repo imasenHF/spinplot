@@ -205,3 +205,11 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .curve-manager.scan-matrix .scan-derived-name{cursor:grab;user-select:none}
 .curve-manager.scan-matrix .scan-derived-name:active{cursor:grabbing}
 .curve-manager.scan-matrix .scan-derived-name:focus-visible{outline:2px solid #2b6686;outline-offset:-2px}
+
+/* Compact, per-subplot scan-fit labels: one toggle, font and placement controls. */
+.scan-fit-display{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 9px;min-width:0;margin-top:7px}
+.scan-fit-display>.switch{grid-column:1/-1}
+.scan-fit-display>.control-label{margin-bottom:0}
+.scan-fit-custom{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.scan-fit-custom[hidden]{display:none}
+.scan-fit-custom>.control-label{margin-bottom:0}
