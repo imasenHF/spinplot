@@ -1,3 +1,10 @@
+## 2026-10-31 Legend 控件修复（独立分支，待验收）
+
+- 原因：`src/interface.js` 对全部 `sp.twoD` 的 Labels 设置统一处理，仅 Stack/Overlap 允许显示；Variable scan 虽由一维曲线渲染器绘制，却被隐藏。绘图模型又覆盖 Variable scan 的 `labelMode`。全局 Style → Legend 原先仅有不透明度和边框，缺少位置设置。
+- 新增 `globalLegendPosition`，默认 Upper right。新子图 `legendPosition='inherit'`；局部位置可以覆盖全局；位置计算同时作用于实际绘制与外置 legend 的绘图区边距。Variable scan 新建时显式默认为 Legend，用户可设置标签模式与位置；直接二维 Heatmap/Contour/3D 继续隐藏无意义的曲线图例。
+- 老配置文件没有 `globalLegendPosition` 时，把原来的默认 `upper_right` 视为继承（加载初始画面仍为 Upper right），其他原有明确位置及 `auto` 保持其既有语义。保存使用现有配置 v10 / 项目 v11，不更改格式版本。
+- 代码与单元回归位于 `src/plotting/legend-position.js`、`src/plotting/legend-position.test.js`、`src/main.js`、`src/interface.js`、`src/plotting/oned.js` 和 `index.html`。本段记录开发分支上的代码，待 PR/CI/部署完成后更新发布状态。
+
 ## 2026-10-31 Power fit 参数和布局整理（已合并 main，PR #5）
 
 - 幅度模型的数值求解器不变，优化的 P 改称 Psat；上升段净幅度 S(P)−C 等于峰值净幅度一半时的功率为 P½=(2−√3)²Psat。线宽拟合有独立的 Psat，P½ 仅为幅度拟合计算量。
