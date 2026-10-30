@@ -15,3 +15,15 @@ export function resolveLegendPosition(local, globalPosition = 'upper_right') {
   if (chosen === 'auto') return 'upper_right';
   return positions.has(chosen) ? chosen : 'upper_right';
 }
+
+/**
+ * Existing configurations had no global placement setting. Their implicit
+ * upper-right default becomes inherited without changing the initial image.
+ * Explicit alternative positions retain their meaning.
+ */
+export function migrateLegacyLegendPosition(local, controls) {
+  if (local === 'upper_right' && !Object.hasOwn(controls ?? {}, 'globalLegendPosition')) {
+    return 'inherit';
+  }
+  return local;
+}
