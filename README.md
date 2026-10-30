@@ -69,7 +69,7 @@ node src/data/curve-matrix.test.js
 
 ## 版本、保存与兼容
 
-- **应用版本**：以 `package.json` 的 `version` 为准；检查时为 **0.9.2**，`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
+- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 为 **0.9.2**，当前修正分支候选为 **0.10.0**；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
 - **项目格式**：`type: "SpinPlotProject"`，当前 `version: 11`；包含数据数组、二维矩阵与配置。载入逻辑支持经校验的旧项目版本 9/10/11，无法读取时应提示错误。
 - **配置格式**：当前 `version: 10`；单独保存布局、选项和参数，不包含原始谱图数组。项目文件内部也含有此配置。
 - **迁移要求**：文件格式的版本号独立于应用版本；字段变化需检查历史项目读取、兼容性和失败提示，版本标签应在构建与发布检查后创建。
