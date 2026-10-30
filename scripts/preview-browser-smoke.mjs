@@ -244,7 +244,7 @@ try {
     const make2D=(title,row,col,top,right)=>({
       ...JSON.parse(JSON.stringify(source2D)),
       title,mode:'heatmap',gridRow:row,gridCol:col,rowSpan:1,colSpan:1,
-      emptyProjectionSpace:'none',
+      emptyProjectionSpace:'none',plotFootprint:'main',
       twoD:{...source2D.twoD,index:2,settings:{...matrixSettings,showProjections:true,showXProjection:top,showYProjection:right}}
     });
     const make1D=(title,row,col)=>({
@@ -263,6 +263,9 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.deepEqual(await page.locator('[data-field="emptyProjectionSpace"]').evaluateAll(els=>els.map(el=>el.value)),['none','none','none','none'],'All subplot types expose the empty projection-space setting');
     const targetCard=page.locator('.subplot').nth(1);
+    if(await targetCard.evaluate(el=>el.classList.contains('collapsed')))await targetCard.locator('[data-action="collapse"]').click();
+    const targetLayout=targetCard.locator('details.advanced-layout');
+    if(!await targetLayout.evaluate(el=>el.open))await targetLayout.locator('summary').click();
     const occupancy=targetCard.locator('[data-field="emptyProjectionSpace"]');
     assert.equal(await occupancy.isVisible(),true,'1D subplots can occupy unused projection space');
     const topProjectionCard=page.locator('.subplot').nth(0);
@@ -292,6 +295,7 @@ try {
       await occupancy.selectOption(value);
       return captureTargetFrame();
     };
+    await page.locator('#renderBtnTop').click();
     const noneFrame=await captureTargetFrame();
     const topFrame=await setOccupancy('top');
     const rightFrame=await setOccupancy('right');
@@ -304,6 +308,7 @@ try {
     assert.deepEqual(savedSpace.config.subplots.map(sp=>sp.emptyProjectionSpace),['none','both','none','none'],'Empty projection-space settings persist per subplot');
     assert.equal(savedSpace.config.subplots[0].twoD.settings.showXProjection,true,'Top projection state remains unchanged');
     assert.equal(savedSpace.config.subplots[0].twoD.settings.showYProjection,false,'Right projection state remains unchanged');
+    assert.equal(Object.hasOwn(savedSpace.config.subplots[0],'plotFootprint'),false,'Legacy projection-selection field is removed on load/save');
     await load(savedSpace,'empty-projection-space-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="emptyProjectionSpace"]').inputValue(),'both','Occupancy setting restores after project reload');
