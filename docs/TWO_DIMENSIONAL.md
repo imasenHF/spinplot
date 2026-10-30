@@ -119,13 +119,22 @@ Numerical tests `src/twod/scan-order.test.js` and the Chromium project test cove
 - The regression suite checks independent right-projection linewidth calculation, reversed field coordinates, legacy PTP values, constant traces, synthetic saturated signals, dual axes, excluded-point interaction, model markup, project persistence, CSV, SVG and reference-compatible builds. [Full regression 40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) passed before the final documentation-only updates.
 - Complex overlapping lines, extrema distorted by noise, uncertainty/covariance estimates and real-instrument physical calibration remain separate scientific verification tasks. 真实复杂谱线、极值受噪声影响的情况、不确定度/协方差估计和真实仪器物理校准仍需独立科学验证。
 
-## Plot footprint and subplot geometry (merged into main, 2026-10-30)
+## Stage B correction: empty projection-space occupancy (0.10.0 candidate)
 
-Each 2D subplot stores an independent `plotFootprint` preset: `main` (main axes only), `top` (main axes plus top projection), `right` (main axes plus right projection), or `full` (both projections). The default and legacy fallback are `full`. The preset controls projection availability without overwriting explicit user-disabled projection flags. The setting is stored in the existing subplot project/config object; no project format version change is required.
+The first `plotFootprint` implementation merged in PR #1 coupled layout selection to projection visibility. That did not match the intended use. The corrected model separates projection display from the use of blank accessory space.
 
-For layouts made of single-row and single-column cells, the renderer allocates auxiliary title/projection/colorbar space by row and column so the main plotting frames remain equal in height within each row and equal in width within each column. Layouts containing row-spanning or column-spanning cells retain the shared-inset fallback to preserve the existing grid geometry. The selected design canvas dimensions remain unchanged in SVG and other exports.
+Each subplot stores an optional `emptyProjectionSpace` value:
+- `none` (default): retain shared row/column margins and keep the main plotting frame aligned.
+- `top`: when this subplot does not display a top projection, use the unused top-projection margin shared by its row.
+- `right`: when this subplot does not display a right projection, use the unused right-projection margin shared by its column.
+- `both`: occupy both available directions.
 
-Implementation: `src/plotting/footprint.js`, `src/plotting/oned.js`, `src/twod/ui.js`, `src/main.js`. Regression includes preset flags, geometry allocation, spanning fallback, insufficient canvas handling, live UI changes, SVG projection selection, project save/reload and canvas dimensions. CI [40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550) passed. The implementation is merged into formal `main`; production Pages deployment passed [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341).
+The setting only consumes the difference between the shared margin and this subplot's natural inset. If the corresponding projection is visible on the same subplot, its space is retained. Natural insets for subplot titles, g axes, colorbars and legends remain intact; right occupancy does not consume colorbar space. The control is available to 1D, 2D and Variable scan subplots. It does not toggle or disable projection controls.
+
+Implementation: `src/plotting/footprint.js` normalizes the setting and resolves per-subplot margins; `src/plotting/oned.js` applies the resolved margins after row/column allocation; `src/twod/ui.js` exposes actual top/right projection visibility in the natural inset model; `src/main.js` provides the control and legacy config cleanup. The former `plotFootprint` property is removed on config load. Project format 11 and config format 10 remain unchanged; missing `emptyProjectionSpace` values default to `none`.
+
+Regression covers preset normalization, top/right/both margin consumption, visible-projection protection, colorbar retention, 1D behavior, a mixed 2×2 2D/1D browser layout, project save/reload and export canvas size. Full CI and browser results are tracked in the correction branch Actions. This is a candidate change and is not yet part of formal `main`.
+
 
 ## Interface organization
 
