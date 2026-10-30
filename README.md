@@ -28,7 +28,7 @@
 - 原有的一维 Region 等基线、二维源矩阵和二维投影统计不做隐式校正或全矩阵均值扣除；**此次没有修改任何二维基线处理**。
 - 等高线沿物理 X/Y 坐标插值；3D 使用可旋转三角网格。界面使用 34 px 的独立符号列、简短标题与问号帮助，3D 视角面板默认折叠。
 
-新功能的数值、构建、Chromium 与旧版对照通过 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
+阶段 B 新增 Plot footprint（Main / Top / Right / Full）及跨列主坐标框对齐、行高分配；项目保存恢复、SVG 输出和浏览器交互均有专门回归。阶段 B 完整数值、构建、Chromium 与迁移前对照通过 [Actions #40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。此前三模式坐标与二维预览的回归见 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
 
 ## 使用与科研限制
 
