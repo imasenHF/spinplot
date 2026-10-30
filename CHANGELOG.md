@@ -4,7 +4,7 @@
 
 - No unreleased changes recorded.
 
-## 0.10.0 — 2026-10-30 (candidate)
+## 0.10.0 — 2026-10-30
 
 - Add per-subplot `Empty projection space` occupancy: `none / top / right / both`. A subplot without a corresponding projection can opt into the unused top margin shared by its row, the unused right margin shared by its column, or both.
 - Keep projection visibility independent from layout occupancy. Occupancy never hides/disables a visible projection and preserves the subplot's natural title, g-axis, colorbar and legend margins.

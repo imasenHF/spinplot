@@ -10,6 +10,7 @@
 - 上一版阶段 B 对 `Plot footprint` 的实现偏离用户意图：它控制投影面板是否启用，且将投影控件禁用；用户真正需要的是**无投影子图可选择占用其他子图在同一行/列预留的上投影/右投影空间**。此前的 B 不应作为目标功能已完成的依据。
 - 当前修正分支：`preview/modularization-phase-b-empty-projection-20261030`，从正式 `main` 建立。候选应用版本为 **0.10.0**；项目格式 11、配置格式 10 保持不变。
 - 新字段 `emptyProjectionSpace` 控制 `none / top / right / both`。只对当前子图未显示的对应投影空间生效；不改变投影开关，不占用色标、g 轴、标题或图例的必要边距。设置面向 1D、2D、Variable scan 子图，默认 `none`。
+- 版本候选为 `0.10.0`，`package.json` 与 `package-lock.json` 已同步；Vite 负责标题栏版本与保存文件 `appVersion`。新增 `.github/workflows/release.yml`：只有正式 Pages 部署成功且 `package.json.version` 相对父提交发生变化时，才创建 `vX.Y.Z` 标签和 GitHub Release；预览分支不创建正式标签。
 - 代码和测试位置：`src/plotting/footprint.js`、`src/plotting/footprint.test.js`、`src/plotting/oned.js`、`src/twod/ui.js`、`src/main.js`、`scripts/preview-browser-smoke.mjs`。自动化回归完成前不创建正式合并 PR，不更新正式 Pages。
 - 每次任务继续先读取主站 `SITE_CONTEXT.md`、`PROJECT_INDEX.md`，再读取本文件、项目上下文、架构、二维说明、样式指南和目标源码。测试、预览快照与正式发布分别核对。
 本文是 SpinPlot 持续开发的远程交接记录，用于跨会话保存已确认决定、当前任务、实现位置、验收标准和发布边界，避免仅依赖对话历史推断项目状态。

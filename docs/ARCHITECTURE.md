@@ -54,6 +54,13 @@ public/legacy/           旧路径跳转
 
 新增或重命名字段时先确定旧文件读取行为与迁移结果；不能自动恢复的属性必须提示丢失/不支持。配置恢复不应覆盖已导入的原始数据；项目文件加载需校验数组、二维矩阵、版本和引用下标。
 
+## Version and release management
+
+- `package.json.version` is the single source for the application version. Keep the root `package-lock.json` version synchronized.
+- Vite injects the package version into the titlebar; the same version is written to the project's `appVersion`. It is independent of project format 11 and config format 10.
+- Every version change requires a dated `CHANGELOG.md` section and browser verification of the displayed version and saved `appVersion`.
+- `.github/workflows/release.yml` runs only after the production Pages workflow succeeds on `main`. It compares the package version with the first parent commit; when the version changed, it creates tag `vX.Y.Z` and a GitHub Release using the matching changelog section. No tag or release is created from a preview branch or a failed deployment.
+
 ## 5. 模块化实现（2026-10-30 已合并 main）
 
 模块化实现、一维绘图/坐标/导出接入已通过 PR #1 合并至正式 `main`。原阶段 B 的 `plotFootprint` 仅控制投影可见性，与用户要求的空白占位语义不符；当前修正分支将其替换为 `emptyProjectionSpace`，待专项验收后再合并。
