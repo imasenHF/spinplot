@@ -60,17 +60,25 @@ Run `node src/twod/ciq.test.js /path/to/extracted/experiments` for exact compari
 
 ### Consistent main frames
 
-Subplots with equal grid spans share the maximum required left/right/top/bottom margins. 1D coordinate frames therefore match 2D main maps in mixed figures; enabling a g axis does not shrink only that subplot. Projections, colorbars and outside legends keep their reserved space. Explicit unequal spans retain their intended size. This geometry applies to interactive views and every export format.
+Subplots sharing a row or column use the maximum required auxiliary margins by default. This keeps 1D coordinate frames aligned with 2D main maps in mixed figures; enabling a g axis does not shrink only that subplot. Projections, colorbars and outside legends retain their own reserved space. Explicit unequal spans retain their intended size. The same geometry calculation is used for interactive views and exports.
 
-Top and right projections each have independent visibility, range-label, and title controls. Hiding a projection removes its accessory space. Mixed columns allocate the required projection/colorbar space per column while keeping all main axes the same size. The 2D data section shows the current dataset; narrow sidebar rows truncate long names with a full-name tooltip.
+Top and right projections each have independent visibility, range-label and title controls. In a mixed layout, hiding a projection on one subplot does not remove the shared row/column margin required by another subplot. Each subplot therefore exposes an `Empty projection space` setting:
+- `none` (default): retain the shared margin and keep the main plotting frame aligned.
+- `top`: when this subplot has no top projection, use the unused top-projection margin shared by its row.
+- `right`: when this subplot has no right projection, use the unused right-projection margin shared by its column.
+- `both`: occupy both available directions.
+
+The setting only consumes the difference between the shared margin and this subplot's natural inset. A projection visible on the same subplot always retains its space. Natural insets for title, g axis, colorbar and legend remain intact; right occupancy does not consume the colorbar. The control is available to 1D, 2D and Variable scan subplots. It does not toggle or disable projection controls. The optional `emptyProjectionSpace` field is saved per subplot; absent values default to `none`. The former `plotFootprint` field is ignored and removed during config load. Project format 11 and config format 10 remain unchanged.
+
+The 2D data section shows the current dataset; narrow sidebar rows truncate long names with a full-name tooltip.
 
 ## Manual 1D curve groups as 2D data
 
 For a subplot containing at least two 1D curves, the Plot mode menu offers exactly four modes: `Stack`, `Overlap`, `Heatmap` and `Variable scan (new subplot)`. Heatmap converts the selected curves into a 2D matrix; Variable scan creates a separate scan-correlation subplot while retaining the source plot. The previous `Overlay (1D)` and `Stack (1D)` return modes are removed from this menu; use Undo to reverse the conversion when needed. The `Scan variable · Heatmap Y axis` editor sits directly below Plot mode and is collapsed by default. It remains available in Heatmap and Variable scan modes. It contains the variable name, optional unit, and either equal spacing (`Start`, `Step`) or an explicit array; fields apply changes directly without a separate Apply button. Defaults are `Subplot index`, blank unit, start 1, step 1. Heatmap displays the Y-axis title by default. For curve-derived Heatmaps, the title uses the scan-variable name. Array values are entered in current curve order, stored by curve ID, and remain attached to their source curves when reordered; heatmap rows are sorted numerically by scan-variable value. A blank unit omits unit parentheses from the axis label.
 
-## Projection feature extraction and saturation fitting (preview branch)
+## Projection feature extraction and saturation fitting (merged into main, 2026-10-30)
 
-These capabilities are implemented on `preview/modularization-phase1-20261009`, not the released `main`. The independent static preview is synchronized separately.
+These capabilities were developed on `preview/modularization-phase1-20261009` and merged into formal `main` by PR #1 on 2026-10-30. The independent static preview is synchronized separately.
 
 ### Top and right projection semantics
 
@@ -104,7 +112,7 @@ Numerical tests `src/twod/scan-order.test.js` and the Chromium project test cove
 - In direct-2D Variable scan mode, every derived statistic/feature/fit curve has an individual compact **34 px glyph selector** in the right Style column. The selector uses the same line/marker glyph options as ordinary 1D curves instead of text labels. Both data and style columns use 24 px rows, 2 px inner padding, equal visible heights, and synchronized scrolling. Saved per-curve styles and the existing derived virtual IDs are retained. Legacy manual-1D-derived scan mode keeps its existing Scan style control.
 - If the user changes the Scan axis to the acquired non-power variable, `Power saturation fitting` closes automatically without clearing the fit settings; when power mode is restored an enabled fit is expanded. dB attenuation values are not mislabeled as measured mW. `Exclude points from fit` uses the same plain nested details styling as other advanced controls; the mathematical formula parentheses use nonstretching MathML delimiters and a slightly smaller font.
 - A selected **Linear** mode always formats Y-axis, Top/Right projection scale, and Z colorbar ticks in ordinary decimal notation, even if the global tick formatter would otherwise choose an exponent. Choosing **Scientific** explicitly enables exponent notation, while Log10/SymLog still use their original mapping. Ordinary X-axis notation is unchanged.
-- Current numerical, browser, old-project and reference-image/export checks are recorded in [CI 40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424). Public static preview deployment is tracked in [Pages 40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918). 阶段 B Plot footprint 已在 2026-10-30 实现并合并正式版；该功能不修改原始数据。
+- Current numerical, browser, old-project and reference-image/export checks are recorded in [CI 40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424). Public static preview deployment is tracked in [Pages 40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918). 阶段 B 的正确语义与验收要求见上方 `Consistent main frames`；它只改变主绘图区占用的版面，不修改原始数据或投影统计。
 
 ### Validation and limitations
 
