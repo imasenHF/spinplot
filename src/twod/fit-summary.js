@@ -8,7 +8,7 @@ export function scanFitResultLines(data, selection = []) {
     const fields = [];
     for (const key of selection) {
       if (key === 'formula') { fields.push(name === 'Amplitude' ? 'S(P) = A√P/(1 + P/P½) + C' : 'ΔB(P) = A√(1 + P/Psat) + C'); continue; }
-      const entry = key === 'P' ? ['P', fit.parameters.P, ' mW']
+      const entry = key === 'P' ? [name === 'Amplitude' ? 'P½' : 'Psat', fit.parameters.P, ' mW']
         : key === 'A' ? ['A', fit.parameters.A, '']
         : key === 'C' ? ['C', fit.parameters.C, '']
         : key === 'r2' ? ['R2', fit.r2, '']
