@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { resolveLegendPosition } from './legend-position.js';
+import { resolveLegendPosition, migrateLegacyLegendPosition } from './legend-position.js';
 
 test('new subplot inherits global legend position', () => {
   assert.equal(resolveLegendPosition('inherit','lower_left'),'lower_left');
@@ -14,4 +14,12 @@ test('explicit subplot position overrides global, including outside positions', 
 test('legacy auto and invalid values retain a safe inside fallback', () => {
   assert.equal(resolveLegendPosition('auto','outside_top'),'upper_right');
   assert.equal(resolveLegendPosition('unknown','lower_left'),'upper_right');
+});
+
+test('legacy default migrates to global inheritance without moving the initial legend', () => {
+  assert.equal(migrateLegacyLegendPosition('upper_right', {}),'inherit');
+  assert.equal(resolveLegendPosition(migrateLegacyLegendPosition('upper_right', {})),'upper_right');
+  assert.equal(migrateLegacyLegendPosition('upper_left', {}),'upper_left');
+  assert.equal(migrateLegacyLegendPosition('upper_right',{globalLegendPosition:'lower_left'}),'upper_right');
+  assert.equal(migrateLegacyLegendPosition('inherit', {}),'inherit');
 });
