@@ -12,7 +12,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 应用：https://plastocyanin.org/spinplot/
 - 构建：Vite、JavaScript（含部分独立模块）、TypeScript 检查；`package.json` 中包含 React 依赖，但主体界面尚未改造成 React 应用。
 - 发布：`main` 触发 GitHub Actions，产物为 `dist/`，部署路径为 `/spinplot/`；不单独声明 `CNAME`。
-- 当前应用版本：**0.9.2**（来源为 `package.json`；更新版本号时同步修改本节）。
+- 正式 `main` 当前版本：**0.9.2**；本修正分支候选版本：**0.10.0**（来源为 `package.json`，待本分支验收与 PR 合并后发布）。
 - 项目文件格式：**11**；配置文件格式：**10**；两者均与应用版本号相互独立。
 
 ## 2. 已实现功能范围
@@ -75,7 +75,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-**2026-10-30 阶段 B Plot footprint 与跨列排版（已合并正式版）：** 实现位于 `Main / Top / Right / Full` 四种子图画幅范围。单行布局按各行最大顶部/底部附属空间重新分配行高，单列布局按各列左右附属空间与比例宽度重新分配列宽，使主坐标框分别保持等高/等宽；跨行或跨列子图走共享边距路径。每个二维子图的预设独立保存，投影开关随画幅范围约束，切换时保留布局面板状态。测试覆盖四种预设、开关状态、画幅几何、跨列主框对齐、项目保存/恢复、SVG 投影内容与画布设计尺寸。代码及本地浏览器回归已通过 [Actions 40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。代码已合并至正式 `main`，正式 Pages [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341) 部署成功；公开预览 Pages [41001626603](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001626603) 和 HTTP 检查 [41001606803](https://github.com/imasenHF/spinplot/actions/runs/41001606803) 成功。
+**阶段 B 修正（2026-10-30，候选版本 0.10.0）：** 目标为混合投影布局中的空白占位。共享布局仍按行/列计算投影所需的最大附属空间；每个子图新增 `emptyProjectionSpace`，可选 `none / top / right / both`。该设置只允许当前子图占用同一行的上投影预留区、同一列的右投影预留区，且仅在当前子图未显示相应投影时生效。投影显示状态、色标、`g` 轴、标题与图例边距均保持独立。控件适用于 1D、2D 与 Variable scan 子图，默认 `none` 保持旧版对齐行为。旧 `plotFootprint` 字段在配置载入时删除；项目格式 11、配置格式 10 不变。实现与验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md) 和 [CHANGELOG](CHANGELOG.md)。
 
 **2026-10-29 独立预览功能（已于 2026-10-30 合并正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。上述功能已随 PR #1 合并正式 `main`，正式 Pages 部署见 [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341)。
 
