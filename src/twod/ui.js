@@ -67,6 +67,8 @@ export function defaults(d) {
     scanFitLabelPosition: 'lower_right',
     scanFitLabelSize: 12,
     scanFitLabelFont: 'inherit',
+    scanFitLabelOpacity: 0,
+    scanFitLabelBorder: false,
     scanFitLabelX: 50,
     scanFitLabelY: 65,
     topFeatureDisplay: 'none',
@@ -490,12 +492,16 @@ export function controls(card, sp, d, onChange) {
   fitControls.style.gridColumn='1 / -1';
   fitControls.open=s.scanAxisMode==='power'&&!!(s.scanFitAmplitude||s.scanFitLinewidth);
   const fitHeading=document.createElement('summary');
-  fitHeading.textContent='Power saturation fitting';
+  fitHeading.textContent='Power fit';
   fitControls.append(fitHeading);
   const fitBody=document.createElement('div');
   fitBody.className='local-block grid2';
   fitControls.append(fitBody);
   scanSettings.append(fitControls);
+  const modelHeading=document.createElement('div');
+  modelHeading.className='scan-fit-section-heading';
+  modelHeading.textContent='Models';
+  fitBody.append(modelHeading);
   check(fitBody,'scanFitAmplitude','Fit peak-to-peak amplitude',()=>{
     // Existing v11 Statistic/PTP projects keep their old zero/constant trace
     // semantics until users explicitly enable the physical saturation fit.
@@ -528,17 +534,18 @@ export function controls(card, sp, d, onChange) {
   const measuredPower=document.createElement('div');
   measuredPower.className='scan-measured-power';
   measuredPower.style.gridColumn='1 / -1';
-  fitBody.append(measuredPower);
+  fitBody.insertBefore(measuredPower,excludePanel);
   const fitBounds=document.createElement('div');
   fitBounds.className='grid2 scan-fit-bounds';
   fitBounds.style.gridColumn='1 / -1';
   fitBody.append(fitBounds);
   const fitBoundTitle=document.createElement('div');
   fitBoundTitle.style.gridColumn='1 / -1';
-  fitBoundTitle.textContent='Characteristic power search limits (mW) · blank = measured range';
+  fitBoundTitle.textContent='Fit parameter range (mW)';
+  fitBoundTitle.title='Blank bounds use the included measured powers. Custom bounds permit extrapolation.';
   fitBounds.append(fitBoundTitle);
-  input(fitBounds,'scanFitPowerMinMW','Start','number');
-  input(fitBounds,'scanFitPowerMaxMW','End','number');
+  input(fitBounds,'scanFitPowerMinMW','Min','number');
+  input(fitBounds,'scanFitPowerMaxMW','Max','number');
   const displayPanel=document.createElement('div');
   displayPanel.className='scan-fit-display';
   displayPanel.style.gridColumn='1 / -1';
@@ -547,12 +554,12 @@ export function controls(card, sp, d, onChange) {
   showFitCheck.type='checkbox';
   showFitCheck.checked=s.scanFitShow===true;
   showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;onChange();};
-  showFit.append(showFitCheck,document.createTextNode('Show fit results'));
+  showFit.append(showFitCheck,document.createTextNode('Show results on plot'));
   displayPanel.replaceChildren(showFit);
   const position=document.createElement('label');
   position.className='control-label';position.textContent='Position';
   const positionSelect=document.createElement('select');
-  for(const [value,label] of [['lower_right','Lower right'],['lower_left','Lower left'],['upper_right','Upper right'],['upper_left','Upper left'],['custom','Custom']]){
+  for(const [value,label] of [['upper_left','Upper left'],['upper_center','Upper center'],['upper_right','Upper right'],['center_left','Center left'],['center','Center'],['center_right','Center right'],['lower_left','Lower left'],['lower_center','Lower center'],['lower_right','Lower right'],['custom','Custom']]){
     const option=document.createElement('option');option.value=value;option.textContent=label;positionSelect.append(option);
   }
   positionSelect.value=s.scanFitLabelPosition||'lower_right';
@@ -583,11 +590,36 @@ export function controls(card, sp, d, onChange) {
   sizeInput.value=String(s.scanFitLabelSize??12);
   sizeInput.onchange=()=>{s.scanFitLabelSize=Math.max(8,Math.min(24,Number(sizeInput.value)||12));onChange();};
   sizeLabel.append(sizeInput);displayPanel.append(sizeLabel);
+
+  const backgroundLabel=document.createElement('label');
+  backgroundLabel.className='control-label';
+  backgroundLabel.textContent='Background opacity';
+  const opacityInput=document.createElement('input');
+  opacityInput.type='range';opacityInput.min='0';opacityInput.max='1';opacityInput.step='0.05';
+  opacityInput.value=String(s.scanFitLabelOpacity??0);
+  opacityInput.setAttribute('aria-label','Fit label background opacity');
+  opacityInput.oninput=()=>{s.scanFitLabelOpacity=Math.max(0,Math.min(1,Number(opacityInput.value)||0));onChange();};
+  backgroundLabel.append(opacityInput);displayPanel.append(backgroundLabel);
+  const borderLabel=document.createElement('label');
+  borderLabel.className='switch';
+  const borderInput=document.createElement('input');
+  borderInput.type='checkbox';borderInput.checked=s.scanFitLabelBorder===true;
+  borderInput.onchange=()=>{s.scanFitLabelBorder=borderInput.checked;onChange();};
+  borderLabel.append(borderInput,document.createTextNode('Border'));
+  displayPanel.append(borderLabel);
   fitBody.append(displayPanel);
   const results=document.createElement('div');
   results.className='scan-fit-results';
   results.style.gridColumn='1 / -1';
-  fitBody.append(results);
+  fitBody.insertBefore(results,displayPanel);
+  const resultsHeading=document.createElement('div');
+  resultsHeading.className='scan-fit-section-heading';
+  resultsHeading.textContent='Fit results';
+  fitBody.insertBefore(resultsHeading,results);
+  const annotationHeading=document.createElement('div');
+  annotationHeading.className='scan-fit-section-heading';
+  annotationHeading.textContent='Plot annotation';
+  fitBody.insertBefore(annotationHeading,displayPanel);
   const formatNumber=(value)=>Number.isFinite(value)?Number(value.toPrecision(7)).toString():'—';
   function outputField(parent,label,value,unit=''){
     const holder=document.createElement('label');
@@ -597,7 +629,7 @@ export function controls(card, sp, d, onChange) {
     field.type='text';
     field.readOnly=true;
     field.value=value;
-    field.title=label==='P½'?'Power where fitted amplitude is half its low-power extrapolation; also the peak of this fixed-exponent model, not the linear-range cutoff.':'Calculated result; not editable';
+    field.title=label==='P½'?'Ascending-branch power at half the fitted peak after subtracting offset C.':label==='Psat'?'Characteristic saturation power; for amplitude this is the fitted peak power.':'Calculated result; not editable';
     holder.append(field);
     parent.append(holder);
   }
@@ -669,7 +701,7 @@ export function controls(card, sp, d, onChange) {
     if(!data.valid){results.textContent=data.reason||'No valid scan data';return;}
     for(const [key,title,fit,enabled,formula] of [
       ['amplitude','Amplitude',data.amplitudeFit,s.scanFitAmplitude,
-       'Spp(P) = A√P / (1 + P/P½) + C'],
+       'Spp(P) = A√P / (1 + P/Psat) + C'],
       ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth,
        'ΔBpp(P) = A√(1 + P/Psat) + C']
     ]){
@@ -679,13 +711,13 @@ export function controls(card, sp, d, onChange) {
       section.style.gridColumn='1 / -1';
       const head=document.createElement('div');
       head.style.fontWeight='600';
-      head.textContent=title+' · '+(key==='amplitude'?'Amplitude saturation':'Homogeneous power broadening');
+      head.textContent=title+' · '+(key==='amplitude'?'Amplitude saturation':'Power-dependent linewidth');
       const eq=document.createElement('div');
       eq.className='scan-fit-equation';
       // Static MathML is parsed as native mathematical markup in Chromium.
       // No user-provided strings are interpolated into these expressions.
       eq.innerHTML=key==='amplitude'
-        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
+        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
         :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
       section.append(head,eq);
       if(!fit?.valid){
@@ -695,11 +727,13 @@ export function controls(card, sp, d, onChange) {
       }else{
         const grid=document.createElement('div');
         grid.className='grid2 scan-fit-parameters';
-        outputField(grid,key==='amplitude'?'P½':'Psat',formatNumber(fit.parameters.P),'mW');
+        outputField(grid,'Psat',formatNumber(fit.parameters.P),'mW');
+        if(key==='amplitude')outputField(grid,'P½',formatNumber(fit.parameters.PHalf),'mW');
         outputField(grid,'A',formatNumber(fit.parameters.A));
         outputField(grid,s.scanFitOffset?'C':'C · fixed',formatNumber(fit.parameters.C));
         outputField(grid,'RMSE',formatNumber(fit.rmse));
         outputField(grid,'R²',fit.r2==null?'—':formatNumber(fit.r2));
+        outputField(grid,'No. of points',String(fit.n));
         section.append(grid);
         if(fit.warning){
           const warning=document.createElement('div');
@@ -718,7 +752,7 @@ export function controls(card, sp, d, onChange) {
   solverHelp.type='button';
   solverHelp.className='help-tip';
   solverHelp.textContent='?';
-  solverHelp.dataset.help='Fixed solver: bounded logarithmic search with local refinement. For each candidate characteristic power, linear least squares determines A and optional C. By default the characteristic power is restricted to the measured domain; entering custom bounds permits extrapolation. At least four distinct powers are needed (five when C is fitted).';
+  solverHelp.dataset.help='Amplitude Psat is the fitted peak power. P½ is the lower-power half-height crossing of S(P)−C, equal to (2−√3)² × Psat. The linewidth fit has an independent Psat. Bounded logarithmic search and linear least squares determine parameters. Blank limits use included measured powers. Four distinct powers are needed, or five if C is fitted.';
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
