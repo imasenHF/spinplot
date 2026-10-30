@@ -38,7 +38,7 @@
 - 仓库：`imasenHF/spinplot`。
 - 正式基线：`main`；已合并的修正分支 `preview/modularization-phase-b-empty-projection-20261030` 和旧模块化分支 `preview/modularization-phase1-20261009` 保留作历史记录。
 - 正式入口：<https://plastocyanin.org/spinplot/>，由仓库 `main` 的正式发布流程管理。
-- 临时预览入口：<https://plastocyanin.org/previews/spinplot-modularization/>，由主站仓库中单独保存的静态构建快照提供。
+- 临时预览入口：<https://plastocyanin.org/previews/spinplot-modularization/>，由主站仓库中单独保存的静态构建快照提供。预览页面标题及版本号使用 `0.10.0-dev` 标记；页头 SpinPlot 品牌链接指向正式应用 <https://plastocyanin.org/spinplot/>。
 - PR #1：<https://github.com/imasenHF/spinplot/pull/1>，已于 2026-10-30 合并至 `main`；合并提交 `163a539c59964271f75055663c82db2974785478`。
 - 正式 `main` 应用版本为 `0.10.0`，发布标签 `v0.10.0`。项目文件格式为 11，配置格式为 10；`emptyProjectionSpace` 为可选子图字段，不改变文件格式。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
 - 预览分支 Actions 生成的构建产物不会自动替换主站仓库里的预览快照。必须单独检查快照同步提交、主站 Pages 发布结果和公开 URL；不可将分支 CI 成功等同于线上页面已更新。
