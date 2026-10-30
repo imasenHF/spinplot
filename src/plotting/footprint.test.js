@@ -78,7 +78,7 @@ test("row footprint allocation leaves spanning rows to the shared-inset layout",
 
 test("row footprint allocation rejects a canvas with insufficient main plot height", () => {
   assert.throws(
-    () => fitMainRows([{ row: 1, insets: { top: 280, bottom: 280 } }], 1, 600),
+    () => fitMainRows([{ row: 1, insets: { top: 290, bottom: 290 } }], 1, 600),
     /Canvas too small/,
   );
 });

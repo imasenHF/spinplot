@@ -1,11 +1,5 @@
 name: SpinPlot live preview browser smoke
 on:
-  push:
-    branches:
-      - 'preview/modularization-*'
-    paths:
-      - '.github/workflows/preview-browser-check.yml'
-      - 'scripts/preview-browser-smoke.mjs'
   workflow_dispatch:
 permissions:
   contents: read

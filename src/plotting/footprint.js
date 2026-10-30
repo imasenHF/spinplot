@@ -41,7 +41,7 @@ export function fitMainRows(entries, rowCount, totalHeight) {
   }
   const extra = top.reduce((sum, value, i) => sum + value + bottom[i], 0);
   const mainHeight = (Number(totalHeight) - extra) / rows;
-  if (!Number.isFinite(mainHeight) || mainHeight <= 80)
+  if (!Number.isFinite(mainHeight) || mainHeight <= 35)
     throw new Error("Canvas too small for current subplot layout");
   return {
     mainHeight,

@@ -240,7 +240,7 @@ try {
   if (process.env.SPINPLOT_TEST_FOOTPRINT === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
     const footprints=['main','right','top','full'];
-    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false};
+    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false,xMode:'mean',yMode:'mean'};
     const footprintSubplots=footprints.map((footprint,index)=>{
       const subplot=JSON.parse(JSON.stringify(source2D));
       return {...subplot,title:'Footprint '+footprint,mode:'heatmap',plotFootprint:footprint,gridRow:Math.floor(index/2)+1,gridCol:index%2+1,rowSpan:1,colSpan:1,twoD:{...subplot.twoD,index:2,settings:{...footprintSettings}}};
