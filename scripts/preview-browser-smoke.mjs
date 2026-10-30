@@ -12,7 +12,8 @@ try {
   page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
   const response = await page.goto(url,{waitUntil:'networkidle',timeout:45000});
   assert.equal(response.status(),200,'Preview HTML must be served');
-  assert.match(await page.title(),/SpinPlot \d+\.\d+\.\d+/);\n  if(process.env.SPINPLOT_EXPECT_VERSION)assert.equal(await page.title(),`SpinPlot ${process.env.SPINPLOT_EXPECT_VERSION}`);
+  assert.match(await page.title(),/SpinPlot \d+\.\d+\.\d+/);
+  if(process.env.SPINPLOT_EXPECT_VERSION)assert.equal(await page.title(),`SpinPlot ${process.env.SPINPLOT_EXPECT_VERSION}`);
   assert.equal(await page.locator('.tab-btn').count(),6,'Six tabs are required');
   try {
     await page.waitForFunction(() => document.querySelector('#statusMain')?.textContent?.includes('Waiting for data'),null,{timeout:15000});
