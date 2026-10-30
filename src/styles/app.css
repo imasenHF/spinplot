@@ -213,3 +213,8 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-custom{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .scan-fit-custom[hidden]{display:none}
 .scan-fit-custom>.control-label{margin-bottom:0}
+
+/* Power fit: model → data/range → readout → on-plot annotation. */
+.scan-fit-section-heading{grid-column:1/-1;font-size:11px;font-weight:600;color:#273f4e;margin:8px 0 1px;border-bottom:1px solid #ced7da;padding-bottom:3px}
+.scan-fit-display input[type=range]{width:100%;min-width:0}
+.scan-fit-display>.switch{align-self:center}
