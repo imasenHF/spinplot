@@ -356,13 +356,17 @@ export function renderFigure(
     const visible = lines.slice(0, Math.max(0, Math.floor((ph - 16) / lineHeight)));
     if (!visible.length) return;
     ctx.save();
-    ctx.font = `${size}px ${font}`;
+    const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
+    ctx.font = `${size}px ${chosenFont}`;
     const width = Math.min(pw - 12, Math.max(70, ...visible.map(line => ctx.measureText(line).width + 16)));
     const height = visible.length * lineHeight + 10;
     if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
     const position = sp.fitResultPosition || 'lower_right';
-    const left = position.endsWith('right') ? x0 + pw - width - 6 : x0 + 6;
-    const top = position.startsWith('lower') ? y0 + ph - height - 6 : y0 + 6;
+    const custom = position === 'custom';
+    const fx = Math.max(0,Math.min(1,(Number(sp.fitResultX) || 0)/100));
+    const fy = Math.max(0,Math.min(1,(Number(sp.fitResultY) || 0)/100));
+    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12) : position.endsWith('right') ? x0 + pw - width - 6 : x0 + 6;
+    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12) : position.startsWith('lower') ? y0 + ph - height - 6 : y0 + 6;
     ctx.fillStyle = theme.bg === '#11181b' ? 'rgba(17,24,27,0.86)' : 'rgba(255,255,255,0.88)';
     ctx.fillRect(left, top, width, height);
     ctx.fillStyle = theme.text;
