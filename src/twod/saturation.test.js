@@ -67,3 +67,14 @@ assert.equal(fitSaturation([{power:1,signal:1}],{}).valid,false);
 assert.equal(fitSaturation([1,2,3,4,5].map(i=>({power:i,signal:1})),{model:'invalid'}).valid,false);
 assert.equal(fitSaturation([1,1,1,1].map((i,index)=>({power:i,signal:index}))).valid,false);
 console.log('PASS: peak features, linewidth coordinate separation, dual feature scan and both saturation models');
+
+// For the fixed-exponent amplitude model, P-half is half of the unsaturated
+// sqrt(P) extrapolation and coincides with the fitted signal maximum.
+// It is not an operational definition of the low-power linear-range endpoint.
+const characteristic=17.52736;
+const unsaturated=power=>7*Math.sqrt(power);
+const saturated=power=>saturationModels.amplitude(power,7,characteristic,0);
+assert.ok(Math.abs(saturated(characteristic)/unsaturated(characteristic)-0.5)<1e-12);
+assert.ok(saturated(characteristic)>saturated(characteristic/2));
+assert.ok(saturated(characteristic)>saturated(characteristic*2));
+assert.ok(Math.abs(saturated(characteristic/19)/unsaturated(characteristic/19)-0.95)<1e-12);
