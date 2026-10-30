@@ -5,7 +5,7 @@
 
 ## 1. 定位与发布
 
-- **Legend 控件（开发分支，待验收）：** Style → Legend 增加 Global position（九宫格及 Outside top/right，默认 Upper right），Subplots → Legend & labels 在 Variable scan 中重新可见且默认展开；支持 Legend/Direct/Both/None、局部位置继承或覆盖，曲线绘图、SVG/PDF 导出和项目保存共用有效位置。旧配置未包含全局位置且使用默认 Upper right 时迁移为继承；其他局部位置保留。普通 Heatmap/Contour/3D 继续使用色标，不显示无意义的曲线 legend。
+- **Legend 控件（PR #6 已合并 main）：** Style → Legend 增加 Global position（九宫格及 Outside top/right，默认 Upper right），Subplots → Legend & labels 在 Variable scan 中重新可见且默认展开；支持 Legend/Direct/Both/None、局部位置继承或覆盖，曲线绘图、SVG/PDF 导出和项目保存共用有效位置。旧配置未包含全局位置且使用默认 Upper right 时迁移为继承；其他局部位置保留。普通 Heatmap/Contour/3D 继续使用色标，不显示无意义的曲线 legend。
 
 
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
