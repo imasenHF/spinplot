@@ -1,3 +1,9 @@
+## 2026-10-31 顶部常用工具栏整理（PR 待验收）
+
+- 删除顶部 Plot、Load Config、Save Config 和 Reset Config，移除 File 菜单及 Export 页的 Reset Config。保留七按钮的固定排列：Open Data、Open Project、Save Project | Undo、Redo | Clear Data | Export，Export 保留文字；Clear Data 保留现有动作语义。低频 Config 保存/读取在 Export 页与 File 菜单保留，Tools → Recalculate 与自动绘图保持可用。
+- 文件打开改用带 aria-label 的可聚焦 button 触发 file input；打开/保存项目保持格式兼容。更新 src/main.js 的事件绑定，避免查询已删除的按钮导致初始化失败；删除不可达的 Clear Config 函数与默认快照。新增明确区分数据文件、项目文件和图像导出的 SVG，顶部高频操作使用 34 px 按钮和 19 px 图形。
+- 更新脚本中已删除的顶部控件引用，Chromium 回归检查按钮集合、文件选择、保存项目、保存配置、图形导出和清除数据；CI 与部署状态以对应 PR/Actions 结果为准。
+
 ## 2026-10-31 Legend 控件修复（已合并 main，PR #6）
 
 - 原因：`src/interface.js` 对全部 `sp.twoD` 的 Labels 设置统一处理，仅 Stack/Overlap 允许显示；Variable scan 虽由一维曲线渲染器绘制，却被隐藏。绘图模型又覆盖 Variable scan 的 `labelMode`。全局 Style → Legend 原先仅有不透明度和边框，缺少位置设置。
