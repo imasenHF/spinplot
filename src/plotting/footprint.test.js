@@ -1,53 +1,86 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  applyPlotFootprint,
+  emptyProjectionSpaceFlags,
   fitMainRows,
-  footprintProjectionFlags,
-  normalizePlotFootprint,
+  normalizeEmptyProjectionSpace,
+  resolveMainInsets,
 } from "./footprint.js";
 import { fitMainColumns } from "../twod/ui.js";
 
-const settings = {
-  showProjections: true,
-  showXProjection: true,
-  showYProjection: true,
-  showColorbar: true,
-};
-
-test("plot footprint presets select top and right projection regions", () => {
-  assert.deepEqual(footprintProjectionFlags("main"), { top: false, right: false });
-  assert.deepEqual(footprintProjectionFlags("top"), { top: true, right: false });
-  assert.deepEqual(footprintProjectionFlags("right"), { top: false, right: true });
-  assert.deepEqual(footprintProjectionFlags("full"), { top: true, right: true });
-  assert.equal(normalizePlotFootprint("unknown"), "full");
-  assert.equal(normalizePlotFootprint(undefined), "full");
+test("empty projection-space presets describe optional top/right occupancy", () => {
+  assert.deepEqual(emptyProjectionSpaceFlags("none"), { top: false, right: false });
+  assert.deepEqual(emptyProjectionSpaceFlags("top"), { top: true, right: false });
+  assert.deepEqual(emptyProjectionSpaceFlags("right"), { top: false, right: true });
+  assert.deepEqual(emptyProjectionSpaceFlags("both"), { top: true, right: true });
+  assert.equal(normalizeEmptyProjectionSpace("unknown"), "none");
+  assert.equal(normalizeEmptyProjectionSpace(undefined), "none");
 });
 
-test("plot footprint preserves individual projection toggles and colorbar settings", () => {
-  const cases = [
-    ["main", false, false],
-    ["top", true, false],
-    ["right", false, true],
-    ["full", true, true],
-  ];
-  for (const [footprint, top, right] of cases) {
-    const resolved = applyPlotFootprint(settings, footprint);
-    assert.equal(resolved.showXProjection, top);
-    assert.equal(resolved.showYProjection, right);
-    assert.equal(resolved.showColorbar, true);
-  }
-  assert.equal(
-    applyPlotFootprint({ ...settings, showXProjection: false }, "full").showXProjection,
-    false,
+test("a subplot can occupy only the unused top or right space shared by its row/column", () => {
+  const natural = { left: 52, right: 20, top: 42, bottom: 55 };
+  const shared = { left: 52, right: 140, top: 130, bottom: 55 };
+  assert.deepEqual(resolveMainInsets(natural, shared, "none"), shared);
+  assert.deepEqual(resolveMainInsets(natural, shared, "top"), {
+    ...shared,
+    top: natural.top,
+  });
+  assert.deepEqual(resolveMainInsets(natural, shared, "right"), {
+    ...shared,
+    right: natural.right,
+  });
+  assert.deepEqual(resolveMainInsets(natural, shared, "both"), {
+    ...shared,
+    top: natural.top,
+    right: natural.right,
+  });
+});
+
+test("occupancy never covers a projection displayed by the same subplot", () => {
+  const natural = {
+    left: 52,
+    right: 140,
+    top: 130,
+    bottom: 55,
+    hasTopProjection: true,
+    hasRightProjection: true,
+  };
+  const shared = { left: 52, right: 180, top: 170, bottom: 55 };
+  assert.deepEqual(resolveMainInsets(natural, shared, "both"), shared);
+  assert.deepEqual(
+    resolveMainInsets({ ...natural, hasTopProjection: false }, shared, "both"),
+    { ...shared, top: 130 },
   );
-  assert.equal(
-    applyPlotFootprint({ ...settings, showProjections: false }, "full").showProjections,
-    false,
+  assert.deepEqual(
+    resolveMainInsets({ ...natural, hasRightProjection: false }, shared, "both"),
+    { ...shared, right: 140 },
   );
 });
 
-test("row footprint allocation keeps main plot heights equal while rows reflow", () => {
+test("occupying right projection space retains colorbar and axis reservations", () => {
+  const natural = {
+    left: 52,
+    right: 100,
+    top: 42,
+    bottom: 55,
+    hasRightProjection: false,
+  };
+  const shared = { left: 52, right: 220, top: 42, bottom: 55 };
+  assert.equal(resolveMainInsets(natural, shared, "right").right, 100);
+});
+
+test("occupying projection space also works for 1D subplots without projections", () => {
+  const natural = { left: 56, right: 16, top: 34, bottom: 40 };
+  const shared = { left: 56, right: 140, top: 120, bottom: 40 };
+  assert.deepEqual(resolveMainInsets(natural, shared, "both"), {
+    left: 56,
+    right: 16,
+    top: 34,
+    bottom: 40,
+  });
+});
+
+test("row allocation keeps shared main heights equal while rows reflow", () => {
   const fitted = fitMainRows(
     [
       { row: 1, rowSpan: 1, insets: { top: 90, bottom: 40 } },
@@ -70,21 +103,21 @@ test("row footprint allocation keeps main plot heights equal while rows reflow",
   );
 });
 
-test("row footprint allocation leaves spanning rows to the shared-inset layout", () => {
+test("row allocation leaves spanning rows to the shared-inset layout", () => {
   assert.equal(
     fitMainRows([{ row: 1, rowSpan: 2, insets: { top: 50, bottom: 20 } }], 2, 600),
     null,
   );
 });
 
-test("row footprint allocation rejects a canvas with insufficient main plot height", () => {
+test("row allocation rejects a canvas with insufficient main plot height", () => {
   assert.throws(
     () => fitMainRows([{ row: 1, insets: { top: 290, bottom: 290 } }], 1, 600),
     /Canvas too small/,
   );
 });
 
-test("column footprint allocation keeps main plot widths aligned across columns", () => {
+test("column allocation retains aligned main widths by default", () => {
   const fitted = fitMainColumns(
     [
       { col: 1, box: { cellW: 400 }, insets: { left: 50, right: 80, rightFraction: 0, top: 20, bottom: 20 } },
