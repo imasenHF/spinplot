@@ -5,7 +5,7 @@
 
 ## Power fit 结果显示
 
-- 扫描子图拟合结果默认隐藏；Power fit 的 `Show fit results` 一次性显示公式及全部拟合参数。位置支持四角或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组，半透明背景随主题变更，导出与屏幕使用相同绘图路径。
+- 扫描子图拟合结果默认隐藏；Power fit 的 `Show fit results` 一次性显示公式及全部拟合参数。位置支持四角或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组；幅度同时显示 Psat 与上升段半峰值 P½（采用 S−C），拟合点数显示为 No. of points。拟合结果注释采用九宫格或自定义坐标、可开关边框、背景不透明度 0–1，默认图内右下角、无背景、无边框。Variable scan 的普通曲线 legend 默认保留在绘图区内，导出与屏幕沿用同一绘图路径。
 
 ## 1. 产品视觉定位
 
