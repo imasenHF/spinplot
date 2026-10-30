@@ -1,3 +1,10 @@
+## 2026-10-31 Variable scan 拟合结果子图显示
+
+- Power fit 新增 `Show on plot` 复选项，按字段单独控制 P（mW）、A、C、R²、RMSE、n；默认关闭，不改变已有项目的默认画面。
+- 仅显示有效拟合结果，按 Amplitude / Linewidth 分组。结果由纯函数 `src/twod/fit-summary.js` 生成，绘图在 `src/plotting/oned.js` 中完成；Canvas、SVG、PDF 使用相同绘图路径。
+- 选择保存在 `twoD.settings.scanFitDisplay`。拟合数值仍由既有 `scanCorrelationData` / `fitSaturation` 提供；没有改拟合模型、参数约束或排除点设置。
+- 单元测试见 `src/twod/fit-summary.test.js`。复杂子图中的图例重叠、字体和跨阅读器导出仍需浏览器视觉回归。
+
 
 ## 2026-10-30 Variable scan 功率拟合文案精简
 
