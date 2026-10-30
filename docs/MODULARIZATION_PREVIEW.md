@@ -1,8 +1,8 @@
 # 模块化第一阶段预览记录
 
-状态：**预览分支，未合并正式 main；构建快照已在主站独立临时路径发布，正式 `/spinplot/` 未变。**
+状态：**历史记录。模块化阶段已于 2026-10-30 通过 PR #1 合并正式 `main`；本文保留各阶段实施与验收记录，不作为当前分支状态依据。阶段 B 空投影空间占位的修正开发见 `docs/DEVELOPMENT_CONTEXT.md`。
 
-- 临时分支：`preview/modularization-phase1-20261009`
+- 历史开发分支：`preview/modularization-phase1-20261009`
 - 源分支基线：`main` @ `3dfd126ae0a2af5ef836233f181dd2b757f2e64c`
 - 目标：不改变功能与文件格式，移除内联 CSS/JS，抽出可单测的数值处理函数。
 
