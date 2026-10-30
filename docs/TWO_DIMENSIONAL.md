@@ -111,6 +111,14 @@ Numerical tests `src/twod/scan-order.test.js` and the Chromium project test cove
 - The regression suite checks independent right-projection linewidth calculation, reversed field coordinates, legacy PTP values, constant traces, synthetic saturated signals, dual axes, excluded-point interaction, model markup, project persistence, CSV, SVG and reference-compatible builds. [Full regression 40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) passed before the final documentation-only updates.
 - Complex overlapping lines, extrema distorted by noise, uncertainty/covariance estimates and real-instrument physical calibration remain separate scientific verification tasks. The phase-B per-subplot `Plot footprint` geometry options have not been implemented; existing grid span and rendering geometry remain unchanged.
 
+## Plot footprint and subplot geometry (preview branch, 2026-10-30)
+
+Each 2D subplot stores an independent `plotFootprint` preset: `main` (main axes only), `top` (main axes plus top projection), `right` (main axes plus right projection), or `full` (both projections). The default and legacy fallback are `full`. The preset controls projection availability without overwriting explicit user-disabled projection flags. The setting is stored in the existing subplot project/config object; no project format version change is required.
+
+For layouts made of single-row and single-column cells, the renderer allocates auxiliary title/projection/colorbar space by row and column so the main plotting frames remain equal in height within each row and equal in width within each column. Layouts containing row-spanning or column-spanning cells retain the shared-inset fallback to preserve the existing grid geometry. The selected design canvas dimensions remain unchanged in SVG and other exports.
+
+Implementation: `src/plotting/footprint.js`, `src/plotting/oned.js`, `src/twod/ui.js`, `src/main.js`. Regression includes preset flags, geometry allocation, spanning fallback, insufficient canvas handling, live UI changes, SVG projection selection, project save/reload and canvas dimensions. CI [40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550) passed. Public preview deployment/browser verification is tracked separately; this is not yet a formal `main` release.
+
 ## Interface organization
 
 The six tabs remain Data, Processing, Subplots, Axes, Style and Export. Figure title and canvas controls are part of the Subplots layout area. File owns project/config operations; existing toolbar shortcuts and file formats remain supported.
