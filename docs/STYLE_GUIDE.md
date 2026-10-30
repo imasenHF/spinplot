@@ -1,6 +1,6 @@
 # SpinPlot — STYLE_GUIDE
 
-更新日期：2026-10-30（Asia/Shanghai）
+更新日期：2026-10-31（Asia/Shanghai）
 适用范围：SpinPlot 独立软件界面、图表预览及导出。以下区分**现有实现**与**后续修改必须保留的规则**；实际值以 `index.html` CSS、`src/interface.js`、`src/twod/ui.js`、`src/twod/palettes.js` 和绘图/导出代码为准。本文件不要求将主站的页面布局直接覆盖本工具。
 
 ## Legend 位置与局部覆盖
