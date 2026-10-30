@@ -17,7 +17,7 @@ public/legacy/           旧路径跳转
 .github/workflows/pages.yml  构建与 Pages 发布
 ```
 
-- 正式 `main` 当前版本为 **0.9.2**；修正分支候选版本以 `package.json` 为准，为 **0.10.0**。
+- 正式 `main` 当前版本为 **0.10.0**，发布标签 [`v0.10.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0)。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
@@ -63,7 +63,7 @@ public/legacy/           旧路径跳转
 
 ## 5. 模块化实现（2026-10-30 已合并 main）
 
-模块化实现、一维绘图/坐标/导出接入已通过 PR #1 合并至正式 `main`。原阶段 B 的 `plotFootprint` 仅控制投影可见性，与用户要求的空白占位语义不符；当前修正分支将其替换为 `emptyProjectionSpace`，待专项验收后再合并。
+模块化实现、一维绘图/坐标/导出接入已通过 PR #1 合并；阶段 B 的 `emptyProjectionSpace` 空白投影占位已通过 PR #2 合并正式 `main`。正式 Pages 部署 [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) 与 Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 成功。
 
 | 模块 | 实际职责 |
 | --- | --- |

@@ -12,7 +12,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 应用：https://plastocyanin.org/spinplot/
 - 构建：Vite、JavaScript（含部分独立模块）、TypeScript 检查；`package.json` 中包含 React 依赖，但主体界面尚未改造成 React 应用。
 - 发布：`main` 触发 GitHub Actions，产物为 `dist/`，部署路径为 `/spinplot/`；不单独声明 `CNAME`。
-- 正式 `main` 当前版本：**0.9.2**；本修正分支候选版本：**0.10.0**（来源为 `package.json`，待本分支验收与 PR 合并后发布）。
+- 正式 `main` 当前版本：**0.10.0**，已发布标签 [`v0.10.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0)。应用版本以 `package.json` 为准；项目格式 11、配置格式 10 独立管理。
 - 项目文件格式：**11**；配置文件格式：**10**；两者均与应用版本号相互独立。
 
 ## 2. 已实现功能范围
@@ -41,7 +41,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 排除点改为逐轨迹复选框，未参与拟合的测量值单独以符号标识，保留原始记录及导出纳入状态。直接二维来源的 Current data 左侧缩进显示衍生曲线，右列独立设置每条线型/符号；多条原始一维曲线生成的旧扫描视图保留原 Style 控件兼容。拟合曲线默认虚线、实测特征默认点线，图例默认置于绘图区外侧上方。设置随项目保存，拟合重载后重算；正式数据及基线不修改。
 - **2026-10-30 界面修订：** 普通二维 Heatmap 不显示无用的 Scan style 或 Current data 空白样式列；直接二维 Variable scan 的衍生曲线恢复 34 px 纯符号 Style 列，数据/样式列表等高、逐行对应。非功率扫描自动折叠拟合设置且不将 dB 误显示为 mW；排除点设置恢复一致的折叠外观；MathML 括号禁止随分式拉伸。Linear 模式下的主图 Y、Top/Right 投影和 Z 色标均用十进制刻度，只有明确选 Scientific 才使用科学计数法。原始数值/项目格式/二维基线均不变。完整回归与浏览器/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 成功，主站独立预览 Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功；真实谱线科学适用性与参数不确定度尚未独立验收。
 - **2026-10-30 派生曲线 Z-order：** 直接二维 Variable scan 的 Current data 中，缩进的派生曲线可鼠标拖拽调整前后绘制次序（下方在上层），也可通过 Alt+↑/↓ 调整。原始矩阵行固定；右侧线型/符号控制跟随条目移动。使用稳定虚拟 ID 和子图 `scanDerivedOrder` 记录顺序，旧项目缺省时保留原始默认顺序；Canvas/图例/SVG/其他图形导出与保存重载采用同一排序。新增纯函数测试 `src/twod/scan-order.test.js`，完整回归 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。此功能不改变谱线数值、拟合、二维基线、项目格式版本或正式分支。
-- 阶段 B 初版（PR #1）曾以 `plotFootprint` 控制投影面板显示，并按行列分配主坐标框尺寸；该实现与用户要求的空白投影空间占位语义不符，不能视为 B 已按目标完成。当前修正分支以 `emptyProjectionSpace` 重做该功能，验收结果见 `docs/DEVELOPMENT_CONTEXT.md`。多峰线宽判读、真实仪器校准及拟合不确定度估计仍未完成。
+- 阶段 B 初版（PR #1）的 `plotFootprint` 将占位选项与投影显隐耦合，未满足用户原始要求；PR #2 已以 `emptyProjectionSpace` 修正并合并正式版 0.10.0。具体实现与验收见 `docs/DEVELOPMENT_CONTEXT.md`。多峰线宽判读、真实仪器校准及拟合不确定度估计仍未完成。
 
 ### 二维查看与导出
 
@@ -75,7 +75,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-**阶段 B 修正（2026-10-30，候选版本 0.10.0）：** 目标为混合投影布局中的空白占位。共享布局仍按行/列计算投影所需的最大附属空间；每个子图新增 `emptyProjectionSpace`，可选 `none / top / right / both`。该设置只允许当前子图占用同一行的上投影预留区、同一列的右投影预留区，且仅在当前子图未显示相应投影时生效。投影显示状态、色标、`g` 轴、标题与图例边距均保持独立。控件适用于 1D、2D 与 Variable scan 子图，默认 `none` 保持旧版对齐行为。旧 `plotFootprint` 字段在配置载入时删除；项目格式 11、配置格式 10 不变。实现与验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md) 和 [CHANGELOG](CHANGELOG.md)。
+**阶段 B（正式版本 0.10.0，2026-10-30）：** 已通过 PR #2 合并。混合投影布局中，每个子图可通过 `emptyProjectionSpace` 选择 `none / top / right / both`，无投影子图可占用同行的上投影预留区、同列的右投影预留区或两者；当前子图显示的投影、色标、`g` 轴、标题与图例边距保持独立。控件适用于 1D、2D 与 Variable scan 子图，默认 `none` 保持原有对齐行为。旧 `plotFootprint` 字段在配置载入时删除；项目格式 11、配置格式 10 不变。正式 Pages 部署 [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) 成功，GitHub Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。实现与验收见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md) 和 [CHANGELOG](CHANGELOG.md)。
 
 **2026-10-29 独立预览功能（已于 2026-10-30 合并正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。上述功能已随 PR #1 合并正式 `main`，正式 Pages 部署见 [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341)。
 
@@ -84,7 +84,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
-手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前 0.10.0 候选修正状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前正式版本为 0.10.0，阶段 B 修正已合并并发布；实现与后续科研验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。

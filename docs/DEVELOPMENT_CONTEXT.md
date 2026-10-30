@@ -4,15 +4,16 @@
 
 ## 用途与优先级
 
-## 最新状态（2026-10-30：阶段 B 语义修正与 0.10.0 候选版）
+## 最新状态（2026-10-30：阶段 B 修正、正式合并与 0.10.0 发布）
 
-- PR #1 已于 2026-10-30 合并，合并提交为 `163a539c59964271f75055663c82db2974785478`。正式 `main` 当前仍显示版本 0.9.2。
-- 上一版阶段 B 对 `Plot footprint` 的实现偏离用户意图：它控制投影面板是否启用，且将投影控件禁用；用户真正需要的是**无投影子图可选择占用其他子图在同一行/列预留的上投影/右投影空间**。此前的 B 不应作为目标功能已完成的依据。
-- 当前修正分支：`preview/modularization-phase-b-empty-projection-20261030`，从正式 `main` 建立。候选应用版本为 **0.10.0**；项目格式 11、配置格式 10 保持不变。
-- 新字段 `emptyProjectionSpace` 控制 `none / top / right / both`。只对当前子图未显示的对应投影空间生效；不改变投影开关，不占用色标、g 轴、标题或图例的必要边距。设置面向 1D、2D、Variable scan 子图，默认 `none`。
-- 版本候选为 `0.10.0`，`package.json` 与 `package-lock.json` 已同步；Vite 负责标题栏版本与保存文件 `appVersion`。新增 `.github/workflows/release.yml`：只有正式 Pages 部署成功且 `package.json.version` 相对父提交发生变化时，才创建 `vX.Y.Z` 标签和 GitHub Release；预览分支不创建正式标签。
-- 代码和测试位置：`src/plotting/footprint.js`、`src/plotting/footprint.test.js`、`src/plotting/oned.js`、`src/twod/ui.js`、`src/main.js`、`scripts/preview-browser-smoke.mjs`。自动化回归完成前不创建正式合并 PR，不更新正式 Pages。
-- 每次任务继续先读取主站 `SITE_CONTEXT.md`、`PROJECT_INDEX.md`，再读取本文件、项目上下文、架构、二维说明、样式指南和目标源码。测试、预览快照与正式发布分别核对。
+- PR #1（初版模块化与二维功能）已合并；PR #2 修正阶段 B 的占位语义，已于 2026-10-30 合并至正式 `main`，合并提交 `c438cf43926782342216daee05d7bf5760033c4c`。
+- 正式应用版本为 **0.10.0**，GitHub Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。正式 Pages 部署 [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) 和发布工作流 [41005959883](https://github.com/imasenHF/spinplot/actions/runs/41005959883) 均成功。
+- 阶段 B 的正确语义为：无投影子图可选择占用同行的上投影预留区、同列的右投影预留区或两者。字段为 `emptyProjectionSpace = none / top / right / both`；可见投影、色标、标题、g 轴和图例的自然边距保持独立。默认 `none`。
+- 独立预览快照已同步为 0.10.0；Pages [41005533960](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41005533960)、公开 HTTP [41005667562](https://github.com/imasenHF/spinplot/actions/runs/41005667562)、公开 Chromium [41005667590](https://github.com/imasenHF/spinplot/actions/runs/41005667590) 均成功；完整回归 [41005667591](https://github.com/imasenHF/spinplot/actions/runs/41005667591) 成功。
+- 项目文件格式 11、配置格式 10 未变；旧 `plotFootprint` 在配置载入时移除。真实多组分 EPR 谱线峰峰线宽判读、仪器校准和功率饱和拟合参数不确定度仍需独立科学验证。
+- 正式基线为 `main`；`preview/modularization-phase-b-empty-projection-20261030` 与 `preview/modularization-phase1-20261009` 保留为开发历史。后续功能从最新 `main` 创建独立预览分支，完成测试后再合并。
+
+
 本文是 SpinPlot 持续开发的远程交接记录，用于跨会话保存已确认决定、当前任务、实现位置、验收标准和发布边界，避免仅依赖对话历史推断项目状态。
 
 本文不是代码状态的替代品。每次任务开始时，当前 GitHub 分支、最新 HEAD、文件内容、测试结果和用户最新要求优先于本文。本文中的 SHA、CI 结果均为记录时的基线，继续工作前必须重新查询，不得直接当作当前状态。
@@ -33,11 +34,11 @@
 ## 仓库与发布边界
 
 - 仓库：`imasenHF/spinplot`。
-- 当前修正分支：`preview/modularization-phase-b-empty-projection-20261030`；正式基线为 `main`。旧模块化分支 `preview/modularization-phase1-20261009` 保留作历史记录。
+- 正式基线：`main`；已合并的修正分支 `preview/modularization-phase-b-empty-projection-20261030` 和旧模块化分支 `preview/modularization-phase1-20261009` 保留作历史记录。
 - 正式入口：<https://plastocyanin.org/spinplot/>，由仓库 `main` 的正式发布流程管理。
 - 临时预览入口：<https://plastocyanin.org/previews/spinplot-modularization/>，由主站仓库中单独保存的静态构建快照提供。
 - PR #1：<https://github.com/imasenHF/spinplot/pull/1>，已于 2026-10-30 合并至 `main`；合并提交 `163a539c59964271f75055663c82db2974785478`。
-- 正式 `main` 应用版本为 `0.9.2`；当前修正分支候选版本为 `0.10.0`。项目文件格式为 11，配置格式为 10；本次新增 `emptyProjectionSpace` 可选子图字段，不改变文件格式。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
+- 正式 `main` 应用版本为 `0.10.0`，发布标签 `v0.10.0`。项目文件格式为 11，配置格式为 10；`emptyProjectionSpace` 为可选子图字段，不改变文件格式。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
 - 预览分支 Actions 生成的构建产物不会自动替换主站仓库里的预览快照。必须单独检查快照同步提交、主站 Pages 发布结果和公开 URL；不可将分支 CI 成功等同于线上页面已更新。
 - 公开预览禁止使用客户数据、内部文件或其他未经授权的材料。
 
@@ -56,7 +57,7 @@
 - **控件外观：** `Exclude points from fit` 改用现有嵌套 `advanced-layout` 折叠栏风格，去除额外方框。MathML 中函数参数括号明确 `stretchy="false"`，缩小公式默认字号；不修改数学表达式和拟合算法。
 - **轴格式：** 当 Y、Top/Right 投影强度轴或 Z 色标处于 `linear` 模式时，刻度使用十进制格式，不再从全局 Auto/Scientific 偏好或 `Number.toPrecision()` 的自动指数形式隐式切换为科学计数法。用户显式选择 `scientific` 仍显示科学计数法；Log10/SymLog 保持原数值映射与标签规则。普通 X 轴尚无该三模式设置，其原有手动 Tick notation 行为保持不变。
 - **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开预览页面 Chromium [40923593239](https://github.com/imasenHF/spinplot/actions/runs/40923593239) 在 Pages 发布后重跑成功，已独立完成线上浏览器验收。
-- **发布边界：** 本节七项 UI 修复、Linear 刻度修复及 Z-order 功能已随 PR #1 合并正式 `main`；正式发布见 Actions `41001804341`。本次阶段 B 修正只在 `preview/modularization-phase-b-empty-projection-20261030` 开发，尚未合并或部署到正式 `/spinplot/`。
+- **发布边界：** 七项 UI 修复、Linear 刻度修复、Z-order 和阶段 B 空投影空间占位均已合并正式 `main`；正式 0.10.0 部署见 Actions `41005910687`，Release 为 `v0.10.0`。
 
 ## 历史预览交付与验收（2026-10-29）
 
@@ -76,7 +77,7 @@
 - 代码回归与构建：[`39684319918`](https://github.com/imasenHF/spinplot/actions/runs/39684319918) 成功，包含现有数值/CSV/项目兼容/二维测试、TypeScript 检查、Vite 生产构建、Chromium 交互测试及与迁移前导出结果对照。
 - 公开预览浏览器检查配置提交：[`1b3e328`](https://github.com/imasenHF/spinplot/commit/1b3e328af054c9ef79818193e902ca78c1a3fe41)，为已发布临时快照启用 colorbar 双击测试；模块化预览工作流 `39684871649` 成功。该 SHA 仅用于追溯配置变更，不代表当前 HEAD；每次任务开始时重新查询最新分支状态。
 - 主站临时快照已更新：主站仓库提交 [`0f238ea`](https://github.com/imasenHF/imasenhf.github.io/commit/0f238ea62a1be5a8bcb4fd30c4665cb8a087e465)，新应用脚本为 `assets/index-DAzGls40.js`。主站 Pages 发布 [`39684696016`](https://github.com/imasenHF/imasenhf.github.io/actions/runs/39684696016) 成功；更新后的公开 HTTP 检查 [`39684871606`](https://github.com/imasenHF/spinplot/actions/runs/39684871606) 和公开 Chromium 浏览器测试 [`39684871564`](https://github.com/imasenHF/spinplot/actions/runs/39684871564) 均成功。
-- 当时正式 `main` 与 `/spinplot/` 未修改；该预览分支后来通过 PR #1 合并。当前阶段 B 修正只存在于 `preview/modularization-phase-b-empty-projection-20261030`，尚未合并。
+- 当时正式 `main` 与 `/spinplot/` 未修改；该预览分支后来通过 PR #1 合并，阶段 B 修正再通过 PR #2 合并。
 
 
 ## 频率校正 Target 模式修复
@@ -98,7 +99,7 @@
 
 `Auto Z`、色标双击均基于 `TwoD.autoZBounds()` 计算当前可见 Z 数据范围，写入数值 `zMin`、`zMax` 并保持 `zUseGlobal=false`。该模式不再使用旧版的“清空 min/max”恢复机制。双击热图主体仅重置 X/Y，保留独立 Z。测试需要断言实际数值，不能继续以空字符串作为“自动范围”的期望值。二维基线不在此流程中执行，不能自动减全矩阵均值。
 
-## 阶段 B 修正：空投影空间占位（2026-10-30）
+## 阶段 B：空投影空间占位（已合并正式版，2026-10-30）
 
 ### 用户目标
 
@@ -129,7 +130,7 @@
 3. 右侧占位保留本子图的色标、g 轴与标题边距；上方占位保留标题、g 轴和图例所需边距。
 4. 设置对 1D、2D、Variable scan 均可操作，项目保存/载入后逐子图恢复；旧项目 9/10/11 和配置格式 10 仍可读取。
 5. 屏幕绘图与 SVG/PNG/PDF 导出采用相同几何计算；原始数据、投影计算、扫描统计和物理量不发生变化。
-6. 回归包括单元测试、生产构建、旧版导出对照、Chromium 交互及公开预览 HTTP 检查。只有以上验收通过后，才将 PR 标记 Ready 并按用户授权合并。
+6. 单元测试、生产构建、旧版导出对照、Chromium 交互、屏幕几何、SVG 导出及公开预览 HTTP/浏览器检查均已通过；PR #2 已按用户要求合并。
 
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合

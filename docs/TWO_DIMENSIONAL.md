@@ -119,7 +119,7 @@ Numerical tests `src/twod/scan-order.test.js` and the Chromium project test cove
 - The regression suite checks independent right-projection linewidth calculation, reversed field coordinates, legacy PTP values, constant traces, synthetic saturated signals, dual axes, excluded-point interaction, model markup, project persistence, CSV, SVG and reference-compatible builds. [Full regression 40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) passed before the final documentation-only updates.
 - Complex overlapping lines, extrema distorted by noise, uncertainty/covariance estimates and real-instrument physical calibration remain separate scientific verification tasks. 真实复杂谱线、极值受噪声影响的情况、不确定度/协方差估计和真实仪器物理校准仍需独立科学验证。
 
-## Stage B correction: empty projection-space occupancy (0.10.0 candidate)
+## Stage B: empty projection-space occupancy (merged into main, 2026-10-30)
 
 The first `plotFootprint` implementation merged in PR #1 coupled layout selection to projection visibility. That did not match the intended use. The corrected model separates projection display from the use of blank accessory space.
 
@@ -133,7 +133,7 @@ The setting only consumes the difference between the shared margin and this subp
 
 Implementation: `src/plotting/footprint.js` normalizes the setting and resolves per-subplot margins; `src/plotting/oned.js` applies the resolved margins after row/column allocation; `src/twod/ui.js` exposes actual top/right projection visibility in the natural inset model; `src/main.js` provides the control and legacy config cleanup. The former `plotFootprint` property is removed on config load. Project format 11 and config format 10 remain unchanged; missing `emptyProjectionSpace` values default to `none`.
 
-Regression covers preset normalization, top/right/both margin consumption, visible-projection protection, colorbar retention, 1D behavior, a mixed 2×2 2D/1D browser layout, project save/reload and export canvas size. Full CI and browser results are tracked in the correction branch Actions. This is a candidate change and is not yet part of formal `main`.
+Regression covers preset normalization, top/right/both margin consumption, visible-projection protection, colorbar retention, 1D behavior, a mixed 2×2 2D/1D browser layout, project save/reload and export canvas size. Full CI and browser results are tracked in the correction branch Actions. The implementation was merged into formal `main` by PR #2 and released as `v0.10.0`; production Pages [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) and release workflow [41005959883](https://github.com/imasenHF/spinplot/actions/runs/41005959883) succeeded.
 
 
 ## Interface organization
