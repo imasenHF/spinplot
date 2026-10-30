@@ -17,6 +17,7 @@ import { axisKind, gFromB, BFromG } from "../processing/axis.js";
 import { tickFormatter } from "../twod/ticks.js";
 import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js";
 import * as TwoD from "../twod/ui.js";
+import { applyPlotFootprint, fitMainRows } from "./footprint.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -422,15 +423,19 @@ export function renderFigure(
       gy = state.layout.gapY,
       padX = 10,
       padBottom = 10,
-      unitW = (logicalW - 2 * padX - gx * (cols - 1)) / cols,
-      unitH = (logicalH - figTop - padBottom - gy * (rows - 1)) / rows;
+      totalWidth = logicalW - 2 * padX - gx * (cols - 1),
+      totalHeight = logicalH - figTop - padBottom - gy * (rows - 1),
+      unitW = totalWidth / cols,
+      unitH = totalHeight / rows;
     if (!(unitW > 80 && unitH > 80))
       throw new Error("Canvas too small for current subplot layout");
-    const frameEntries = model.map((m, index) => {
+    const buildFrameEntries = (rowHeights) => model.map((m, index) => {
       const cell = cells[index],
         box = {
           cellW: unitW * cell.colSpan + gx * (cell.colSpan - 1),
-          cellH: unitH * cell.rowSpan + gy * (cell.rowSpan - 1),
+          cellH: cell.rowSpan === 1
+            ? rowHeights[cell.row - 1]
+            : unitH * cell.rowSpan + gy * (cell.rowSpan - 1),
         },
         options = {
           axisSize: axisTitleSize,
@@ -439,20 +444,21 @@ export function renderFigure(
           yTitleDistance: Number($("yTitleDistance").value),
           g: subplotGConfig(m.sp),
           frequency: displayFrequency(m.sp, m.curves),
-        };
+        },
+        plotSettings = m.sp.twoD
+          ? applyPlotFootprint(m.sp.twoD.settings, m.sp.plotFootprint)
+          : null;
       return {
         index,
+        row: cell.row,
         col: cell.col,
+        rowSpan: cell.rowSpan,
+        colSpan: cell.colSpan,
         twoD: !!m.sp.twoD,
         box,
-        insets: m.sp.twoD
-          ? TwoD.plotInsets(
-              m.matrix,
-              m.sp.twoD.settings,
-              box,
-              m.sp.title,
-              options,
-            )
+        plotSettings,
+        insets: plotSettings
+          ? TwoD.plotInsets(m.matrix, plotSettings, box, m.sp.title, options)
           : oneDInsets(
               ctx,
               m,
@@ -464,16 +470,50 @@ export function renderFigure(
             ),
       };
     });
-    const packed = cells.every((c) => c.colSpan === 1 && c.rowSpan === 1)
-      ? TwoD.fitMainColumns(
-          frameEntries,
-          cols,
-          logicalW - 2 * padX - gx * (cols - 1),
-        )
-      : null;
-    const mixedInsets = packed
-      ? new Map(frameEntries.map((e) => [e.index, packed.insets[e.col - 1]]))
-      : TwoD.sharedMainInsets(frameEntries);
+    let rowHeights = Array(rows).fill(unitH),
+      frameEntries = buildFrameEntries(rowHeights),
+      rowPack = null;
+    if (cells.every((cell) => cell.rowSpan === 1)) {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const next = fitMainRows(frameEntries, rows, totalHeight),
+          delta = Math.max(
+            0,
+            ...next.heights.map((height, index) => Math.abs(height - rowHeights[index])),
+          );
+        rowPack = next;
+        rowHeights = next.heights;
+        frameEntries = buildFrameEntries(rowHeights);
+        if (delta < 0.05) break;
+      }
+      rowPack = fitMainRows(frameEntries, rows, totalHeight);
+      const finalDelta = Math.max(
+        0,
+        ...rowPack.heights.map((height, index) => Math.abs(height - rowHeights[index])),
+      );
+      if (finalDelta >= 0.05) {
+        rowHeights = rowPack.heights;
+        frameEntries = buildFrameEntries(rowHeights);
+        rowPack = fitMainRows(frameEntries, rows, totalHeight);
+      }
+    }
+    const packed = cells.every((cell) => cell.colSpan === 1 && cell.rowSpan === 1)
+      ? TwoD.fitMainColumns(frameEntries, cols, totalWidth)
+      : null,
+      sharedInsets = packed ? null : TwoD.sharedMainInsets(frameEntries),
+      mixedInsets = new Map(frameEntries.map((entry) => {
+        const horizontal = packed
+          ? packed.insets[entry.col - 1]
+          : sharedInsets.get(entry.index) || entry.insets,
+          vertical = rowPack && entry.rowSpan === 1
+            ? rowPack.insets[entry.row - 1]
+            : horizontal;
+        return [entry.index, {
+          left: horizontal.left,
+          right: horizontal.right,
+          top: vertical.top,
+          bottom: vertical.bottom,
+        }];
+      }));
     model.forEach((m, si) => {
       const sp = m.sp,
         cell = cells[si],
@@ -487,16 +527,20 @@ export function renderFigure(
                 .slice(0, cell.col - 1)
                 .reduce((a, w) => a + w + gx, 0)
             : (cell.col - 1) * (unitW + gx)),
-        cellY = figTop + (cell.row - 1) * (unitH + gy),
+        cellY = rowPack
+          ? figTop + rowHeights.slice(0, cell.row - 1).reduce((sum, height) => sum + height + gy, 0)
+          : figTop + (cell.row - 1) * (unitH + gy),
         cellW = packed
           ? packed.widths[cell.col - 1]
           : unitW * cell.colSpan + gx * (cell.colSpan - 1),
-        cellH = unitH * cell.rowSpan + gy * (cell.rowSpan - 1);
+        cellH = rowPack && cell.rowSpan === 1
+          ? rowHeights[cell.row - 1]
+          : unitH * cell.rowSpan + gy * (cell.rowSpan - 1);
       if (sp.twoD) {
         const r = TwoD.render(
           ctx,
           m.matrix,
-          sp.twoD.settings,
+          frameEntries[si].plotSettings,
           { cellX, cellY, cellW, cellH },
           font,
           theme,

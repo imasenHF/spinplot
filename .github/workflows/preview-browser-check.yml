@@ -34,6 +34,7 @@ jobs:
           SPINPLOT_TEST_AXIS_LOG: '1'
           SPINPLOT_TEST_AXIS_DISPLAY: '1'
           SPINPLOT_TEST_POWER_SATURATION: '1'
+          SPINPLOT_TEST_FOOTPRINT: '1'
         run: node scripts/preview-browser-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()

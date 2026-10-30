@@ -237,6 +237,39 @@ try {
   const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
   await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
   assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
+  if (process.env.SPINPLOT_TEST_FOOTPRINT === '1') {
+    const source2D=mixed.config.subplots.find(sp=>sp.twoD);
+    const footprints=['main','right','top','full'];
+    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false};
+    const footprintSubplots=footprints.map((footprint,index)=>{
+      const subplot=JSON.parse(JSON.stringify(source2D));
+      return {...subplot,title:'Footprint '+footprint,mode:'heatmap',plotFootprint:footprint,gridRow:Math.floor(index/2)+1,gridCol:index%2+1,rowSpan:1,colSpan:1,twoD:{...subplot.twoD,index:2,settings:{...footprintSettings}}};
+    });
+    const footprintProject={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:2,spans:'1,1 / 1,1',gapX:20,gapY:20},subplots:footprintSubplots}};
+    await load(footprintProject,'plot-footprints.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Each 2D subplot exposes its saved footprint preset');
+    for(let index=0;index<footprints.length;index++){
+      const card=page.locator('.subplot').nth(index),footprint=footprints[index];
+      assert.equal(await card.locator('[data-twod="showXProjection"]').isDisabled(),!['top','full'].includes(footprint),'Top projection control follows footprint '+footprint);
+      assert.equal(await card.locator('[data-twod="showYProjection"]').isDisabled(),!['right','full'].includes(footprint),'Right projection control follows footprint '+footprint);
+    }
+    const savedFootprints=await save('browser-preview/plot-footprints.json');
+    assert.deepEqual(savedFootprints.config.subplots.map(sp=>sp.plotFootprint),footprints,'Footprint settings persist in project files');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    await page.locator('#imageFormat').selectOption('svg');
+    const [footprintDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await footprintDownload.saveAs('browser-preview/plot-footprints.svg');
+    const footprintSvg=fs.readFileSync('browser-preview/plot-footprints.svg','utf8');
+    assert.equal([...footprintSvg.matchAll(/Field projection \(/g)].length,2,'Only Top and Full footprints draw top projections');
+    assert.equal([...footprintSvg.matchAll(/Microwave attenuation projection \(/g)].length,2,'Only Right and Full footprints draw right projections');
+    const footprintSize=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return [doc.documentElement.getAttribute('width'),doc.documentElement.getAttribute('height')];},footprintSvg);
+    assert.deepEqual(footprintSize,['1000','1000'],'SVG export retains the selected design canvas size');
+    await load(savedFootprints,'plot-footprints-reload.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Footprint settings restore after project reload');
+    await page.screenshot({path:'browser-preview/plot-footprints.png',fullPage:true});
+  }
   if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
     const extraView=(title,row,mode)=>({...JSON.parse(JSON.stringify(source2D)),title,mode,gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings,swap:false,scanAxisMode:'attenuation'}}});
