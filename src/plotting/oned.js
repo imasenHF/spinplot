@@ -354,6 +354,7 @@ export function renderFigure(
     const size = Math.max(8, Math.min(24, Number(sp.fitResultFontSize) || 12));
     const lineHeight = size * 1.35;
     const visible = lines.slice(0, Math.max(0, Math.floor((ph - 16) / lineHeight)));
+    if (visible.length && visible.length < lines.length) visible[visible.length-1] = `… (${lines.length-visible.length+1} more)`;
     if (!visible.length) return;
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
@@ -365,10 +366,18 @@ export function renderFigure(
     const custom = position === 'custom';
     const fx = Math.max(0,Math.min(1,(Number(sp.fitResultX) || 0)/100));
     const fy = Math.max(0,Math.min(1,(Number(sp.fitResultY) || 0)/100));
-    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12) : position.endsWith('right') ? x0 + pw - width - 6 : x0 + 6;
-    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12) : position.startsWith('lower') ? y0 + ph - height - 6 : y0 + 6;
-    ctx.fillStyle = theme.bg === '#11181b' ? 'rgba(17,24,27,0.86)' : 'rgba(255,255,255,0.88)';
-    ctx.fillRect(left, top, width, height);
+    const [lx, ly] = legendXY(position, x0, y0, pw, ph, width, height);
+    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12) : lx;
+    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12) : ly;
+    const opacity = clamp(Number(sp.fitResultOpacity ?? 0), 0, 1);
+    if (opacity > 0) {
+      ctx.fillStyle = theme.bg === '#11181b' ? `rgba(17,24,27,${opacity})` : `rgba(255,255,255,${opacity})`;
+      ctx.fillRect(left, top, width, height);
+    }
+    if (sp.fitResultBorder === true) {
+      ctx.strokeStyle = theme.axis;
+      ctx.strokeRect(left, top, width, height);
+    }
     ctx.fillStyle = theme.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
