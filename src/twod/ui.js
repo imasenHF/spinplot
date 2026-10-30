@@ -578,11 +578,10 @@ export function controls(card, sp, d, onChange) {
     const low=fittingPowers?.length?Math.min(...fittingPowers):NaN;
     const high=fittingPowers?.length?Math.max(...fittingPowers):NaN;
     measuredPower.textContent=!canFitPower
-      ?'The acquired scan variable ('+(scanCoordinateAxis.unit||'no unit')+
-        ') is not calibrated power. Select Microwave power (mW) to fit.'
+      ?'Power calibration required'
       :Number.isFinite(measuredLow)&&Number.isFinite(measuredHigh)
-        ?'Measured power: '+formatNumber(measuredLow)+'–'+formatNumber(measuredHigh)+' mW'
-        :'Measured power: unavailable';
+        ?'Measured: '+formatNumber(measuredLow)+'–'+formatNumber(measuredHigh)+' mW'
+        :'Measured range unavailable';
     for(const [key,value] of [['scanFitPowerMinMW',low],['scanFitPowerMaxMW',high]]){
       const field=fitBounds.querySelector('[data-twod='+key+']');
       if(field)field.placeholder=formatNumber(value);
