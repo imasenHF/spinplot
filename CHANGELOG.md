@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Simplify the primary toolbar to seven standalone actions: Open Data, Open Project, Save Project, Undo, Redo, Clear Data, and Export Figure. Replace similar file-operation icons with distinct folder/package/floppy/image glyphs, keep Export text, and unify icon sizing. Remove the redundant top Plot and Config buttons and all Reset Config UI; retain File menu and Export panel Config save/load, Tools → Recalculate, and automatic redrawing. Preserve project/config formats and update browser regression coverage.
+
 - Restore `Legend & labels` for Variable scan subplots, including user-controlled Legend / Direct / Both / None and visible local legend-position settings. Add global legend position under Style with nine inside locations and two outside placements. New subplots inherit the global setting; explicit local positions override it in both drawing and plot-margin calculations. Migrate legacy default upper-right placement to inherited settings without changing initial appearance. Add unit and Chromium persistence regressions.
 
 - Replace per-parameter scan-fit display checkboxes with a single all-results toggle; add equation, plot-corner/custom percentage positioning, independent font-family selection and 8–24 px text sizing. Retain the existing epsilon=1 amplitude model while clarifying that P½ indicates half suppression relative to low-power extrapolation, not the end of the low-power linear range.

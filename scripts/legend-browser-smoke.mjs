@@ -24,18 +24,41 @@ try {
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('http://127.0.0.1:4173/spinplot/', { waitUntil: 'networkidle' });
 
+  // The top-level toolbar keeps only seven high-frequency actions.
+  const toolbarButtons = await page.locator('.top-actions > button.tool-btn').evaluateAll(
+    buttons => buttons.map(button => button.id));
+  assert.deepEqual(toolbarButtons, [
+    'openDataBtn','openProjectBtn','saveProjectBtn',
+    'undoBtn','redoBtn','clearDataBtn','exportImageBtn'
+  ]);
+  for (const id of ['renderBtnTop','clearConfigBtn','saveConfigBtn','configFile','clearConfigBtnSide']) {
+    assert.equal(await page.locator('#'+id).count(),0,id+' must not remain');
+  }
+  assert.equal(await page.locator('#saveConfigBtnSide').count(),1);
+  assert.equal(await page.locator('#configFileSide').count(),1);
+  assert.ok(await page.locator('#exportImageBtn .tool-text').isVisible());
+  const [dataChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.locator('#openDataBtn').click()
+  ]);
+  assert.equal(dataChooser.isMultiple(),true);
+  await dataChooser.setFiles({
+    name: 'legend-fixture.csv', mimeType: 'text/csv',
+    buffer: Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,2,4\n3330,-1,-2\n3340,0,0\n')
+  });
+  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
+  const [projectChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.locator('#openProjectBtn').click()
+  ]);
+  assert.equal(projectChooser.isMultiple(),false);
+
   await page.locator('button.tab-btn[data-tab="style"]').click();
   assert.equal(await page.locator('#globalLegendPosition').inputValue(), 'upper_right');
   assert.equal(await page.locator('#globalLegendPosition option').count(), 11);
   await page.locator('#globalLegendPosition').selectOption('lower_left');
 
   await page.locator('button.tab-btn[data-tab="data"]').click();
-  await page.locator('#dataFiles').setInputFiles({
-    name: 'legend-fixture.csv', mimeType: 'text/csv',
-    buffer: Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,2,4\n3330,-1,-2\n3340,0,0\n')
-  });
-  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
-
   await page.locator('button.tab-btn[data-tab="subplots"]').click();
   const source = page.locator('.subplot').first();
   if (await source.evaluate(el => el.classList.contains('collapsed'))) {
@@ -71,6 +94,32 @@ try {
   const hiddenProject = JSON.parse(await fs.readFile(await noneDownload.path(), 'utf8'));
   assert.equal(hiddenProject.config.subplots[1].labelMode, 'none',
     'Variable scan label visibility must remain user-controlled');
+  // File downloads are tested in an independent page so that the two
+  // project downloads above do not influence browser download permissions.
+  const toolbarPage = await browser.newPage({acceptDownloads:true});
+  toolbarPage.on('pageerror', error => pageErrors.push(error.message));
+  await toolbarPage.goto('http://127.0.0.1:4173/spinplot/',{waitUntil:'networkidle'});
+  await toolbarPage.locator('#dataFiles').setInputFiles({
+    name:'toolbar-fixture.csv',mimeType:'text/csv',
+    buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n')
+  });
+  await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
+  await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
+  const [configDownload] = await Promise.all([
+    toolbarPage.waitForEvent('download',{timeout:15000}),
+    toolbarPage.locator('#saveConfigBtnSide').click()
+  ]);
+  const config = JSON.parse(await fs.readFile(await configDownload.path(),'utf8'));
+  assert.equal(config.version,10);
+  await toolbarPage.locator('#imageFormat').selectOption('svg');
+  const [figureDownload] = await Promise.all([
+    toolbarPage.waitForEvent('download',{timeout:15000}),
+    toolbarPage.locator('#exportImageBtn').click()
+  ]);
+  assert.match(figureDownload.suggestedFilename(),/\.svg$/i);
+  await toolbarPage.locator('#clearDataBtn').click();
+  await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '0');
+  await toolbarPage.close();
   assert.deepEqual(pageErrors, []);
   console.log('PASS: global legend position, scan labels, local override and persistence');
 } finally {
