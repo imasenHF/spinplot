@@ -1,5 +1,5 @@
-import notoRegularUrl from "notosans-fontface/fonts/NotoSans-Regular.ttf?url";
-import notoBoldUrl from "notosans-fontface/fonts/NotoSans-Bold.ttf?url";
+import notoRegularUrl from "../assets/fonts/NotoSansSC-Regular.ttf?url";
+import notoBoldUrl from "../assets/fonts/NotoSansSC-Bold.ttf?url";
 
 let notoFontFilesPromise;
 
@@ -17,18 +17,15 @@ async function addUnicodeFont(doc) {
     }));
   }
   const [regular, bold] = await notoFontFilesPromise;
-  doc.addFileToVFS("NotoSans-Regular.ttf", regular);
-  doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
-  doc.addFileToVFS("NotoSans-Bold.ttf", bold);
-  doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+  doc.addFileToVFS("NotoSansSC-Regular.ttf", regular);
+  doc.addFont("NotoSansSC-Regular.ttf", "NotoSansSC", "normal");
+  doc.addFileToVFS("NotoSansSC-Bold.ttf", bold);
+  doc.addFont("NotoSansSC-Bold.ttf", "NotoSansSC", "bold");
 }
 
 function prepareUnicodeText(root) {
   const textNodes = [...root.querySelectorAll("text")];
   const allText = textNodes.map((node) => node.textContent || "").join("");
-  if (/[\\u2e80-\\u9fff\\uac00-\\ud7af\\uf900-\\faff]/i.test(allText)) {
-    throw new Error("Vector PDF currently embeds Latin and Greek text; CJK labels should be exported as SVG or printed to PDF from the browser");
-  }
   const hasUnicode = /[^\\x00-\\x7f]/.test(allText);
   if (!hasUnicode) return false;
 
@@ -41,7 +38,7 @@ function prepareUnicodeText(root) {
     node.replaceChildren(...parts.map((part) => {
       const span = node.ownerDocument.createElementNS(namespace, "tspan");
       if (/[^\\x00-\\x7f]/.test(part)) {
-        span.setAttribute("font-family", "NotoSans");
+        span.setAttribute("font-family", "NotoSansSC");
         if (bold) span.setAttribute("font-weight", "bold");
       }
       span.textContent = part;
