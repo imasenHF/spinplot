@@ -4,7 +4,7 @@
 - 正式 PDF 导出改为复用 `vectorScene` → `svgFromScene`，再由 `svg2pdf.js` 与 `jsPDF` 转换；不再把 Canvas 位图嵌入 PDF。
 - PDF 页面尺寸按设计画布 px 值以 96 px/in 换算为 pt；Export DPI 不影响 PDF，仍只作用于 PNG/JPEG 等栅格格式。
 - `src/export/pdf.test.js` 检查输入与 SVG 解析错误；Pages 工作流通过 Chromium 对矢量路径、文本对象、字体资源、页面框和无图像 XObject 做浏览器回归。真实复杂图、中文字体嵌入和 Acrobat/Edge/Firefox 阅读器视觉验收仍待完成。
-- 依赖版本固定为 `jspdf@4.2.1` 与 `svg2pdf.js@2.8.1`。Pages 工作流先生成并提交与 `package.json` 一致的 lockfile，再执行 `npm ci`。
+- 依赖版本固定为 `jspdf@4.0.0` 与 `svg2pdf.js@2.8.1`。Pages 工作流先生成并提交与 `package.json` 一致的 lockfile，再执行 `npm ci`。
 # SpinPlot 持续开发上下文
 
 更新日期：2026-10-30（Asia/Shanghai）
