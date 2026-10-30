@@ -598,7 +598,7 @@ export function controls(card, sp, d, onChange) {
   opacityInput.type='range';opacityInput.min='0';opacityInput.max='1';opacityInput.step='0.05';
   opacityInput.value=String(s.scanFitLabelOpacity??0);
   opacityInput.setAttribute('aria-label','Fit label background opacity');
-  opacityInput.oninput=()=>{s.scanFitLabelOpacity=Math.max(0,Math.min(1,Number(opacityInput.value)||0));onChange();};
+  opacityInput.onchange=()=>{s.scanFitLabelOpacity=Math.max(0,Math.min(1,Number(opacityInput.value)||0));onChange();};
   backgroundLabel.append(opacityInput);displayPanel.append(backgroundLabel);
   const borderLabel=document.createElement('label');
   borderLabel.className='switch';
