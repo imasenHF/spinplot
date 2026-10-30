@@ -49,6 +49,7 @@ try {
       element.dispatchEvent(new Event("change", { bubbles: true }));
     };
     setValue("figureTitle", "Vector PDF export regression");
+    setValue("yLabel", "Intensity α");
     setValue("imageFormat", "pdf");
     const hideY = document.getElementById("hideYTitle");
     hideY.checked = false;
@@ -79,7 +80,7 @@ try {
   const extracted = execFileSync("pdftotext", [pdfPath, "-"], { encoding: "utf8" });
   assert.match(extracted, /Vector PDF export regression/, "PDF text extraction missed the figure title");
   assert.match(extracted, /Magnetic Field/, "PDF text extraction missed the X-axis title");
-  assert.match(extracted, /Intensity/, "PDF text extraction missed the Y-axis title");
+  assert.match(extracted, /Intensity α/, "PDF text extraction missed the Greek alpha in the Y-axis title");
 
   assert.deepEqual(pageErrors, [], "Browser raised errors during vector PDF export");
   console.log(`Vector PDF smoke passed: ${bytes.length} bytes; extracted ${extracted.trim().split(/\s+/).length} words.`);
