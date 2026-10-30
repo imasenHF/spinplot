@@ -33,10 +33,10 @@ test("PDF cross-reference offsets point to the actual object byte positions", as
   const bytes = await makePdf();
   const text = new TextDecoder().decode(bytes);
   const startMarker = text.lastIndexOf("startxref");
-  const startXref = Number(text.slice(startMarker + 9).trim().split(/\\s+/)[0]);
+  const startXref = Number(text.slice(startMarker + 9).trim().split(" ")[0]);
   assert.ok(Number.isInteger(startXref));
   const xrefText = new TextDecoder().decode(bytes.slice(startXref));
-  const lines = xrefText.split(/\\r?\\n/);
+  const lines = xrefText.split("\n");
   assert.equal(lines[0], "xref");
   assert.equal(lines[1], "0 6");
   for (let id = 1; id <= 5; id++) {
