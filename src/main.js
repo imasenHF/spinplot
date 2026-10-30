@@ -387,7 +387,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }
  }
  const fitResults=scanFitResultLines(data,t.scanFitDisplay);
- const renderSp={...sp,fitResultLines:fitResults,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
+ const renderSp={...sp,fitResultLines:fitResults,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.mode==='scan'&&(data?.featureMode&&data.featureMode!=='statistic')?'legend':sp.mode==='scan'?'none':sp.labelMode,
     legendPosition:sp.mode==='scan'&&data?.featureMode&&data.featureMode!=='statistic'&&sp.legendPosition==='upper_right'
       ?'outside_top':sp.legendPosition,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
