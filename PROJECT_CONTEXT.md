@@ -6,6 +6,7 @@
 ## 1. 定位与发布
 
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
+- Variable scan 的 Power fit 增加 `Show on plot`，可单独选择 P（mW）、A、C、R²、RMSE、n 显示在扫描子图左上角；默认不显示。Amplitude 与 Linewidth 拟合结果分组呈现，只有有效拟合显示数值。选择项保存在 `twoD.settings.scanFitDisplay`，屏幕、SVG/PDF 与其他导出共用绘图结果。
 - Variable scan 功率拟合面板采用简短标签：Power fit、Amplitude、Linewidth、Offset C、Fit range；测量功率范围保留为单行数据读数，排除点说明段落已删除，Fit range 的空值规则通过控件提示说明。
 
 - Export 页按钮采用紧凑两列布局；图形/CSV 操作按钮最小高度 44 px，行列间距统一。投影与 Variable scan 导出选择器独立成组，按钮不再随选择器标签换行而纵向拉伸。
