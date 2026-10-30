@@ -5,6 +5,9 @@
 
 ## 1. 定位与发布
 
+- **Legend 控件（开发分支，待验收）：** Style → Legend 增加 Global position（九宫格及 Outside top/right，默认 Upper right），Subplots → Legend & labels 在 Variable scan 中重新可见且默认展开；支持 Legend/Direct/Both/None、局部位置继承或覆盖，曲线绘图、SVG/PDF 导出和项目保存共用有效位置。旧配置未包含全局位置且使用默认 Upper right 时迁移为继承；其他局部位置保留。普通 Heatmap/Contour/3D 继续使用色标，不显示无意义的曲线 legend。
+
+
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
 - Variable scan Power fit 使用单个 `Show results on plot` 开关（默认关闭），同时显示模型公式及 Psat/P½、A、C、R²、RMSE、No. of points。可选九宫格或自定义 X/Y 百分比位置、字体（继承绘图字体或独立选择）及 8–24 px 字号，默认右下角、继承绘图字体、12 px。设置保存在 `twoD.settings.scanFitShow/scanFitLabelPosition/scanFitLabelSize`，旧版逐项显示设置在加载时转换为总开关。Amplitude 与 Linewidth 分组，只有有效拟合显示数值；图形导出共用绘图路径。幅度拟合优化参数显示为 `Psat`，即当前模型的峰值功率；另计算上升段基线扣除后的半峰值功率 `P½=(2−√3)²Psat`。线宽拟合具有独立 `Psat`。参与点数标为 `No. of points`，排除点不计入。图内拟合结果默认右下角、背景完全透明且无边框，可调九宫格或自定义位置、字体、字号、背景不透明度和边框；曲线 legend 默认留在绘图区内。
 - Variable scan 功率拟合面板采用简短标签：Power fit、Amplitude、Linewidth、Offset C、Fit range；测量功率范围保留为单行数据读数，排除点说明段落已删除，Fit range 的空值规则通过控件提示说明。
