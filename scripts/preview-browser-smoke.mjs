@@ -316,8 +316,8 @@ try {
     const [bothDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await bothDownload.saveAs('browser-preview/empty-projection-both.svg');
     const bothSvg=fs.readFileSync('browser-preview/empty-projection-both.svg','utf8');
-    assert.match(bothSvg,/<svg\\b/,'SVG export remains valid with both projection spaces occupied');
-    assert.doesNotMatch(bothSvg,/\\b(?:NaN|Infinity)\\b/,'SVG geometry contains finite coordinates');
+    assert.match(bothSvg,/<svg\b,'SVG export remains valid with both projection spaces occupied');
+    assert.doesNotMatch(bothSvg,/\b(?:NaN|Infinity)\b/,'SVG geometry contains finite coordinates');
 
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     await occupancy.selectOption('none');
