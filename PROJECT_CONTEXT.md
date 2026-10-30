@@ -1,7 +1,7 @@
 # SpinPlot — PROJECT_CONTEXT
 
 更新日期：2026-10-30（Asia/Shanghai）
-状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
+状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。架构维护现状、分阶段优化顺序和验收要求见 [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
 
@@ -74,6 +74,8 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 软件可用于整理与可视化，但重要定量结论仍应与原始谱图、已知标准数据及独立计算对照。
 
 ## 5. 预览分支与待办
+
+- **架构维护规划（2026-10-30）：** 已根据正式 `main` 的 0.10.0 代码建立分阶段优化计划，范围包括统一质量检查、逐步收缩 `src/main.js`、拆分 `src/twod/ui.js`、统一文件读取接口及按性能测量决定是否引入 Worker。该文件目前仅记录规划，相关代码尚未按计划修改；实施时以 [ARCHITECTURE_IMPROVEMENT_PLAN.md](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md) 为准。
 
 **阶段 B（正式版本 0.10.0，2026-10-30）：** 已通过 PR #2 合并。混合投影布局中，每个子图可通过 `emptyProjectionSpace` 选择 `none / top / right / both`，无投影子图可占用同行的上投影预留区、同列的右投影预留区或两者；当前子图显示的投影、色标、`g` 轴、标题与图例边距保持独立。控件适用于 1D、2D 与 Variable scan 子图，默认 `none` 保持原有对齐行为。旧 `plotFootprint` 字段在配置载入时删除；项目格式 11、配置格式 10 不变。正式 Pages 部署 [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) 成功，GitHub Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。实现与验收见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md) 和 [CHANGELOG](CHANGELOG.md)。
 
