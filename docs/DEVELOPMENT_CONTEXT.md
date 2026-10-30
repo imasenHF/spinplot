@@ -1,4 +1,11 @@
 
+## 2026-10-30 Variable scan 功率拟合文案精简
+
+- 功率拟合折叠标题改为 `Power fit`；三个复选项改为 `Amplitude`、`Linewidth`、`Offset C`。
+- 排除点面板删除长说明段落，摘要改为 `Exclude points · N excluded`；测量范围压缩为 `Measured: min–max mW`，未校准时显示 `Power calibration required`。
+- 搜索范围标题改为 `Fit range (mW)`，输入标签改为 `Min` / `Max`；空值仍使用实测功率范围，说明保留在标题提示中，不占用面板空间。
+- 仅调整可见文案和提示，不改拟合模型、参数、默认值、排除点行为或计算逻辑。修改位置：`src/twod/ui.js`。
+
 ## 2026-10-30 Variable scan 符号居中修正
 
 - 直接二维 Variable scan 的符号选择器此前保留了右侧 7 px 内边距，导致符号视觉中心偏移；常规曲线没有该覆盖规则，因此显示正常。
