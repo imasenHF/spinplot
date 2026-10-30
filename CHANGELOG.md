@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Compact the Export tab action area: use evenly spaced two-column buttons with a 44 px minimum height and consistent line spacing; align projection/scan export selectors and their buttons without stretching the buttons to the full selector-row height.
+
 - Replace the raster PDF fallback with SVG-to-PDF vector conversion using `svg2pdf.js` and `jsPDF`. PDF retains vector paths and text objects, uses the design canvas physical dimensions, and is independent of raster DPI. Embed a subset Noto Sans SC font on demand for GB2312 Chinese, Greek, and common scientific symbols.
 - Add a low-emphasis `dev` link beside the copyright/contact text in the bottom status bar, opening the isolated development preview without changing the formal entry.
 
