@@ -4,13 +4,14 @@
 
 ## 用途与优先级
 
-## 最新状态（2026-10-30：阶段 B 验收与正式合并）
+## 最新状态（2026-10-30：阶段 B 语义修正与 0.10.0 候选版）
 
-- 阶段 B Plot footprint / 跨列布局已完成软件验收；完整回归 [41001606843](https://github.com/imasenHF/spinplot/actions/runs/41001606843)、公开预览 Pages [41001626603](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001626603)、预览 HTTP [41001606803](https://github.com/imasenHF/spinplot/actions/runs/41001606803) 均成功。
-- 用户授权在阶段 B 验收后合并；PR #1 已由 merge commit `163a539c59964271f75055663c82db2974785478` 合并至 `main`。正式 Pages 构建与部署 [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341) 成功，正式入口为 `/spinplot/`。
-- 当前正式代码以 `main` 为准；`preview/modularization-phase1-20261009` 保留作后续试验分支。未来代码任务仍须先读取主站 `SITE_CONTEXT.md`、`PROJECT_INDEX.md`，再读取本文件、项目上下文、架构、二维说明和目标源码。
-- 阶段 B 的几何分配对单行/单列布局采用等高/等宽优化；含跨行/跨列跨度的复杂组合采用共享边距回退。真实复杂谱线、仪器校准、多组分线宽判读及拟合不确定度仍须独立科学验证。
-
+- PR #1 已于 2026-10-30 合并，合并提交为 `163a539c59964271f75055663c82db2974785478`。正式 `main` 当前仍显示版本 0.9.2。
+- 上一版阶段 B 对 `Plot footprint` 的实现偏离用户意图：它控制投影面板是否启用，且将投影控件禁用；用户真正需要的是**无投影子图可选择占用其他子图在同一行/列预留的上投影/右投影空间**。此前的 B 不应作为目标功能已完成的依据。
+- 当前修正分支：`preview/modularization-phase-b-empty-projection-20261030`，从正式 `main` 建立。候选应用版本为 **0.10.0**；项目格式 11、配置格式 10 保持不变。
+- 新字段 `emptyProjectionSpace` 控制 `none / top / right / both`。只对当前子图未显示的对应投影空间生效；不改变投影开关，不占用色标、g 轴、标题或图例的必要边距。设置面向 1D、2D、Variable scan 子图，默认 `none`。
+- 代码和测试位置：`src/plotting/footprint.js`、`src/plotting/footprint.test.js`、`src/plotting/oned.js`、`src/twod/ui.js`、`src/main.js`、`scripts/preview-browser-smoke.mjs`。自动化回归完成前不创建正式合并 PR，不更新正式 Pages。
+- 每次任务继续先读取主站 `SITE_CONTEXT.md`、`PROJECT_INDEX.md`，再读取本文件、项目上下文、架构、二维说明、样式指南和目标源码。测试、预览快照与正式发布分别核对。
 本文是 SpinPlot 持续开发的远程交接记录，用于跨会话保存已确认决定、当前任务、实现位置、验收标准和发布边界，避免仅依赖对话历史推断项目状态。
 
 本文不是代码状态的替代品。每次任务开始时，当前 GitHub 分支、最新 HEAD、文件内容、测试结果和用户最新要求优先于本文。本文中的 SHA、CI 结果均为记录时的基线，继续工作前必须重新查询，不得直接当作当前状态。
@@ -31,11 +32,11 @@
 ## 仓库与发布边界
 
 - 仓库：`imasenHF/spinplot`。
-- 后续试验分支：`preview/modularization-phase1-20261009`；当前正式基线为 `main`。
+- 当前修正分支：`preview/modularization-phase-b-empty-projection-20261030`；正式基线为 `main`。旧模块化分支 `preview/modularization-phase1-20261009` 保留作历史记录。
 - 正式入口：<https://plastocyanin.org/spinplot/>，由仓库 `main` 的正式发布流程管理。
 - 临时预览入口：<https://plastocyanin.org/previews/spinplot-modularization/>，由主站仓库中单独保存的静态构建快照提供。
 - PR #1：<https://github.com/imasenHF/spinplot/pull/1>，已于 2026-10-30 合并至 `main`；合并提交 `163a539c59964271f75055663c82db2974785478`。
-- 应用版本基线为 `0.9.2`；项目文件格式为 11；配置格式为 10。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
+- 正式 `main` 应用版本为 `0.9.2`；当前修正分支候选版本为 `0.10.0`。项目文件格式为 11，配置格式为 10；本次新增 `emptyProjectionSpace` 可选子图字段，不改变文件格式。修改格式字段前必须回归旧项目 9/10/11 与配置格式 10。
 - 预览分支 Actions 生成的构建产物不会自动替换主站仓库里的预览快照。必须单独检查快照同步提交、主站 Pages 发布结果和公开 URL；不可将分支 CI 成功等同于线上页面已更新。
 - 公开预览禁止使用客户数据、内部文件或其他未经授权的材料。
 
@@ -96,27 +97,52 @@
 
 `Auto Z`、色标双击均基于 `TwoD.autoZBounds()` 计算当前可见 Z 数据范围，写入数值 `zMin`、`zMax` 并保持 `zUseGlobal=false`。该模式不再使用旧版的“清空 min/max”恢复机制。双击热图主体仅重置 X/Y，保留独立 Z。测试需要断言实际数值，不能继续以空字符串作为“自动范围”的期望值。二维基线不在此流程中执行，不能自动减全矩阵均值。
 
-## 阶段 B：Plot footprint 与跨列布局（2026-10-30）
+## 阶段 B 修正：空投影空间占位（2026-10-30）
 
-- **实现状态：** 已在预览分支完成代码实现。每个二维子图新增 `plotFootprint`，支持 `main`、`top`、`right`、`full` 四种范围；默认 `full`，旧项目缺少字段时保持原有完整投影显示。
-- **投影控制：** 画幅预设决定顶部/右侧投影控件的可用状态；子图原有 `showProjections`、`showXProjection`、`showYProjection` 的显式关闭状态继续有效。改变预设后布局折叠面板保持展开，设置随项目保存/恢复。
-- **几何分配：** `src/plotting/footprint.js` 计算单行子图的行高分配；`src/twod/ui.js` 的 `fitMainColumns()` 计算单列子图列宽分配。分配依据包括顶部/底部标题与投影、左侧轴标题、右侧投影及色标空间，目标是同一行主坐标框等高、同一列主坐标框等宽。无跨行/跨列跨度时采用行列独立分配；存在跨度时使用共享边距回退路径，保留现有网格布局语义。
-- **回归范围：** `src/plotting/footprint.test.js` 覆盖四种预设、投影开关保留、行高分配、跨行回退、画布不足错误及列宽分配；`scripts/preview-browser-smoke.mjs` 覆盖预设控件、即时切换、SVG 顶/右投影出现次数、设计画布尺寸及项目重载；`scripts/preview-regression.mjs` 已启用 `SPINPLOT_TEST_FOOTPRINT`。完整数值/构建/Chromium/迁移前对照 [40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550) 成功。
-- **当前发布状态：** 预览分支静态构建已生成 `index-Dhp_8wZQ.js`，主站独立预览 HTML 与 JS 资源已更新；主站 Pages 发布 [41001497581](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001497581) 正在执行。公开 URL 的阶段 B 浏览器复测尚未完成。正式 `main` 与 `/spinplot/` 后续已于 2026-10-30 更新部署。
-- **限制：** 目前的等高/等宽分配针对单行/单列子图；含跨行/跨列跨度的复杂组合采用共享边距回退，尚未实现任意跨度约束下的全局最优几何求解。此项不影响现有布局表达能力，但极复杂混排需作为独立验收样例。
+### 用户目标
+
+混合布局中，含上投影或右投影的子图会让同一行/列其他子图共享相应的附属边距。没有对应投影的子图因此留下空白。用户希望无投影子图可选择性占用这些共享空白，使绘图区向上、向右或同时扩展。
+
+### 交互定义
+
+- `emptyProjectionSpace = none`：保留共享预留空间，默认值，维持既有对齐方式。
+- `top`：若当前子图没有上投影，则使用同行共享上边距与自身自然上边距之间的差额。
+- `right`：若当前子图没有右投影，则使用同列共享右边距与自身自然右边距之间的差额。
+- `both`：同时尝试占用上方和右侧的未使用空间。
+- 若当前子图显示相应投影，该方向的空间始终保留；此设置不得关闭或禁用投影控件。
+- 自然边距继续保留该子图自身的标题、g 轴、色标、图例等空间。右侧占位只减少投影共享的额外边距，不侵占色标。
+- 控件对 1D、2D、Variable scan 子图均可见；每个子图独立保存设置。
+
+### 实现位置
+
+- `src/plotting/footprint.js`：`normalizeEmptyProjectionSpace()`、`emptyProjectionSpaceFlags()` 与 `resolveMainInsets()`；根据自然边距、共享边距和实际投影状态计算最终主绘图区边距。
+- `src/plotting/oned.js`：构建布局条目时保留二维原始投影设置，不再调用旧 `applyPlotFootprint()`；按子图的 `emptyProjectionSpace` 解析共享边距。
+- `src/twod/ui.js`：`plotInsets()` 返回上/右投影实际显示标记，供布局算法判定可占用方向。
+- `src/main.js`：Advanced layout 提供四种占位方式；默认 `none`。载入旧项目时删除旧 `plotFootprint` 字段并初始化新字段；投影可见性继续由 `showProjections / showXProjection / showYProjection` 独立控制。
+- 项目格式 11、配置格式 10 不变；`emptyProjectionSpace` 是可选子图字段。旧项目缺失时默认 `none`。
+
+### 验收标准
+
+1. 2×2 混合布局：上投影位于目标子图同行，右投影位于目标子图同列；目标无投影 1D 子图切换 `none / top / right / both` 时，主绘图区分别保持原位、仅向上扩展、仅向右扩展、两个方向均扩展。
+2. 对应投影在目标子图自身可见时，设置不覆盖该投影；投影控件不被禁用。
+3. 右侧占位保留本子图的色标、g 轴与标题边距；上方占位保留标题、g 轴和图例所需边距。
+4. 设置对 1D、2D、Variable scan 均可操作，项目保存/载入后逐子图恢复；旧项目 9/10/11 和配置格式 10 仍可读取。
+5. 屏幕绘图与 SVG/PNG/PDF 导出采用相同几何计算；原始数据、投影计算、扫描统计和物理量不发生变化。
+6. 回归包括单元测试、生产构建、旧版导出对照、Chromium 交互及公开预览 HTTP 检查。只有以上验收通过后，才将 PR 标记 Ready 并按用户授权合并。
+
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合
 
-## 当前预览：峰峰线宽、Variable scan 和功率拟合（2026-10-29）
+## 已合并功能历史记录：峰峰线宽、Variable scan 和功率拟合（2026-10-29）
 
-- **目标分支与发布边界。** `preview/modularization-phase1-20261009` 的 Draft PR #1 尚未合并 `main`，正式 `/spinplot/` 不变。独立预览站 `/previews/spinplot-modularization/` 静态 JS/CSS/HTML 已在主站 `main` 更新，Pages/公开浏览器验收需另查当前运行状态。
+- **历史状态（2026-10-29）。** 当时 `preview/modularization-phase1-20261009` 的 Draft PR #1 尚未合并；该状态已于 2026-10-30 被 PR #1 合并取代。此节只记录后续合并的功能历史，不作为当前分支状态。
 - **投影。** `src/twod/core.js` 中，右侧 `yMode='linewidth'` 与 `yMode='both'` 对每一条 Y 扫描值对应的完整 X 轴谱分别求正负极值横坐标差，返回同 X 轴物理单位的峰峰线宽；Both 时同时返回峰峰幅度及线宽，以不同水平刻度显示在右侧投影中。旧 Mean/Max/Min/PTP/RMS/Sum 不变。顶部聚合投影仍可根据其生成的谱线显示标量峰峰值或线宽读数。以前沿右侧聚合曲线对 Y 轴求极值间距得到 dB 的标量读数已从界面移除；这与逐谱提取 G 单位线宽是两种不同操作。导出右投影 Both 模式时附加线宽及单位列。
 - **Variable scan 单一 Measurement。** 将原 Statistic 下拉与 Signal feature 合并为一个下拉，包含 Mean、Maximum、Minimum、RMS、Sum、峰峰幅度、峰峰线宽及二者组合。保留 `scanFeatureMode/scanStatistic` 旧配置字段，旧 `Statistic / ptp` 保存文件在用户主动启用饱和拟合前保持原数值语义。新 UI 仅增加衍生 `scanMeasurement` 状态，不修改源数据。
 - **拟合交互。** `src/twod/ui.js` 使用静态 MathML 组件展示两个模型及只读参数字段（P、A、C、RMSE、R²，未拟合的 C 显示 fixed）。求解器维持有界对数搜索+局部细化与给定特征功率的线性最小二乘；说明移至可悬停/focus 的问号帮助。测得功率范围明确显示，未手动设边界时，`src/twod/saturation.js` 默认使用已纳入拟合的有效点 `[Pmin,Pmax]`（不再扩张 100 倍）；边界输入框显示当前自动范围为占位值，支持手动放宽并保留越界/边界告警。
 - **排除测量点。** 原 0-based 索引文本输入换为 `Exclude points from fit` 折叠点表，逐项显示轨迹编号、原始扫描变量及实际功率，以勾选决定是否纳入拟合。保留 `scanFitExcluded` 项目兼容字段。被排除的实测值不删除，Variable scan 中独立显示为菱形符号，并在特征 CSV 中记录拟合纳入状态。勾选/取消时直接更新当前派生曲线样式列表。
-- **衍生曲线与默认样式。** 直接二维扫描的 Current data 恢复左右两列：左侧为源矩阵及缩进的派生信号/线宽/拟合/排除点条目，右侧一一对应独立 Style 下拉；重复的 Scan style 控件隐藏。旧手动多条一维曲线组成的 Variable scan 保留既有 Scan style 控件，以免失去操作入口。默认实测点使用线+符号，拟合使用虚线；默认图例移到绘图区上方。每条样式随项目恢复；原始 `rawCurves` 不改动。阶段 B 的可选画幅占用范围和跨列重排**不包含在本次实施中**。
+- **衍生曲线与默认样式。** 直接二维扫描的 Current data 恢复左右两列：左侧为源矩阵及缩进的派生信号/线宽/拟合/排除点条目，右侧一一对应独立 Style 下拉；重复的 Scan style 控件隐藏。旧手动多条一维曲线组成的 Variable scan 保留既有 Scan style 控件，以免失去操作入口。默认实测点使用线+符号，拟合使用虚线；默认图例移到绘图区上方。每条样式随项目恢复；原始 `rawCurves` 不改动。阶段 B 空投影空间占位不属于本节功能；其当前实现与验收要求见上文“阶段 B 修正”。
 - **测试。** 合成 `src/twod/projection-linewidth.test.js`、`src/twod/saturation.test.js`、既有数值/旧项目及 Chromium 浏览器测试均纳入工作流；浏览器增加右侧双曲线 CSV、拟合公式、排除点交互与纳入状态、曲线样式保存恢复。完整回归 [40912092209](https://github.com/imasenHF/spinplot/actions/runs/40912092209) 已通过。公开自动化验收只包含合成数据；真实仪器数据的独立科学验收尚未完成。
-- **未完成项。** 真正复杂多组分谱的峰识别、真实仪器校准、不确定度/协方差、阶段 B Plot footprint 已完成并合并；真实多组分谱线峰识别、真实仪器校准及拟合不确定度/协方差仍待科学验收。不得把已通过的构建与合成数据回归等同于这些验收。
+- **未完成项。** 真正复杂多组分谱的峰识别、真实仪器校准及拟合不确定度/协方差仍待科学验收。不得把已通过的构建与合成数据回归等同于这些验收。
 
 ### 已确认的交互要求（2026-10-23）
 
