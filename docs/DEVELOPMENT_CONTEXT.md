@@ -57,7 +57,7 @@
 - **代码位置：** `src/twod/ui.js`、`src/styles/app.css`、`src/plotting/oned.js`、`scripts/preview-browser-smoke.mjs`。浏览器回归增加热图单列宽度、扫描符号字形和 34 px 列宽、两列可视对齐、非功率模式折叠、原始 dB 不误标 mW、MathML 括号及 Linear 大数值十进制渲染检查。完整数值/构建/Chromium/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 已通过；独立静态预览 JS/CSS/HTML 在主站提交 `352cf641`，Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功。公开预览页面 Chromium [40923593239](https://github.com/imasenHF/spinplot/actions/runs/40923593239) 在 Pages 发布后重跑成功，已独立完成线上浏览器验收。
 - **发布边界：** 仅预览分支及主站独立预览快照；正式 SpinPlot `main`、`/spinplot/`、项目/配置格式、数据处理及二维基线均未修改。阶段 B 的四种 Plot footprint 画幅范围和跨列对齐已于 2026-10-30 实现并合并正式版。
 
-## 当前预览交付与验收（2026-10-29）
+## 历史预览交付与验收（2026-10-29）
 
 - **绘图模式：** Heatmap、Contour（物理坐标 marching squares）和可旋转的三角网格/WebGL 3D surface 位于独立预览分支，3D 视角默认折叠，支持鼠标旋转、方位角、俯仰角、Z 拉伸及缩放。
 - **坐标与色标：** 主图 Y、二维 Z 以及 Top/Right 投影强度轴以三个平行选项呈现：`linear` / `log` / `scientific`。纯正值在 `log` 下采用 Log10，跨零或含负值数据采用保留正负号和零点的对称对数（SymLog），连续且不人为平移；`scientific` 只改变刻度表达，不改变线性映射。Log 与 Scientific 模式切换均对对应可用数据拟合并回填数值 min/max，原始数据保持不变。
