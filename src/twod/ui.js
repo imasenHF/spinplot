@@ -138,6 +138,7 @@ export function migrate(d, s) {
   for (const k of ['showXProjectionRange', 'showYProjectionRange'])
     if (s[k] === undefined) s[k] = s.showProjectionRanges !== false;
   const base = defaults(d);
+  if (s.scanFitShow === undefined) s.scanFitShow = Array.isArray(s.scanFitDisplay) && s.scanFitDisplay.length > 0;
   if (s.scanStatistic === undefined) s.scanStatistic = s.yMode || base.scanStatistic;
   if (!['mean', 'max', 'min', 'ptp', 'rms', 'sum'].includes(s.scanStatistic)) s.scanStatistic = base.scanStatistic;
   if (s.scanStatisticMin === undefined) {
@@ -538,14 +539,11 @@ export function controls(card, sp, d, onChange) {
   const displayPanel=document.createElement('div');
   displayPanel.className='scan-fit-display';
   displayPanel.style.gridColumn='1 / -1';
-  const displayTitle=document.createElement('div');
-  displayTitle.textContent='Show on plot';
-  displayPanel.append(displayTitle);
   const showFit=document.createElement('label'),showFitCheck=document.createElement('input');
   showFit.className='switch';
   showFitCheck.type='checkbox';
-  showFitCheck.checked=s.scanFitShow===true||(Array.isArray(s.scanFitDisplay)&&s.scanFitDisplay.length>0);
-  showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;s.scanFitDisplay=showFitCheck.checked?['formula','P','A','C','r2','rmse','n']:[];onChange();};
+  showFitCheck.checked=s.scanFitShow===true;
+  showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;onChange();};
   showFit.append(showFitCheck,document.createTextNode('Show fit results'));
   displayPanel.replaceChildren(showFit);
   const position=document.createElement('label');
