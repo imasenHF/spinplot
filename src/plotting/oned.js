@@ -347,6 +347,26 @@ export function renderFigure(
     }
     ctx.restore();
   }
+  function drawFitResultSummary(ctx, sp, geom, font, theme) {
+    const lines = sp.fitResultLines;
+    if (!Array.isArray(lines) || !lines.length) return;
+    const { x0, y0, pw, ph } = geom;
+    const lineHeight = 13;
+    const visible = lines.slice(0, Math.max(0, Math.floor((ph - 16) / lineHeight)));
+    if (!visible.length) return;
+    ctx.save();
+    ctx.font = `10px ${font}`;
+    const width = Math.min(pw - 12, Math.max(70, ...visible.map(line => ctx.measureText(line).width + 12)));
+    const height = visible.length * lineHeight + 8;
+    if (width <= 0) { ctx.restore(); return; }
+    ctx.fillStyle = theme.bg === '#11181b' ? 'rgba(17,24,27,0.86)' : 'rgba(255,255,255,0.88)';
+    ctx.fillRect(x0 + 5, y0 + 5, width, height);
+    ctx.fillStyle = theme.text;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    visible.forEach((line, i) => ctx.fillText(line, x0 + 11, y0 + 9 + i * lineHeight, width - 10));
+    ctx.restore();
+  }
   function drawMeasurements(ctx, sp, X, r, font) {
     ctx.save();
     ctx.beginPath();
@@ -962,6 +982,7 @@ export function renderFigure(
         ctx.fillText(String(sp.renderNotice),x0+pw/2,y0+ph/2,Math.max(20,pw-12));ctx.restore();
       }
       drawMeasurements(ctx, sp, X, { x0, y0, pw, ph }, font);
+      drawFitResultSummary(ctx, sp, { x0, y0, pw, ph }, font, theme);
       state.labelRange = m.ymax - m.ymin;
       const geom = { x0, y0, pw, ph };
       if (sp.labelMode === "legend" || sp.labelMode === "both")
