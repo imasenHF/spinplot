@@ -5,7 +5,7 @@
 
 ## Power fit 结果显示
 
-- 扫描子图拟合结果默认隐藏；Power fit 的 `Show fit results` 一次性显示公式及全部拟合参数。位置支持四角，默认右下角；字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组，半透明背景随主题变更，导出与屏幕使用相同绘图路径。
+- 扫描子图拟合结果默认隐藏；Power fit 的 `Show fit results` 一次性显示公式及全部拟合参数。位置支持四角或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组，半透明背景随主题变更，导出与屏幕使用相同绘图路径。
 
 ## 1. 产品视觉定位
 
