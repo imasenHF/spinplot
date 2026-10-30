@@ -66,6 +66,9 @@ export function defaults(d) {
     scanFitShow: false,
     scanFitLabelPosition: 'lower_right',
     scanFitLabelSize: 12,
+    scanFitLabelFont: 'inherit',
+    scanFitLabelX: 50,
+    scanFitLabelY: 65,
     topFeatureDisplay: 'none',
     sideFeatureDisplay: 'none',
     scanStatisticMin: xMin,
@@ -549,12 +552,31 @@ export function controls(card, sp, d, onChange) {
   const position=document.createElement('label');
   position.className='control-label';position.textContent='Position';
   const positionSelect=document.createElement('select');
-  for(const [value,label] of [['lower_right','Lower right'],['lower_left','Lower left'],['upper_right','Upper right'],['upper_left','Upper left']]){
+  for(const [value,label] of [['lower_right','Lower right'],['lower_left','Lower left'],['upper_right','Upper right'],['upper_left','Upper left'],['custom','Custom']]){
     const option=document.createElement('option');option.value=value;option.textContent=label;positionSelect.append(option);
   }
   positionSelect.value=s.scanFitLabelPosition||'lower_right';
   positionSelect.onchange=()=>{s.scanFitLabelPosition=positionSelect.value;onChange();};
   position.append(positionSelect);displayPanel.append(position);
+  const fontLabel=document.createElement('label');
+  fontLabel.className='control-label';fontLabel.textContent='Font';
+  const fontSelect=document.createElement('select');
+  for(const [value,label] of [['inherit','Plot font'],['Arial','Arial'],['Times New Roman','Times New Roman'],['Georgia','Georgia'],['Consolas','Consolas'],['Courier New','Courier New']]){
+    const option=document.createElement('option');option.value=value;option.textContent=label;fontSelect.append(option);
+  }
+  fontSelect.value=s.scanFitLabelFont||'inherit';
+  fontSelect.onchange=()=>{s.scanFitLabelFont=fontSelect.value;onChange();};
+  fontLabel.append(fontSelect);displayPanel.append(fontLabel);
+  const xy=document.createElement('div');xy.className='scan-fit-custom';
+  xy.hidden=positionSelect.value!=='custom';
+  for(const [key,title,fallback] of [['scanFitLabelX','X (%)',50],['scanFitLabelY','Y (%)',65]]){
+    const label=document.createElement('label');label.className='control-label';label.textContent=title;
+    const input=document.createElement('input');input.type='number';input.min='0';input.max='100';input.step='1';
+    input.value=String(s[key]??fallback);
+    input.onchange=()=>{s[key]=Math.max(0,Math.min(100,Number(input.value)||0));onChange();};
+    label.append(input);xy.append(label);
+  }
+  displayPanel.append(xy);
   const sizeLabel=document.createElement('label');
   sizeLabel.className='control-label';sizeLabel.textContent='Font size (px)';
   const sizeInput=document.createElement('input');sizeInput.type='number';sizeInput.min='8';sizeInput.max='24';sizeInput.step='1';
