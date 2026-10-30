@@ -94,29 +94,32 @@ try {
   const hiddenProject = JSON.parse(await fs.readFile(await noneDownload.path(), 'utf8'));
   assert.equal(hiddenProject.config.subplots[1].labelMode, 'none',
     'Variable scan label visibility must remain user-controlled');
-  await page.locator('button.tab-btn[data-tab="export"]').click();
-  const configDownloadPromise=page.waitForEvent('download',{timeout:8000});
-  await page.locator('#saveConfigBtnSide').click();
-  let configDownload;
-  try { configDownload=await configDownloadPromise; }
-  catch(error) {
-    const diagnostics=await page.evaluate(()=>({
-      handler: String(document.querySelector('#saveConfigBtnSide')?.onclick),
-      status: document.querySelector('#status')?.textContent,
-      log: document.querySelector('#log')?.textContent?.slice(-550)
-    }));
-    throw new Error('Config download unavailable: '+JSON.stringify({diagnostics,pageErrors}),{cause:error});
-  }
+  // File downloads are tested in an independent page so that the two
+  // project downloads above do not influence browser download permissions.
+  const toolbarPage = await browser.newPage({acceptDownloads:true});
+  toolbarPage.on('pageerror', error => pageErrors.push(error.message));
+  await toolbarPage.goto('http://127.0.0.1:4173/spinplot/',{waitUntil:'networkidle'});
+  await toolbarPage.locator('#dataFiles').setInputFiles({
+    name:'toolbar-fixture.csv',mimeType:'text/csv',
+    buffer:Buffer.from('B,Trace A,Trace B\\n3300,0,0\\n3310,1,2\\n3320,-1,-2\\n3330,0,0\\n')
+  });
+  await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
+  await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
+  const [configDownload] = await Promise.all([
+    toolbarPage.waitForEvent('download',{timeout:15000}),
+    toolbarPage.locator('#saveConfigBtnSide').click()
+  ]);
   const config = JSON.parse(await fs.readFile(await configDownload.path(),'utf8'));
   assert.equal(config.version,10);
-  await page.locator('#imageFormat').selectOption('svg');
+  await toolbarPage.locator('#imageFormat').selectOption('svg');
   const [figureDownload] = await Promise.all([
-    page.waitForEvent('download'),
-    page.locator('#exportImageBtn').click()
+    toolbarPage.waitForEvent('download',{timeout:15000}),
+    toolbarPage.locator('#exportImageBtn').click()
   ]);
   assert.match(figureDownload.suggestedFilename(),/\.svg$/i);
-  await page.locator('#clearDataBtn').click();
-  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '0');
+  await toolbarPage.locator('#clearDataBtn').click();
+  await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '0');
+  await toolbarPage.close();
   assert.deepEqual(pageErrors, []);
   console.log('PASS: global legend position, scan labels, local override and persistence');
 } finally {
