@@ -20,7 +20,7 @@ jobs:
           ok=0
           for attempt in {1..8}; do
             if curl --fail --location --silent --show-error --max-time 15 "${base}" -o app.html; then
-              if grep -q 'SpinPlot 0.9.2' app.html; then ok=1; break; fi
+              if grep -q 'SpinPlot 0.10.0' app.html; then ok=1; break; fi
             fi
             sleep 8
           done

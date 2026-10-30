@@ -1,6 +1,9 @@
 name: SpinPlot live preview browser smoke
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'preview/modularization-phase-b-*'
 permissions:
   contents: read
 jobs:
@@ -28,7 +31,8 @@ jobs:
           SPINPLOT_TEST_AXIS_LOG: '1'
           SPINPLOT_TEST_AXIS_DISPLAY: '1'
           SPINPLOT_TEST_POWER_SATURATION: '1'
-          SPINPLOT_TEST_FOOTPRINT: '1'
+          SPINPLOT_TEST_EMPTY_PROJECTION_SPACE: '1'
+          SPINPLOT_EXPECT_VERSION: '0.10.0'
         run: node scripts/preview-browser-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
