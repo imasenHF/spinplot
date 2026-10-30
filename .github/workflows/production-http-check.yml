@@ -31,7 +31,7 @@ jobs:
             sleep 6
           done
           test "${READY}" = "1"
-          SCRIPT_PATH="$(grep -oE 'src="[^"]+\\.js"' "${HTML_FILE}" | head -1 | cut -d '"' -f 2)"
+          SCRIPT_PATH="$(grep -oE 'src="[^"]+\.js"' "${HTML_FILE}" | head -1 | cut -d '"' -f 2)"
           test -n "${SCRIPT_PATH}"
           case "${SCRIPT_PATH}" in
             http*) SCRIPT_URL="${SCRIPT_PATH}" ;;
