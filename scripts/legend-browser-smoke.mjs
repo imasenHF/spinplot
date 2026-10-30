@@ -101,7 +101,7 @@ try {
   await toolbarPage.goto('http://127.0.0.1:4173/spinplot/',{waitUntil:'networkidle'});
   await toolbarPage.locator('#dataFiles').setInputFiles({
     name:'toolbar-fixture.csv',mimeType:'text/csv',
-    buffer:Buffer.from('B,Trace A,Trace B\\n3300,0,0\\n3310,1,2\\n3320,-1,-2\\n3330,0,0\\n')
+    buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n')
   });
   await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
   await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
