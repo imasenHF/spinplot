@@ -47,14 +47,14 @@ npm ci
 npm run dev
 ```
 
-构建与本地预览：
+构建、统一检查与本地预览：
 
 ```bash
-npm run build
+npm run check
 npm run preview
 ```
 
-构建脚本执行 `tsc --noEmit && vite build`，产物位于 `dist/`。相关二维回归测试可运行：
+`npm run check` 顺序运行 ESLint、Prettier 格式检查、单元测试和 `tsc --noEmit && vite build`。格式检查目前覆盖新增质量管理文件与 `package.json`，历史压缩源码将在独立提交中分批整理。应用产物位于 `dist/`。单项回归也可运行：
 
 ```bash
 node src/twod/core.test.js
