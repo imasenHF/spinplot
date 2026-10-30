@@ -31,9 +31,9 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 多曲线叠加与堆叠；每条曲线通过单一下拉菜单设置实线、虚线、点线、空心/实心圆形、方形、三角形、菱形，以及线条与符号的组合。符号显示自动抽样并保留首尾点；Canvas 与 SVG 均支持实心填充。每个子图可单独设置线宽（留空时继承全局线宽）和符号大小；Variable scan 子图另有独立曲线样式，不继承源曲线样式。旧配置中的 mode/symbol 字段仍可读取。另支持布局、局部坐标轴、图例、标注、磁场间距 ΔB、X/Y 平移缩放、撤销/重做。手动选定至少两条兼容的一维曲线后，可转换为二维 Heatmap，或显式创建独立 Variable scan 子图；扫描变量支持名称、可选单位、等间距起点/间隔和自定义数组，变量值按源曲线 ID 保存并按坐标排序。
 - 坐标数值可设置有效数字及普通/科学计数法，适用于一维、二维及投影轴。
 
-### 预览分支：投影线宽、功率饱和与阶段 A 界面（2026-10-29）
+### 已合并正式版：投影线宽、功率饱和与阶段 A/B 界面（2026-10-30）
 
-以下仅在 `preview/modularization-phase1-20261009` 实现，正式 `main` 和 `/spinplot/` 未改。
+以下功能已随 PR #1 合并至正式 `main`，正式 Pages 部署见 [Actions 41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341)。开发分支 `preview/modularization-phase1-20261009` 保留作后续工作参考。
 
 - Top 投影从聚合后的一维曲线提取峰峰幅度、横坐标极值间距或二者读数。Right 投影从每一条扫描变量值对应的**完整磁场谱**提取峰峰幅度或物理磁场线宽，支持同时显示两条扫描曲线及各自的水平刻度（线宽单位跟随磁场 X 轴，例如 G）；不再将右侧聚合曲线极值间距误认为磁场线宽。
 - Variable scan 只有一个 `Measurement` 选择器：Mean/Max/Min/RMS/Sum、Peak-to-peak amplitude、Peak-to-peak linewidth、Both。旧 Statistic/PTP 项目保持既有统计结果，直到用户主动启用新饱和拟合。振幅曲线使用左 Y 轴，线宽在双特征模式下使用右 Y 轴。
@@ -41,14 +41,14 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 排除点改为逐轨迹复选框，未参与拟合的测量值单独以符号标识，保留原始记录及导出纳入状态。直接二维来源的 Current data 左侧缩进显示衍生曲线，右列独立设置每条线型/符号；多条原始一维曲线生成的旧扫描视图保留原 Style 控件兼容。拟合曲线默认虚线、实测特征默认点线，图例默认置于绘图区外侧上方。设置随项目保存，拟合重载后重算；正式数据及基线不修改。
 - **2026-10-30 界面修订：** 普通二维 Heatmap 不显示无用的 Scan style 或 Current data 空白样式列；直接二维 Variable scan 的衍生曲线恢复 34 px 纯符号 Style 列，数据/样式列表等高、逐行对应。非功率扫描自动折叠拟合设置且不将 dB 误显示为 mW；排除点设置恢复一致的折叠外观；MathML 括号禁止随分式拉伸。Linear 模式下的主图 Y、Top/Right 投影和 Z 色标均用十进制刻度，只有明确选 Scientific 才使用科学计数法。原始数值/项目格式/二维基线均不变。完整回归与浏览器/迁移对照 [40923593424](https://github.com/imasenHF/spinplot/actions/runs/40923593424) 成功，主站独立预览 Pages [40924052918](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40924052918) 成功；真实谱线科学适用性与参数不确定度尚未独立验收。
 - **2026-10-30 派生曲线 Z-order：** 直接二维 Variable scan 的 Current data 中，缩进的派生曲线可鼠标拖拽调整前后绘制次序（下方在上层），也可通过 Alt+↑/↓ 调整。原始矩阵行固定；右侧线型/符号控制跟随条目移动。使用稳定虚拟 ID 和子图 `scanDerivedOrder` 记录顺序，旧项目缺省时保留原始默认顺序；Canvas/图例/SVG/其他图形导出与保存重载采用同一排序。新增纯函数测试 `src/twod/scan-order.test.js`，完整回归 [40929024040](https://github.com/imasenHF/spinplot/actions/runs/40929024040) 成功。此功能不改变谱线数值、拟合、二维基线、项目格式版本或正式分支。
-- 阶段 B Plot footprint 与跨列排版已在 2026-10-30 实现：四种画幅预设、投影可用性控制、单行子图主框等高、单列子图主框等宽、跨行/跨列布局回退、项目保存恢复及 SVG 设计尺寸保持。自动化测试和本地 Chromium 浏览器回归见 `docs/DEVELOPMENT_CONTEXT.md`；公开预览快照已提交主站，Pages 部署与公开浏览器复测仍待最终确认。多峰线宽判读、真实仪器校准及拟合不确定度估计仍未完成。
+- 阶段 B Plot footprint 与跨列排版已在 2026-10-30 实现：四种画幅预设、投影可用性控制、单行子图主框等高、单列子图主框等宽、跨行/跨列布局回退、项目保存恢复及 SVG 设计尺寸保持。自动化测试和本地 Chromium 浏览器回归见 `docs/DEVELOPMENT_CONTEXT.md`；公开预览与正式站点均已部署；阶段 B 完整回归 [41001606843](https://github.com/imasenHF/spinplot/actions/runs/41001606843)、预览 Pages [41001626603](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001626603)、预览 HTTP 检查 [41001606803](https://github.com/imasenHF/spinplot/actions/runs/41001606803) 及正式 Pages [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341) 均成功。多峰线宽判读、真实仪器校准及拟合不确定度估计仍未完成。
 
 ### 二维查看与导出
 
 - 二维绘图模式包括 Heatmap、Stack 与 Overlap。Overlap 将所选扫描轨迹绘制在共同 X 坐标轴上，并可按每隔 N 条轨迹抽取显示。Field–Power 的功率轴使用零衰减参考功率 P₀ 按 P(A) = P₀ × 10^(-A/10) 换算，界面只要求输入 P₀；旧项目中的参考功率/参考衰减参数会迁移为等效 P₀。
 - Variable scan 通过 2D Plot mode 菜单显式新增为独立子图，导入时不会自动创建，也不替代原图的右侧 Y 投影。新增图初始放在源二维图右侧（布局不允许时追加为新行），复用常规子图的位置、尺寸、项目保存和导出机制；横轴采用扫描变量，纵轴为每条扫描轨迹在独立统计区间内的统计值。统计方式与区间保存在 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax`，与源二维图的 `yMode`、`projectionXMin/Max` 独立。创建时在坐标方向一致的条件下，以源图右侧投影的统计方式和区间初始化；扫描视图隐藏二维 Top/Right projection 控件。
 - 顶部与右侧投影分别设置计算区间、显示强度范围、统计方式、标题及范围标签；方法包括均值、最大、最小、峰峰值、RMS、求和。样本求和不是按坐标间隔加权的积分。
-- X/Y/Z 轴、色标范围、调色板及 `g` 轴可分别设置；色标支持滚轮缩放 Z 范围，双击色标可恢复自动 Z 范围；双击热图主体仍恢复 X/Y 轴。该交互修复目前仅在预览分支及临时预览中，尚未合并正式 `main`。
+- X/Y/Z 轴、色标范围、调色板及 `g` 轴可分别设置；色标支持滚轮缩放 Z 范围，双击色标可恢复自动 Z 范围；双击热图主体仍恢复 X/Y 轴。该交互修复已随 PR #1 合并正式 `main`，并已部署至 `/spinplot/`。
 - 二维预览按屏幕像素取样；数据矩阵、投影计算及矢量导出保留原始数据单元。超大矩阵的实际容量受浏览器内存与文件大小影响。
 - 二维数据目前直接显示所选信号分量；一维基线和噪声缩放未扩展至二维矩阵。
 
@@ -75,9 +75,9 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 ## 5. 预览分支与待办
 
-**2026-10-30 阶段 B Plot footprint 与跨列排版：** 预览分支已实现 `Main / Top / Right / Full` 四种子图画幅范围。单行布局按各行最大顶部/底部附属空间重新分配行高，单列布局按各列左右附属空间与比例宽度重新分配列宽，使主坐标框分别保持等高/等宽；跨行或跨列子图走共享边距路径。每个二维子图的预设独立保存，投影开关随画幅范围约束，切换时保留布局面板状态。测试覆盖四种预设、开关状态、画幅几何、跨列主框对齐、项目保存/恢复、SVG 投影内容与画布设计尺寸。代码及本地浏览器回归已通过 [Actions 40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。公开预览静态快照已更新，Pages 发布及公开浏览器复测待完成；正式 `main` 与 `/spinplot/` 尚未合并。
+**2026-10-30 阶段 B Plot footprint 与跨列排版（已合并正式版）：** 实现位于 `Main / Top / Right / Full` 四种子图画幅范围。单行布局按各行最大顶部/底部附属空间重新分配行高，单列布局按各列左右附属空间与比例宽度重新分配列宽，使主坐标框分别保持等高/等宽；跨行或跨列子图走共享边距路径。每个二维子图的预设独立保存，投影开关随画幅范围约束，切换时保留布局面板状态。测试覆盖四种预设、开关状态、画幅几何、跨列主框对齐、项目保存/恢复、SVG 投影内容与画布设计尺寸。代码及本地浏览器回归已通过 [Actions 40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550)。代码已合并至正式 `main`，正式 Pages [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341) 部署成功；公开预览 Pages [41001626603](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001626603) 和 HTTP 检查 [41001606803](https://github.com/imasenHF/spinplot/actions/runs/41001606803) 成功。
 
-**2026-10-29 独立预览状态（非正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。正式 `/spinplot/`、`main` 未修改，Draft PR #1 未合并。
+**2026-10-29 独立预览功能（已于 2026-10-30 合并正式 `main`）：** Heatmap、Contour、可旋转 3D 均可设置 Linear / Log10-SymLog / Scientific Z 轴；主图 Y 与 Top/Right 投影强度轴也提供相同三个并列模式。全正值 Log10、带零/负值的信号采用保留零点和符号的 SymLog，Scientific 仅改变标签、不改变线性间距。切换模式自动计算并填写子图轴 min/max；Auto Z 和色标双击填写当前可见数据的数值范围，X/Y 复原不清除 Z。Current order 和 34 px 的纯符号菜单并排，侧栏说明使用 `?` 提示。**不改动二维基线**：原有 Region、其他一维处理及直接二维矩阵的数据语义维持原样。代码完整回归 [40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984) 成功，预览主站部署 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624) 成功。上述功能已随 PR #1 合并正式 `main`，正式 Pages 部署见 [41001804341](https://github.com/imasenHF/spinplot/actions/runs/41001804341)。
 
 核心源码：`src/twod/zscale.js`、`src/twod/contours.js`、`src/twod/surface3d.js`、`src/twod/ui.js`、`src/plotting/axis-scale.js`、`src/plotting/oned.js`、`src/main.js` 及 `src/interface.js`。最新完整数值、生产构建、Chromium 交互和旧版对照成功：[40739205730](https://github.com/imasenHF/spinplot/actions/runs/40739205730)。主站独立预览 JS/CSS 与完整同版本 HTML 已同步，Pages 工作流 [40739438889](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40739438889) 成功；公开预览在同步 HTML 后 Chromium 复测 [40739205307（第 2 次）](https://github.com/imasenHF/spinplot/actions/runs/40739205307) 通过。首次线上失败源自旧版 HTML 缺少新增全局 Y 轴控件，并非数值实现失败。正式 `/spinplot/` 未更新、Draft PR #1 未合并。
 
