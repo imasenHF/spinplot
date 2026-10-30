@@ -1,5 +1,6 @@
 import {axisEps,niceTicks,ticksWithStep,configuredGTicks} from './processing/axis.js';
 import {svgFromScene} from './export/svg.js';
+import 'svg2pdf.js';
 import {pdfFromSvg} from './export/pdf.js';
 import {vectorScene} from './export/scene.js';
 import {canvasBlob,bmpBlob,tiffBlob,pngWithDpi,jpegWithDpi} from './export/image.js';
