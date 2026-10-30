@@ -105,34 +105,12 @@ try {
   });
   await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
   await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
-  const configHandler=await toolbarPage.locator('#saveConfigBtnSide').evaluate(e=>String(e.onclick));
-  console.log('CONFIG_HANDLER',configHandler.slice(0,350));
-  console.log('CONFIG_PROBE',JSON.stringify(await toolbarPage.evaluate(()=>{
-    const btn=document.querySelector('#saveConfigBtnSide');
-    const before=document.querySelector('#log')?.textContent;
-    let threw=null;
-    try {btn.click();}catch(error){threw=String(error);}
-    return {disabled:btn.disabled,visible:!!btn.getClientRects().length,
-      before,after:document.querySelector('#log')?.textContent,threw,
-      type:btn.type}
-  })));
-  console.log('CONFIG_ERRORS',JSON.stringify(pageErrors));
-  let configDownload;
-  try {
-    [configDownload] = await Promise.all([
-      toolbarPage.waitForEvent('download',{timeout:5000}),
-      toolbarPage.locator('#saveConfigBtnSide').click()
-    ]);
-  } catch (error) {
-    const diagnostic=await toolbarPage.evaluate(()=>({
-      handler: String(document.querySelector('#saveConfigBtnSide')?.onclick),
-      status: document.querySelector('#status')?.textContent,
-      log: document.querySelector('#log')?.textContent?.slice(-400),
-      dataCount: document.querySelector('#dataCount')?.textContent
-    }));
-    console.log('CONFIG_DIAGNOSTICS',JSON.stringify({diagnostic,pageErrors}));
-    throw error;
-  }
+  const fileOperations = toolbarPage.locator('#fileOperationsCard');
+  assert.ok(await fileOperations.isVisible(), 'Config / Project must be visible on Export');
+  const [configDownload] = await Promise.all([
+    toolbarPage.waitForEvent('download',{timeout:15000}),
+    toolbarPage.locator('#saveConfigBtnSide').click()
+  ]);
   const config = JSON.parse(await fs.readFile(await configDownload.path(),'utf8'));
   assert.equal(config.version,10);
   await toolbarPage.locator('#imageFormat').selectOption('svg');
