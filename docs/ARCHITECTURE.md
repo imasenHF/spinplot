@@ -75,13 +75,13 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 | `src/processing/axis.js` | 轴类型和单位、频率对齐、Field/g 换算、刻度生成；二维模块复用同一实现 |
 | `src/plotting/oned.js` | Overlay/Stack 显示数组和显示范围；Canvas 绘图、图例、标注和测距，接收已处理模型、控件快照和交互快照 |
 | `src/export/csv.js` | 全局修正、显示数据、频率元数据 CSV，保留原字段和插值 |
-| `src/export/scene.js`, `svg.js`, `pdf.js`, `image.js` | 共用绘图场景记录、SVG/PDF 序列化、栅格编码及 DPI 元数据 |
+| `src/export/scene.js`, `svg.js`, `pdf.js`, `image.js` | 共用绘图场景记录、SVG/PDF 矢量序列化、栅格编码及 DPI 元数据 |
 | `src/export/project.js` | 项目/配置导出入口；版本及兼容校验仍由 `src/project/project.js` 负责 |
 | `src/data/twod.js` | 已有二维 `x/y/real/imag/metadata` 数据结构校验与构造；不新增另一套矩阵格式 |
 
 绘图模块不读取 DOM，不执行一维基线或幅度处理，也不读取原始一维谱。`y` 表示处理后的强度；`yd` 表示叠加显示偏移后的强度；保存项目仅使用原始数组。`signal.js` 的旧 `applyStackOffsets` 接口以及二维 core 的旧坐标接口保留为兼容 re-export，无重复计算实现。
 
-SVG、PDF 和屏幕绘图复用同一个 renderer。二维渲染仍由 `twod/ui.js` 实施；本轮不加入新的二维视图或拟合功能。该分支尚未完成所有 UI/解析函数拆分，不能描述为整个应用入口只剩事件绑定。
+SVG 与 PDF 复用同一个矢量场景；屏幕及栅格导出复用同一个 Canvas renderer。PDF 经 svg2pdf.js + jsPDF 转换，不嵌入整页位图。二维渲染仍由 `twod/ui.js` 实施；本轮不加入新的二维视图或拟合功能。该分支尚未完成所有 UI/解析函数拆分，不能描述为整个应用入口只剩事件绑定。
 
 部署与最新验收状态见 [MODULARIZATION_PREVIEW.md](MODULARIZATION_PREVIEW.md)。
 
