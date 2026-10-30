@@ -255,9 +255,11 @@ try {
       assert.equal(await card.locator('[data-twod="showYProjection"]').isDisabled(),!['right','full'].includes(footprint),'Right projection control follows footprint '+footprint);
     }
     const firstFootprintCard=page.locator('.subplot').nth(0);
-    await firstFootprintCard.locator('details.advanced-layout').evaluate(el=>{el.open=true});
+    const footprintDetails=firstFootprintCard.locator('details.advanced-layout').filter({hasText:'Advanced layout override'});
+    assert.equal(await footprintDetails.count(),1,'The footprint selector belongs to one layout panel');
+    await footprintDetails.evaluate(el=>{el.open=true});
     await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('top');
-    assert.equal(await firstFootprintCard.locator('details.advanced-layout').evaluate(el=>el.open),true,'Changing footprint keeps the layout panel open');
+    assert.equal(await footprintDetails.evaluate(el=>el.open),true,'Changing footprint keeps the layout panel open');
     assert.equal(await firstFootprintCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Top projection becomes available immediately');
     assert.equal(await firstFootprintCard.locator('[data-twod="showYProjection"]').isDisabled(),true,'Right projection remains excluded immediately');
     await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('main');
