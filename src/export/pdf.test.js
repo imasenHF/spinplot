@@ -41,7 +41,7 @@ test("PDF cross-reference offsets point to the actual object byte positions", as
   assert.equal(lines[1], "0 6");
   for (let id = 1; id <= 5; id++) {
     const offset = Number(lines[id + 2].slice(0, 10));
-    assert.equal(new TextDecoder().decode(bytes.slice(offset, offset + 8)), String(id) + " 0 obj");
+    assert.equal(new TextDecoder().decode(bytes.slice(offset, offset + 7)), String(id) + " 0 obj");
   }
   assert.equal(new TextDecoder().decode(bytes.slice(startXref, startXref + 5)), "xref\n");
 });
