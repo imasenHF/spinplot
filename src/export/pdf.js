@@ -1,6 +1,3 @@
-import { jsPDF } from "jspdf";
-import "svg2pdf.js";
-
 export function pdfPageDimensions(design) {
   const width = Number(design?.width);
   const height = Number(design?.height);
@@ -28,6 +25,8 @@ export async function pdfFromSvg({ svg, design }) {
     throw new Error("Could not parse the vector figure as SVG");
   }
 
+  const { jsPDF } = await import("jspdf");
+  await import("svg2pdf.js");
   const doc = new jsPDF({
     orientation: width >= height ? "landscape" : "portrait",
     unit: "pt",
