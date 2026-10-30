@@ -1,0 +1,71 @@
+name: Build embedded CJK PDF fonts
+on:
+  push:
+    branches: [fix/vector-pdf-export]
+permissions:
+  contents: write
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/vector-pdf-export
+      - name: Build static GB2312 font subsets
+        run: |
+          set -euo pipefail
+          if [ -f src/assets/fonts/NotoSansSC-Regular.ttf ]; then
+            echo "Font subsets already exist."
+            exit 0
+          fi
+          mkdir -p src/assets/fonts
+          curl -L --fail --silent --show-error 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf' -o /tmp/NotoSansSC-VF.ttf
+          curl -L --fail --silent --show-error 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/OFL.txt' -o src/assets/fonts/OFL-NotoSansSC.txt
+          python -m pip install --quiet fonttools
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          chars = set(chr(i) for i in range(0x20, 0x7f))
+          for lead in range(0xA1, 0xF8):
+              for trail in range(0xA1, 0xFF):
+                  try:
+                      chars.update(bytes((lead, trail)).decode("gb2312"))
+                  except UnicodeDecodeError:
+                      pass
+          for start, end in [
+              (0x00A0, 0x024F), (0x0300, 0x036F), (0x0370, 0x03FF),
+              (0x2000, 0x206F), (0x2070, 0x209F), (0x2100, 0x214F),
+              (0x2190, 0x21FF), (0x2200, 0x22FF), (0x2460, 0x24FF),
+              (0x3000, 0x303F), (0xFF00, 0xFFEF),
+          ]:
+              chars.update(chr(codepoint) for codepoint in range(start, end + 1))
+          text_file = Path("/tmp/pdf-font-chars.txt")
+          text_file.write_text("".join(sorted(chars)), encoding="utf-8")
+          source = "/tmp/NotoSansSC-VF.ttf"
+          for weight, suffix in ((400, "Regular"), (700, "Bold")):
+              static = f"/tmp/NotoSansSC-{suffix}-static.ttf"
+              output = f"src/assets/fonts/NotoSansSC-{suffix}.ttf"
+              subprocess.run([
+                  "fonttools", "varLib", "instancer", source,
+                  f"wght={weight}", "--output-file", static,
+              ], check=True)
+              subprocess.run([
+                  "pyftsubset", static,
+                  f"--text-file={text_file}",
+                  f"--output-file={output}",
+                  "--layout-features=*",
+                  "--name-IDs=*",
+                  "--name-languages=*",
+                  "--notdef-glyph",
+                  "--notdef-outline",
+                  "--recommended-glyphs",
+              ], check=True)
+          PY
+          ls -lh src/assets/fonts
+      - name: Commit font assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/assets/fonts
+          git commit -m "assets: add subset Noto Sans SC fonts for vector PDF"
+          git push
