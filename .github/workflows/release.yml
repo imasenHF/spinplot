@@ -1,7 +1,7 @@
 name: Publish SpinPlot release after Pages deploy
 on:
   workflow_run:
-    workflows: ["Deploy SpinPlot to GitHub Pages"]
+    workflows: ["SpinPlot production HTTP check"]
     types: [completed]
 permissions:
   contents: write

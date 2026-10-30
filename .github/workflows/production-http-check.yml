@@ -1,0 +1,44 @@
+name: SpinPlot production HTTP check
+on:
+  workflow_run:
+    workflows: ["Deploy SpinPlot to GitHub Pages"]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Verify deployed production page and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          PAGE_URL="https://plastocyanin.org/spinplot/"
+          HTML_FILE="$(mktemp)"
+          READY=0
+          for attempt in {1..10}; do
+            if curl --fail --location --silent --show-error --max-time 20 "${PAGE_URL}?v=${VERSION}" -o "${HTML_FILE}" && grep -Fq "SpinPlot ${VERSION}" "${HTML_FILE}"; then
+              READY=1
+              break
+            fi
+            echo "Production page has not exposed SpinPlot ${VERSION} yet (attempt ${attempt}/10)."
+            sleep 6
+          done
+          test "${READY}" = "1"
+          SCRIPT_PATH="$(grep -oE 'src="[^"]+\\.js"' "${HTML_FILE}" | head -1 | cut -d '"' -f 2)"
+          test -n "${SCRIPT_PATH}"
+          case "${SCRIPT_PATH}" in
+            http*) SCRIPT_URL="${SCRIPT_PATH}" ;;
+            /*) SCRIPT_URL="https://plastocyanin.org${SCRIPT_PATH}" ;;
+            *) SCRIPT_URL="${PAGE_URL}${SCRIPT_PATH#./}" ;;
+          esac
+          JS_FILE="$(mktemp)"
+          curl --fail --location --silent --show-error --max-time 30 "${SCRIPT_URL}" -o "${JS_FILE}"
+          grep -Fq "emptyProjectionSpace" "${JS_FILE}"
+          echo "Production SpinPlot ${VERSION} page and JavaScript asset are reachable and contain the phase-B occupancy feature."
