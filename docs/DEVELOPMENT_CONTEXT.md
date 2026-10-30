@@ -1,3 +1,9 @@
+## 2026-10-31 Export 页恢复 Config / Project 面板（PR #8，待验收）
+
+- 工具栏精简后发现原有 `organizeGlobalUI()` 曾将 `#fileOperationsCard` 隐藏并搬离 Export 页；此前顶部 Config 操作使这一问题不易察觉。
+- 修复后让 Export 页直接显示 Config / Project 面板，保留 Save Config、Load Config、Save Project 与 Open Project，避免把低频配置入口移回顶部。现有 JSON 处理函数、数据格式和自动绘图保持不变。
+- Chromium 回归增加 Export 面板可见性及配置 JSON/SVG 下载。正式验收区分 CI、Pages 和浏览器实际操作。
+
 ## 2026-10-31 顶部常用工具栏整理（PR #7 已合并 main）
 
 - 删除顶部 Plot、Load Config、Save Config 和 Reset Config，移除 File 菜单及 Export 页的 Reset Config。保留七按钮的固定排列：Open Data、Open Project、Save Project | Undo、Redo | Clear Data | Export，Export 保留文字；Clear Data 保留现有动作语义。低频 Config 保存/读取在 Export 页与 File 菜单保留，Tools → Recalculate 与自动绘图保持可用。
