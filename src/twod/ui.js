@@ -63,6 +63,9 @@ export function defaults(d) {
     scanFitPowerMinMW: '',
     scanFitPowerMaxMW: '',
     scanFitDisplay: [],
+    scanFitShow: false,
+    scanFitLabelPosition: 'lower_right',
+    scanFitLabelSize: 12,
     topFeatureDisplay: 'none',
     sideFeatureDisplay: 'none',
     scanStatisticMin: xMin,
@@ -538,23 +541,28 @@ export function controls(card, sp, d, onChange) {
   const displayTitle=document.createElement('div');
   displayTitle.textContent='Show on plot';
   displayPanel.append(displayTitle);
-  const displayChoices=document.createElement('div');
-  displayChoices.className='grid2';
-  for(const [key,label] of [['P','P (mW)'],['A','A'],['C','C'],['r2','R²'],['rmse','RMSE'],['n','n']]){
-    const choice=document.createElement('label'),checkbox=document.createElement('input');
-    choice.className='switch';
-    checkbox.type='checkbox';
-    checkbox.checked=Array.isArray(s.scanFitDisplay)&&s.scanFitDisplay.includes(key);
-    checkbox.onchange=()=>{
-      const selected=new Set(Array.isArray(s.scanFitDisplay)?s.scanFitDisplay:[]);
-      if(checkbox.checked)selected.add(key);else selected.delete(key);
-      s.scanFitDisplay=[...selected];
-      onChange();
-    };
-    choice.append(checkbox,document.createTextNode(label));
-    displayChoices.append(choice);
+  const showFit=document.createElement('label'),showFitCheck=document.createElement('input');
+  showFit.className='switch';
+  showFitCheck.type='checkbox';
+  showFitCheck.checked=s.scanFitShow===true||(Array.isArray(s.scanFitDisplay)&&s.scanFitDisplay.length>0);
+  showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;s.scanFitDisplay=showFitCheck.checked?['formula','P','A','C','r2','rmse','n']:[];onChange();};
+  showFit.append(showFitCheck,document.createTextNode('Show fit results'));
+  displayPanel.replaceChildren(showFit);
+  const position=document.createElement('label');
+  position.className='control-label';position.textContent='Position';
+  const positionSelect=document.createElement('select');
+  for(const [value,label] of [['lower_right','Lower right'],['lower_left','Lower left'],['upper_right','Upper right'],['upper_left','Upper left']]){
+    const option=document.createElement('option');option.value=value;option.textContent=label;positionSelect.append(option);
   }
-  displayPanel.append(displayChoices);
+  positionSelect.value=s.scanFitLabelPosition||'lower_right';
+  positionSelect.onchange=()=>{s.scanFitLabelPosition=positionSelect.value;onChange();};
+  position.append(positionSelect);displayPanel.append(position);
+  const sizeLabel=document.createElement('label');
+  sizeLabel.className='control-label';sizeLabel.textContent='Font size (px)';
+  const sizeInput=document.createElement('input');sizeInput.type='number';sizeInput.min='8';sizeInput.max='24';sizeInput.step='1';
+  sizeInput.value=String(s.scanFitLabelSize??12);
+  sizeInput.onchange=()=>{s.scanFitLabelSize=Math.max(8,Math.min(24,Number(sizeInput.value)||12));onChange();};
+  sizeLabel.append(sizeInput);displayPanel.append(sizeLabel);
   fitBody.append(displayPanel);
   const results=document.createElement('div');
   results.className='scan-fit-results';
