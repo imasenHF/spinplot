@@ -54,7 +54,7 @@ jobs:
           node src/twod/visualization.test.js
           node src/twod/ticks.test.js
       - name: Display, axis, empty projection-space and export regression
-        run: node --test src/plotting/oned.test.js src/plotting/axis-scale.test.js src/plotting/footprint.test.js src/processing/axis.test.js src/export/export.test.js
+        run: node --test src/plotting/oned.test.js src/plotting/axis-scale.test.js src/plotting/footprint.test.js src/processing/axis.test.js src/export/export.test.js src/export/pdf.test.js
       - name: Production-equivalent build
         run: npm run build
       - name: Syntax-check browser regression harness
