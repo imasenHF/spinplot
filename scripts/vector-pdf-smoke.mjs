@@ -8,7 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
 
 const port = 4173;
-const origin = \`http://127.0.0.1:\${port}\`;
+const origin = `http://127.0.0.1:${port}`;
 const server = spawn("npm", ["run", "preview", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
   stdio: "inherit",
   env: process.env,
@@ -65,7 +65,7 @@ try {
   assert.match(extracted, /Intensity/, "PDF text extraction missed the Y-axis title");
 
   assert.deepEqual(pageErrors, [], "Browser raised errors during vector PDF export");
-  console.log(\`Vector PDF smoke passed: \${bytes.length} bytes; extracted \${extracted.trim().split(/\s+/).length} words.\`);
+  console.log(`Vector PDF smoke passed: ${bytes.length} bytes; extracted ${extracted.trim().split(/\s+/).length} words.`);
 } finally {
   await browser?.close();
   server.kill("SIGTERM");
