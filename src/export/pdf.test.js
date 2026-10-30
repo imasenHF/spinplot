@@ -32,15 +32,14 @@ test("PDF is a valid raster-image page with the requested physical dimensions", 
 test("PDF cross-reference offsets point to the actual object byte positions", async () => {
   const bytes = await makePdf();
   const text = new TextDecoder().decode(bytes);
-  const startXref = Number(text.match(/startxref\n(\\d+)/)?.[1]);
+  const startXref = Number(text.match(/startxref\n(\d+)/)?.[1]);
   assert.ok(Number.isInteger(startXref));
-  assert.equal(new TextDecoder().decode(bytes.slice(startXref, startXref + 5)), "xref\n");
-  const xrefIndex = text.lastIndexOf("xref\n");
-  const lines = text.slice(xrefIndex).split("\n");
-  assert.equal(lines[1], "0 6");
+  const xrefText = new TextDecoder().decode(bytes.slice(startXref));
+  assert.ok(xrefText.startsWith("xref\n0 6\n"));
+  const lines = xrefText.split("\n");
   for (let id = 1; id <= 5; id++) {
     const offset = Number(lines[id + 2].slice(0, 10));
-    assert.equal(new TextDecoder().decode(bytes.slice(offset, offset + 8)), `${id} 0 obj`);
+    assert.equal(new TextDecoder().decode(bytes.slice(offset, offset + 8)), \`\${id} 0 obj\`);
   }
   assert.equal(new TextDecoder().decode(bytes.slice(startXref, startXref + 5)), "xref\n");
 });
