@@ -7,7 +7,7 @@
 ## 最新状态（2026-10-30：阶段 B 修正、正式合并与 0.10.0 发布）
 
 - PR #1（初版模块化与二维功能）已合并；PR #2 修正阶段 B 的占位语义，已于 2026-10-30 合并至正式 `main`，合并提交 `c438cf43926782342216daee05d7bf5760033c4c`。
-- 正式应用版本为 **0.10.0**，GitHub Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。正式 Pages 部署 [41005910687](https://github.com/imasenHF/spinplot/actions/runs/41005910687) 和发布工作流 [41005959883](https://github.com/imasenHF/spinplot/actions/runs/41005959883) 均成功。
+- 正式应用版本为 **0.10.0**，GitHub Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。正式 Pages 部署 [41006773145](https://github.com/imasenHF/spinplot/actions/runs/41006773145)、生产 HTTP 检查 [41006826196](https://github.com/imasenHF/spinplot/actions/runs/41006826196) 和发布工作流 [41006841041](https://github.com/imasenHF/spinplot/actions/runs/41006841041) 均成功；Release [v0.10.0](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0) 已发布。
 - 阶段 B 的正确语义为：无投影子图可选择占用同行的上投影预留区、同列的右投影预留区或两者。字段为 `emptyProjectionSpace = none / top / right / both`；可见投影、色标、标题、g 轴和图例的自然边距保持独立。默认 `none`。
 - 独立预览快照已同步为 0.10.0；Pages [41005533960](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41005533960)、公开 HTTP [41005667562](https://github.com/imasenHF/spinplot/actions/runs/41005667562)、公开 Chromium [41005667590](https://github.com/imasenHF/spinplot/actions/runs/41005667590) 均成功；完整回归 [41005667591](https://github.com/imasenHF/spinplot/actions/runs/41005667591) 成功。
 - 项目文件格式 11、配置格式 10 未变；旧 `plotFootprint` 在配置载入时移除。真实多组分 EPR 谱线峰峰线宽判读、仪器校准和功率饱和拟合参数不确定度仍需独立科学验证。

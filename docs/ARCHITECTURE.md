@@ -59,7 +59,7 @@ public/legacy/           旧路径跳转
 - `package.json.version` is the single source for the application version. Keep the root `package-lock.json` version synchronized.
 - Vite injects the package version into the titlebar; the same version is written to the project's `appVersion`. It is independent of project format 11 and config format 10.
 - Every version change requires a dated `CHANGELOG.md` section and browser verification of the displayed version and saved `appVersion`.
-- `.github/workflows/release.yml` runs only after the production Pages workflow succeeds on `main`. It compares the package version with the first parent commit; when the version changed, it creates tag `vX.Y.Z` and a GitHub Release using the matching changelog section. No tag or release is created from a preview branch or a failed deployment.
+- `.github/workflows/production-http-check.yml` verifies the deployed `/spinplot/` page version and JavaScript asset after a successful Pages deployment. `.github/workflows/release.yml` runs only after that public HTTP check succeeds on `main`. It compares the package version with the first parent commit; when the version changed, it creates tag `vX.Y.Z` and a GitHub Release using the matching changelog section. No tag or release is created from a preview branch, failed deployment or failed production HTTP check.
 
 ## 5. 模块化实现（2026-10-30 已合并 main）
 
