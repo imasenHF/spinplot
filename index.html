@@ -16,7 +16,7 @@ Contact: wuhaifeng@ustc.edu.cn
 <header class="titlebar"><div class="spinplot-brand"><a class="brand-icon-link" href="https://plastocyanin.org/" aria-label="返回 plastocyanin 主页"><img src="https://plastocyanin.org/assets/images/imasen_phi_logo/imasen-phi-32.png" width="24" height="24" alt=""></a><a class="brand-name" href="https://plastocyanin.org/">plast<span class="brand-gold">o</span>cyanin<span class="brand-gold">.</span></a><span class="brand-divider" aria-hidden="true">|</span><a class="brand-name" href="./" aria-current="page">SpinPl<span class="brand-gold">o</span>t</a><span class="brand-version">__SPINPLOT_VERSION__</span></div><div class="window-buttons"><button class="window-button">—</button><button class="window-button">□</button><button class="window-button">×</button></div></header>
 <nav class="menubar">
   <div class="menu-group"><button class="menu-item" data-menu="file"><u>F</u>ile</button><div class="menu-popup">
-    <button data-menu-action="open-data">Open Data…</button><button data-menu-action="open-project">Open Project…</button><div class="menu-sep"></div><button data-menu-action="save-project">Save Project</button><div class="menu-sep"></div><button data-menu-action="save-config">Save Config</button><button data-menu-action="load-config">Load Config…</button><button data-menu-action="clear-config">Reset Config · Keep Data</button><div class="menu-sep"></div><button data-menu-action="clear-data">Clear All Data</button><button data-menu-action="export">Export Figure</button>
+    <button data-menu-action="open-data">Open Data…</button><button data-menu-action="open-project">Open Project…</button><div class="menu-sep"></div><button data-menu-action="save-project">Save Project</button><div class="menu-sep"></div><button data-menu-action="save-config">Save Config</button><button data-menu-action="load-config">Load Config…</button><div class="menu-sep"></div><button data-menu-action="clear-data">Clear All Data</button><button data-menu-action="export">Export Figure</button>
   </div></div>
   <div class="menu-group"><button class="menu-item" data-menu="view"><u>V</u>iew</button><div class="menu-popup">
     <button data-menu-action="fit-x">Fit X</button><button data-menu-action="reset-view">Reset View</button><button data-menu-action="toggle-sidebar">Show / Hide Sidebar</button><button data-menu-action="reset-sidebar">Reset Sidebar Width</button><button data-menu-action="toggle-log">Show / Hide Log</button>
@@ -26,16 +26,17 @@ Contact: wuhaifeng@ustc.edu.cn
   </div></div>
   <div class="menu-group"><button class="menu-item" data-menu="help"><u>H</u>elp</button><div class="menu-popup"><button data-menu-action="help">Interaction Help</button><button data-menu-action="interface-prefs">Interface Preferences…</button><div class="menu-sep"></div><button data-menu-action="about">About SpinPlot</button></div></div>
 </nav>
-<div class="top-actions">
-  <label class="btn tool-btn" data-icon="folder" title="Open data (.epr / .DSC+.DTA / .csv)"><input id="dataFiles" type="file" multiple accept=".epr,.dsc,.DSC,.dta,.DTA,.xgf,.XGF,.ygf,.YGF,.csv,text/csv"></label>
-  <div class="toolbar-separator"></div>
-  <button id="renderBtnTop" class="tool-btn major" data-icon="play" title="Recalculate"><span class="tool-text">Plot</span></button>
-
-  <button id="undoBtn" class="tool-btn" data-icon="undo" title="Undo"></button><button id="redoBtn" class="tool-btn" data-icon="redo" title="Redo"></button>
-  <div class="toolbar-separator"></div>
-  <button id="clearDataBtn" class="tool-btn" data-icon="trash" title="Clear all data" aria-label="Clear all data"></button><button id="clearConfigBtn" class="tool-btn" title="Clear config · keep imported data" aria-label="Clear config">↺</button><button id="saveConfigBtn" class="tool-btn" data-icon="gearSave" title="Save config"></button><label class="btn tool-btn" data-icon="gearOpen" title="Load config"><input id="configFile" type="file" accept=".json,application/json"></label>
-  <button id="saveProjectBtn" class="tool-btn" data-icon="dataSave" title="Save project + data"></button><label class="btn tool-btn" data-icon="dataOpen" title="Open project + data"><input id="projectFile" type="file" accept=".json,.eprplot,application/json"></label>
-  <div class="toolbar-separator"></div><button id="exportImageBtn" class="tool-btn major" data-icon="export" title="Export figure"><span class="tool-text">Export</span></button>
+<div class="top-actions" role="toolbar" aria-label="File operations and figure export">
+  <button type="button" id="openDataBtn" class="tool-btn" data-icon="folderOpen" title="Open Data (.epr / .DSC+.DTA / .csv)" aria-label="Open Data"></button><input id="dataFiles" type="file" multiple accept=".epr,.dsc,.DSC,.dta,.DTA,.xgf,.XGF,.ygf,.YGF,.csv,text/csv">
+  <button type="button" id="openProjectBtn" class="tool-btn" data-icon="packageOpen" title="Open Project (data + settings)" aria-label="Open Project"></button><input id="projectFile" type="file" accept=".json,.eprplot,application/json">
+  <button type="button" id="saveProjectBtn" class="tool-btn" data-icon="save" title="Save Project (data + settings)" aria-label="Save Project"></button>
+  <div class="toolbar-separator" aria-hidden="true"></div>
+  <button type="button" id="undoBtn" class="tool-btn" data-icon="undo" title="Undo" aria-label="Undo"></button>
+  <button type="button" id="redoBtn" class="tool-btn" data-icon="redo" title="Redo" aria-label="Redo"></button>
+  <div class="toolbar-separator" aria-hidden="true"></div>
+  <button type="button" id="clearDataBtn" class="tool-btn danger" data-icon="trash" title="Clear all imported data" aria-label="Clear Data"></button>
+  <div class="toolbar-separator" aria-hidden="true"></div>
+  <button type="button" id="exportImageBtn" class="tool-btn major" data-icon="imageDown" title="Export Figure" aria-label="Export Figure"><span class="tool-text">Export</span></button>
 </div>
 <div class="app">
 <aside class="sidebar" style="container-type:inline-size;container-name:sidebar">
@@ -130,7 +131,7 @@ Contact: wuhaifeng@ustc.edu.cn
         <div id="exportSizeReadout" class="plot-size-readout"></div>
         <div class="action-grid export-actions"><button id="exportImageBtnSide">Export figure</button><button id="exportCsvBtn">Export global-corrected CSV</button><button id="exportDisplayCsvBtn">Export subplot display CSV</button><button id="exportMetaBtn">Export frequency metadata</button></div>
       </div></section>
-      <section class="card" id="fileOperationsCard"><h3>Config / Project</h3><div class="body"><div class="action-grid"><button id="saveConfigBtnSide">Save config</button><label class="btn" style="text-align:center">Load config<input id="configFileSide" type="file" accept=".json,application/json"></label><button id="clearConfigBtnSide" title="Restore defaults; keep imported data">Clear config</button><button id="saveProjectBtnSide">Save project + data</button><label class="btn" style="text-align:center">Open project<input id="projectFileSide" type="file" accept=".json,.eprplot,application/json"></label></div></div></section>
+      <section class="card" id="fileOperationsCard"><h3>Config / Project</h3><div class="body"><div class="action-grid"><button id="saveConfigBtnSide">Save config</button><label class="btn" style="text-align:center">Load config<input id="configFileSide" type="file" accept=".json,application/json"></label><button id="saveProjectBtnSide">Save project + data</button><label class="btn" style="text-align:center">Open project<input id="projectFileSide" type="file" accept=".json,.eprplot,application/json"></label></div></div></section>
     </div>
   </div>
 </aside>
