@@ -1,4 +1,10 @@
 
+## 2026-10-30 符号样式按钮外观微调
+
+- Current order 右侧的 28 px 符号选择控件保留原生 `select` 的选择行为与键盘访问能力，但隐藏右侧下拉箭头；控件采用与相邻颜色选择器一致的凸起式浅灰底、边框及明暗内阴影，符号仍按曲线颜色着色。
+- 普通曲线与直接二维 Variable scan 衍生曲线共用该样式。保留 `focus-visible` 轮廓，避免移除箭头后键盘焦点不可辨认；不改变曲线配置、项目格式和颜色映射。
+- 修改位置：`src/styles/app.css`。本次只做 CSS 外观调整，构建与页面回归以本次 Actions 和部署检查为准。
+
 ## 2026-10-30 PDF 矢量导出恢复
 
 - 正式 PDF 导出改为复用 `vectorScene` → `svgFromScene`，再由 `svg2pdf.js` 与 `jsPDF` 转换；不再把 Canvas 位图嵌入 PDF。
