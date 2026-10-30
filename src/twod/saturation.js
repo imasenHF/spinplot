@@ -34,6 +34,11 @@ export function attenuationToPower(dB,p0) {
   const power=p0*10**(-dB/10);
   return Number.isFinite(power)&&power>0?power:NaN;
 }
+// Ascending-branch half-maximum power, relative to the baseline-corrected
+// peak of the fixed-exponent amplitude model (whose peak occurs at P_sat).
+export function amplitudeHalfMaximumPower(pSat) {
+  return Number.isFinite(pSat) && pSat > 0 ? pSat * (2 - Math.sqrt(3)) ** 2 : NaN;
+}
 export const saturationModels={
   amplitude:(p,a,q,c)=>a*Math.sqrt(p)/(1+p/q)+c,
   linewidth:(p,a,q,c)=>a*Math.sqrt(1+p/q)+c
@@ -101,7 +106,7 @@ export function fitSaturation(rawPoints,{model='amplitude',allowOffset=false,min
   const r2=tss>0?1-best.sse/tss:null;
   const warning=atBoundary?'Characteristic power is at the search boundary.':
     best.pHalf<pmin||best.pHalf>pmax?'Characteristic power lies outside the measured power range.':null;
-  return {valid:true,model,parameters:{A:best.a,P:best.pHalf,C:best.c},
+  return {valid:true,model,parameters:{A:best.a,P:best.pHalf,C:best.c,...(model==='amplitude'?{PHalf:amplitudeHalfMaximumPower(best.pHalf)}:{})},
     points:points.map((p,i)=>({...p,fitted:best.predict(p.power),residual:best.residuals[i]})),
     sse:best.sse,rmse,r2,n:points.length,warning,atBoundary,
     modelName:model==='amplitude'?'Peak-to-peak amplitude saturation':'Peak-to-peak power broadening'};
