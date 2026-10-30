@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Restyle per-curve line/marker selectors as compact curve-colored buttons and reduce the style column to 56 px. Add independent color pickers to direct-2D Variable scan derived rows, including fit and excluded traces; preserve style/color settings when either control changes. Keep palette-derived colors when no override is stored.
+- Restyle per-curve line/marker selectors as compact curve-colored raised buttons without dropdown arrows; match the raised bevel treatment of the adjacent color picker and retain keyboard focus indication. Keep the style column at 56 px. Add independent color pickers to direct-2D Variable scan derived rows, including fit and excluded traces; preserve style/color settings when either control changes. Keep palette-derived colors when no override is stored.
 
 - Widen the per-curve style column and use a compact custom dropdown arrow so line/marker symbols remain visible. Add an adjacent per-curve color picker; explicit colors are stored in the existing subplot `curveStyles` settings and override the palette for rendering and vector export while unset curves retain the selected palette.
 
