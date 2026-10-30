@@ -82,6 +82,19 @@ try {
   assert.match(extracted, /Magnetic Field/, "PDF text extraction missed the X-axis title");
   assert.match(extracted, /强度 α/, "PDF text extraction missed Chinese and Greek characters in the Y-axis title");
 
+  const bbox = execFileSync("pdftotext", ["-bbox", pdfPath, "-"], { encoding: "utf8" });
+  const pageSize = bbox.match(/<page width="([0-9.]+)" height="([0-9.]+)">/);
+  assert.ok(pageSize, "PDF page dimensions were not readable");
+  const pageWidth = Number(pageSize[1]);
+  const pageHeight = Number(pageSize[2]);
+  const words = [...bbox.matchAll(/<word xMin="([0-9.]+)" yMin="([0-9.]+)" xMax="([0-9.]+)" yMax="([0-9.]+)">/g)];
+  assert.ok(words.length > 0, "PDF has no extractable text bounding boxes");
+  for (const word of words) {
+    const [, xMin, yMin, xMax, yMax] = word.map((value, index) => index === 0 ? value : Number(value));
+    assert.ok(xMin >= -1 && yMin >= -1 && xMax <= pageWidth + 1 && yMax <= pageHeight + 1, "PDF text extends outside the page");
+    assert.ok(yMax - yMin < 48, "PDF text transform produced an oversized text object");
+  }
+
   assert.deepEqual(pageErrors, [], "Browser raised errors during vector PDF export");
   console.log(`Vector PDF smoke passed: ${bytes.length} bytes; extracted ${extracted.trim().split(/\s+/).length} words.`);
 } finally {
