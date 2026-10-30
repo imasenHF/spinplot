@@ -3,7 +3,7 @@
 更新日期：2026-10-31（Asia/Shanghai）
 适用范围：SpinPlot 独立软件界面、图表预览及导出。以下区分**现有实现**与**后续修改必须保留的规则**；实际值以 `index.html` CSS、`src/interface.js`、`src/twod/ui.js`、`src/twod/palettes.js` 和绘图/导出代码为准。本文件不要求将主站的页面布局直接覆盖本工具。
 
-## 顶部工具栏（待 PR 验收）
+## 顶部工具栏（PR #7 已合并）
 
 - 顶部只保留七个常驻操作，顺序为 Open Data、Open Project、Save Project | Undo、Redo | Clear Data | Export Figure；不再显示 Plot、顶部 Config 文件操作及 Reset Config。Config 保存/读取作为低频操作保留于 Export 页及 File 菜单。工具栏不引入新的下拉菜单。
 - 三个文件相关图标分别使用文件夹、打开项目包和软盘，图片导出采用图片加向下箭头图标，Export 保留文字；消除原来相似的齿轮/文件夹+箭头图标。按钮 34 × 34 px、图标 19 px、笔画约 1.8 px，Export 宽度至少 86 px，采用原有浅灰立体边框；Clear Data 悬停显示警示色。Undo/Redo 禁用态保留差异。
