@@ -575,7 +575,7 @@ export function controls(card, sp, d, onChange) {
     field.type='text';
     field.readOnly=true;
     field.value=value;
-    field.title='Calculated result; not editable';
+    field.title=label==='P½'?'Power where fitted amplitude is half its low-power extrapolation; also the peak of this fixed-exponent model, not the linear-range cutoff.':'Calculated result; not editable';
     holder.append(field);
     parent.append(holder);
   }
