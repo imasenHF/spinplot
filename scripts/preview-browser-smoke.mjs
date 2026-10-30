@@ -310,6 +310,23 @@ try {
     assert.equal(savedSpace.config.subplots[0].twoD.settings.showXProjection,true,'Top projection state remains unchanged');
     assert.equal(savedSpace.config.subplots[0].twoD.settings.showYProjection,false,'Right projection state remains unchanged');
     assert.equal(Object.hasOwn(savedSpace.config.subplots[0],'plotFootprint'),false,'Legacy projection-selection field is removed on load/save');
+
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    await page.locator('#imageFormat').selectOption('svg');
+    const [bothDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await bothDownload.saveAs('browser-preview/empty-projection-both.svg');
+    const bothSvg=fs.readFileSync('browser-preview/empty-projection-both.svg','utf8');
+    assert.match(bothSvg,/<svg\\b/,'SVG export remains valid with both projection spaces occupied');
+    assert.doesNotMatch(bothSvg,/\\b(?:NaN|Infinity)\\b/,'SVG geometry contains finite coordinates');
+
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await occupancy.selectOption('none');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [noneDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await noneDownload.saveAs('browser-preview/empty-projection-none.svg');
+    const noneSvg=fs.readFileSync('browser-preview/empty-projection-none.svg','utf8');
+    assert.notEqual(bothSvg,noneSvg,'SVG export reflects the selected empty projection-space geometry');
+
     await load(savedSpace,'empty-projection-space-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="emptyProjectionSpace"]').inputValue(),'both','Occupancy setting restores after project reload');

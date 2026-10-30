@@ -1,4 +1,7 @@
 name: SpinPlot modularization preview
+concurrency:
+  group: spinplot-modularization-preview-${{ github.ref }}
+  cancel-in-progress: false
 on:
   push:
     branches:
