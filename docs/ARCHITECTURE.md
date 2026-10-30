@@ -17,7 +17,7 @@ public/legacy/           旧路径跳转
 .github/workflows/pages.yml  构建与 Pages 发布
 ```
 
-- 应用当前版本以 `package.json` 为准，检查时是 **0.9.2**。
+- 正式 `main` 当前版本为 **0.9.2**；修正分支候选版本以 `package.json` 为准，为 **0.10.0**。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
@@ -50,11 +50,13 @@ public/legacy/           旧路径跳转
 | SpinPlot 配置 | `version: 10` | `appVersion`、控件参数、布局、子图设置、显示状态；不携带源谱数组 |
 | 应用版本 | `package.json.version` | 语义版本，用于页面和保存文件的 `appVersion`，不决定文件格式 |
 
+子图配置可选字段 `emptyProjectionSpace`（`none / top / right / both`）用于占用同一行/列中未使用的投影附属空间。项目格式 11、配置格式 10 不变；旧字段 `plotFootprint` 不再参与布局，载入时移除。
+
 新增或重命名字段时先确定旧文件读取行为与迁移结果；不能自动恢复的属性必须提示丢失/不支持。配置恢复不应覆盖已导入的原始数据；项目文件加载需校验数组、二维矩阵、版本和引用下标。
 
 ## 5. 模块化实现（2026-10-30 已合并 main）
 
-模块化实现、一维绘图/坐标/导出接入及阶段 B Plot footprint 已通过 PR #1 合并至正式 `main`。预览分支保留为后续试验基线。
+模块化实现、一维绘图/坐标/导出接入已通过 PR #1 合并至正式 `main`。原阶段 B 的 `plotFootprint` 仅控制投影可见性，与用户要求的空白占位语义不符；当前修正分支将其替换为 `emptyProjectionSpace`，待专项验收后再合并。
 
 | 模块 | 实际职责 |
 | --- | --- |
