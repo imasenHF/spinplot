@@ -351,20 +351,24 @@ export function renderFigure(
     const lines = sp.fitResultLines;
     if (!Array.isArray(lines) || !lines.length) return;
     const { x0, y0, pw, ph } = geom;
-    const lineHeight = 13;
+    const size = Math.max(8, Math.min(24, Number(sp.fitResultFontSize) || 12));
+    const lineHeight = size * 1.35;
     const visible = lines.slice(0, Math.max(0, Math.floor((ph - 16) / lineHeight)));
     if (!visible.length) return;
     ctx.save();
-    ctx.font = `10px ${font}`;
-    const width = Math.min(pw - 12, Math.max(70, ...visible.map(line => ctx.measureText(line).width + 12)));
-    const height = visible.length * lineHeight + 8;
-    if (width <= 0) { ctx.restore(); return; }
+    ctx.font = `${size}px ${font}`;
+    const width = Math.min(pw - 12, Math.max(70, ...visible.map(line => ctx.measureText(line).width + 16)));
+    const height = visible.length * lineHeight + 10;
+    if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
+    const position = sp.fitResultPosition || 'lower_right';
+    const left = position.endsWith('right') ? x0 + pw - width - 6 : x0 + 6;
+    const top = position.startsWith('lower') ? y0 + ph - height - 6 : y0 + 6;
     ctx.fillStyle = theme.bg === '#11181b' ? 'rgba(17,24,27,0.86)' : 'rgba(255,255,255,0.88)';
-    ctx.fillRect(x0 + 5, y0 + 5, width, height);
+    ctx.fillRect(left, top, width, height);
     ctx.fillStyle = theme.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    visible.forEach((line, i) => ctx.fillText(line, x0 + 11, y0 + 9 + i * lineHeight, width - 10));
+    visible.forEach((line, i) => ctx.fillText(line, left + 8, top + 5 + i * lineHeight, width - 16));
     ctx.restore();
   }
   function drawMeasurements(ctx, sp, X, r, font) {
