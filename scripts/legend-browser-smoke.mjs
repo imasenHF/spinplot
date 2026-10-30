@@ -106,7 +106,7 @@ try {
     page.waitForEvent('download'),
     page.locator('#exportImageBtn').click()
   ]);
-  assert.match(figureDownload.suggestedFilename(),/\\.svg$/i);
+  assert.match(figureDownload.suggestedFilename(),/\.svg$/i);
   await page.locator('#clearDataBtn').click();
   await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '0');
   assert.deepEqual(pageErrors, []);
