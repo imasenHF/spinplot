@@ -20,7 +20,6 @@ export async function pdfFromSvg({ svg, design }) {
     unit: "pt",
     format: [pageWidth, pageHeight],
     orientation: pageWidth >= pageHeight ? "landscape" : "portrait",
-    compress: true,
     putOnlyUsedFonts: true,
     floatPrecision: 16,
   });
