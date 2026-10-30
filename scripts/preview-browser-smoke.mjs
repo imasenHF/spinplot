@@ -240,7 +240,7 @@ try {
   if (process.env.SPINPLOT_TEST_FOOTPRINT === '1') {
     const source2D=mixed.config.subplots.find(sp=>sp.twoD);
     const footprints=['main','right','top','full'];
-    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false,xMode:'mean',yMode:'mean'};
+    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false,xMode:'mean',yMode:'mean',xProjectionTitle:'TopPanel',yProjectionTitle:'RightPanel'};
     const footprintSubplots=footprints.map((footprint,index)=>{
       const subplot=JSON.parse(JSON.stringify(source2D));
       return {...subplot,title:'Footprint '+footprint,mode:'heatmap',plotFootprint:footprint,gridRow:Math.floor(index/2)+1,gridCol:index%2+1,rowSpan:1,colSpan:1,twoD:{...subplot.twoD,index:2,settings:{...footprintSettings}}};
@@ -261,8 +261,8 @@ try {
     const [footprintDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await footprintDownload.saveAs('browser-preview/plot-footprints.svg');
     const footprintSvg=fs.readFileSync('browser-preview/plot-footprints.svg','utf8');
-    assert.equal([...footprintSvg.matchAll(/Field projection \(/g)].length,2,'Only Top and Full footprints draw top projections');
-    assert.equal([...footprintSvg.matchAll(/Microwave attenuation projection \(/g)].length,2,'Only Right and Full footprints draw right projections');
+    assert.equal([...footprintSvg.matchAll(/TopPanel/g)].length,2,'Only Top and Full footprints draw top projections');
+    assert.equal([...footprintSvg.matchAll(/RightPanel/g)].length,2,'Only Right and Full footprints draw right projections');
     const footprintSize=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return [doc.documentElement.getAttribute('width'),doc.documentElement.getAttribute('height')];},footprintSvg);
     assert.deepEqual(footprintSize,['1000','1000'],'SVG export retains the selected design canvas size');
     await load(savedFootprints,'plot-footprints-reload.spinplot.json');
