@@ -105,6 +105,8 @@ try {
   });
   await toolbarPage.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '2');
   await toolbarPage.locator('button.tab-btn[data-tab="export"]').click();
+  const fileOperations = toolbarPage.locator('#fileOperationsCard');
+  assert.ok(await fileOperations.isVisible(), 'Config / Project must be visible on Export');
   const [configDownload] = await Promise.all([
     toolbarPage.waitForEvent('download',{timeout:15000}),
     toolbarPage.locator('#saveConfigBtnSide').click()
