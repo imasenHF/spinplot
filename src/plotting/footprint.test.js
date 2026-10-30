@@ -6,6 +6,7 @@ import {
   footprintProjectionFlags,
   normalizePlotFootprint,
 } from "./footprint.js";
+import { fitMainColumns } from "../twod/ui.js";
 
 const settings = {
   showProjections: true,
@@ -81,4 +82,21 @@ test("row footprint allocation rejects a canvas with insufficient main plot heig
     () => fitMainRows([{ row: 1, insets: { top: 290, bottom: 290 } }], 1, 600),
     /Canvas too small/,
   );
+});
+
+test("column footprint allocation keeps main plot widths aligned across columns", () => {
+  const fitted = fitMainColumns(
+    [
+      { col: 1, box: { cellW: 400 }, insets: { left: 50, right: 80, rightFraction: 0, top: 20, bottom: 20 } },
+      { col: 2, box: { cellW: 400 }, insets: { left: 50, right: 140, rightFraction: 0.14, top: 80, bottom: 20 } },
+    ],
+    2,
+    1000,
+  );
+  assert.ok(Math.abs(fitted.widths.reduce((sum, width) => sum + width, 0) - 1000) < 1e-9);
+  const mainWidths = fitted.widths.map(
+    (width, index) => width - fitted.insets[index].left - fitted.insets[index].right,
+  );
+  assert.ok(Math.abs(mainWidths[0] - mainWidths[1]) < 1e-9);
+  assert.ok(fitted.widths[1] > fitted.widths[0]);
 });
