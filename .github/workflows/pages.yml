@@ -30,6 +30,8 @@ jobs:
             git push
           fi
       - run: npm ci
+      - name: Stage 0 quality checks (lint, format, unit tests, build)
+        run: npm run check
       - name: PDF export regression
         run: node --test src/export/pdf.test.js
       - name: Install vector PDF browser test runtime
