@@ -1,6 +1,6 @@
 # SpinPlot 持续开发上下文
 
-更新日期：2026-10-29（Asia/Shanghai）
+更新日期：2026-10-30（Asia/Shanghai）
 
 ## 用途与优先级
 
@@ -88,6 +88,15 @@
 ## Auto Z 当前功能与维护约束
 
 `Auto Z`、色标双击均基于 `TwoD.autoZBounds()` 计算当前可见 Z 数据范围，写入数值 `zMin`、`zMax` 并保持 `zUseGlobal=false`。该模式不再使用旧版的“清空 min/max”恢复机制。双击热图主体仅重置 X/Y，保留独立 Z。测试需要断言实际数值，不能继续以空字符串作为“自动范围”的期望值。二维基线不在此流程中执行，不能自动减全矩阵均值。
+
+## 阶段 B：Plot footprint 与跨列布局（2026-10-30）
+
+- **实现状态：** 已在预览分支完成代码实现。每个二维子图新增 `plotFootprint`，支持 `main`、`top`、`right`、`full` 四种范围；默认 `full`，旧项目缺少字段时保持原有完整投影显示。
+- **投影控制：** 画幅预设决定顶部/右侧投影控件的可用状态；子图原有 `showProjections`、`showXProjection`、`showYProjection` 的显式关闭状态继续有效。改变预设后布局折叠面板保持展开，设置随项目保存/恢复。
+- **几何分配：** `src/plotting/footprint.js` 计算单行子图的行高分配；`src/twod/ui.js` 的 `fitMainColumns()` 计算单列子图列宽分配。分配依据包括顶部/底部标题与投影、左侧轴标题、右侧投影及色标空间，目标是同一行主坐标框等高、同一列主坐标框等宽。无跨行/跨列跨度时采用行列独立分配；存在跨度时使用共享边距回退路径，保留现有网格布局语义。
+- **回归范围：** `src/plotting/footprint.test.js` 覆盖四种预设、投影开关保留、行高分配、跨行回退、画布不足错误及列宽分配；`scripts/preview-browser-smoke.mjs` 覆盖预设控件、即时切换、SVG 顶/右投影出现次数、设计画布尺寸及项目重载；`scripts/preview-regression.mjs` 已启用 `SPINPLOT_TEST_FOOTPRINT`。完整数值/构建/Chromium/迁移前对照 [40998987550](https://github.com/imasenHF/spinplot/actions/runs/40998987550) 成功。
+- **当前发布状态：** 预览分支静态构建已生成 `index-Dhp_8wZQ.js`，主站独立预览 HTML 与 JS 资源已更新；主站 Pages 发布 [41001497581](https://github.com/imasenHF/imasenhf.github.io/actions/runs/41001497581) 正在执行。公开 URL 的阶段 B 浏览器复测尚未完成。正式 `main` 与 `/spinplot/` 未修改。
+- **限制：** 目前的等高/等宽分配针对单行/单列子图；含跨行/跨列跨度的复杂组合采用共享边距回退，尚未实现任意跨度约束下的全局最优几何求解。此项不影响现有布局表达能力，但极复杂混排需作为独立验收样例。
 
 ## 当前任务 B：二维扫描变量分析、Overlap 与 CW EPR 功率饱和拟合
 
