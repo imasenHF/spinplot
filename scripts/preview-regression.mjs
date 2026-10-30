@@ -9,9 +9,9 @@ try{
   let ready=false;for(let i=0;i<100;i++){try{ready=(await fetch(`http://127.0.0.1:${port}/spinplot/`)).ok;}catch{}if(ready)break;await new Promise(r=>setTimeout(r,200));}assert.ok(ready,'Preview server started');
  }
  fs.rmSync('browser-preview',{recursive:true,force:true});fs.rmSync('browser-baseline',{recursive:true,force:true});
- await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4174/spinplot/'}});
+ await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4174/spinplot/',SPINPLOT_EXPECT_VERSION:'0.9.2'}});
  fs.renameSync('browser-preview','browser-baseline');
- await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4173/spinplot/',SPINPLOT_TEST_COLORBAR_DBLCLICK:'1',SPINPLOT_TEST_FREQUENCY_ALIGNMENT:'1',SPINPLOT_TEST_TWOD_VIEW_MODES:'1',SPINPLOT_TEST_MANUAL_CURVE_HEATMAP:'1',SPINPLOT_TEST_HEATMAP_DATA_PANEL:'1',SPINPLOT_TEST_ADJACENT_SYMBOL_COLUMN:'1',SPINPLOT_TEST_SURFACE_CONTOUR:'1',SPINPLOT_TEST_AXIS_LOG:'1',SPINPLOT_TEST_AXIS_DISPLAY:'1',SPINPLOT_TEST_PROJECTION_TITLE_SIZE:'1',SPINPLOT_TEST_POWER_SATURATION:'1',SPINPLOT_TEST_EMPTY_PROJECTION_SPACE:'1'}});
+ await run('node',['scripts/preview-browser-smoke.mjs'],{env:{...process.env,SPINPLOT_TEST_URL:'http://127.0.0.1:4173/spinplot/',SPINPLOT_EXPECT_VERSION:'0.10.0',SPINPLOT_TEST_COLORBAR_DBLCLICK:'1',SPINPLOT_TEST_FREQUENCY_ALIGNMENT:'1',SPINPLOT_TEST_TWOD_VIEW_MODES:'1',SPINPLOT_TEST_MANUAL_CURVE_HEATMAP:'1',SPINPLOT_TEST_HEATMAP_DATA_PANEL:'1',SPINPLOT_TEST_ADJACENT_SYMBOL_COLUMN:'1',SPINPLOT_TEST_SURFACE_CONTOUR:'1',SPINPLOT_TEST_AXIS_LOG:'1',SPINPLOT_TEST_AXIS_DISPLAY:'1',SPINPLOT_TEST_PROJECTION_TITLE_SIZE:'1',SPINPLOT_TEST_POWER_SATURATION:'1',SPINPLOT_TEST_EMPTY_PROJECTION_SPACE:'1'}});
  const compared=[];
  for(const name of fs.readdirSync('browser-baseline').filter(n=>/\.(csv|json)$/.test(n)&&n!=='result.json')){
   let old=fs.readFileSync('browser-baseline/'+name,'utf8'),current=fs.readFileSync('browser-preview/'+name,'utf8');
