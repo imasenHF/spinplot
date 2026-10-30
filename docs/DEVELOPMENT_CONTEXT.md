@@ -33,6 +33,8 @@
 
 ## 仓库与发布边界
 
+- 正式应用底部状态栏的版权/联系信息后方提供低强调度 `dev` 入口，链接至独立预览 `https://plastocyanin.org/previews/spinplot-modularization/`；正式应用入口和默认启动路径保持不变。
+
 - 仓库：`imasenHF/spinplot`。
 - 正式基线：`main`；已合并的修正分支 `preview/modularization-phase-b-empty-projection-20261030` 和旧模块化分支 `preview/modularization-phase1-20261009` 保留作历史记录。
 - 正式入口：<https://plastocyanin.org/spinplot/>，由仓库 `main` 的正式发布流程管理。
