@@ -1,0 +1,100 @@
+name: SpinPlot modularization preview
+on:
+  push:
+    branches:
+      - 'preview/modularization-*'
+    paths-ignore:
+      - 'preview-site/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Numeric helper regression
+        run: node --test src/core/numeric.test.js
+      - name: CSV and interpolation regression
+        run: |
+          node --test src/data/csv.test.js
+          node --test src/processing/interpolation.test.js
+      - name: One-dimensional processing regression
+        run: node --test src/processing/signal.test.js
+      - name: Project serialization and compatibility regression
+        run: node --test src/project/project.test.js
+      - name: Manual 1D curve to 2D matrix regression
+        run: node --test src/data/curve-matrix.test.js
+      - name: Z scale and color range regression
+        run: node --test src/twod/zscale.test.js
+      - name: Per-trace feature extraction regression
+        run: node --test src/twod/scan-analysis.test.js
+      - name: Derived scan Z-order and legacy project regression
+        run: node --test src/twod/scan-order.test.js
+      - name: Saturation and linewidth regression
+        run: node --test src/twod/saturation.test.js
+      - name: Per-field-scan right projection linewidth regression
+        run: node --test src/twod/projection-linewidth.test.js
+      - name: Existing 2D regression
+        run: |
+          node src/twod/core.test.js
+          node src/twod/bes3t.test.js
+          node src/twod/large.test.js
+          node src/twod/integration.test.js
+          node src/twod/visualization.test.js
+          node src/twod/ticks.test.js
+      - name: Display, axis, footprint and export regression
+        run: node --test src/plotting/oned.test.js src/plotting/axis-scale.test.js src/plotting/footprint.test.js src/processing/axis.test.js src/export/export.test.js
+      - name: Production-equivalent build
+        run: npm run build
+      - name: Syntax-check browser regression harness
+        run: node --check scripts/preview-browser-smoke.mjs && node --check scripts/preview-regression.mjs
+      - name: Install browser regression runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Build pre-migration reference
+        run: |
+          git worktree add --detach ../spinplot-baseline 911a6a8c2bfbc2079e1832923f3abf0619cfd8ac
+          cd ../spinplot-baseline
+          npm ci
+          npm run build
+      - name: Browser regression and reference comparison
+        run: node scripts/preview-regression.mjs
+      - name: Upload browser acceptance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spinplot-modularization-acceptance
+          path: |
+            browser-preview/
+            browser-baseline/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload isolated preview build (not deployed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: spinplot-modularization-preview
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Build browser preview with relative URLs
+        run: npx vite build --base=./ --outDir=preview-site
+      - name: Commit static preview only to isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f preview-site
+          if git diff --cached --quiet; then
+            echo "Preview build unchanged"
+          else
+            git commit -m "build(preview): static browser preview [skip ci]"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi

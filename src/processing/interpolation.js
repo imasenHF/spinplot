@@ -1,0 +1,2 @@
+// Extracted without changes to 1D interpolation for either axis direction.
+export function interp1(x,y,xq){const asc=x[x.length-1]>=x[0],X=asc?x:x.slice().reverse(),Y=asc?y:y.slice().reverse(),out=new Array(xq.length);let j=0;for(let i=0;i<xq.length;i++){const q=xq[i];if(q<X[0]||q>X[X.length-1]){out[i]=NaN;continue}while(j<X.length-2&&X[j+1]<q)j++;const x0=X[j],x1=X[j+1],y0=Y[j],y1=Y[j+1];out[i]=x1===x0?y0:y0+(q-x0)*(y1-y0)/(x1-x0)}return out}

@@ -1,0 +1,866 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {chromium} from 'playwright';
+
+const url = process.env.SPINPLOT_TEST_URL || 'https://plastocyanin.org/previews/spinplot-modularization/';
+fs.mkdirSync('browser-preview', {recursive: true});
+const browser = await chromium.launch({headless:true,...(process.env.SPINPLOT_CHROMIUM_PATH?{executablePath:process.env.SPINPLOT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']}: {})});
+const errors=[];
+try {
+  const page = await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true});
+  page.on('pageerror', err => errors.push(err.message));
+  page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
+  const response = await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+  assert.equal(response.status(),200,'Preview HTML must be served');
+  assert.match(await page.title(),/SpinPlot 0\.9\.2/);
+  assert.equal(await page.locator('.tab-btn').count(),6,'Six tabs are required');
+  try {
+    await page.waitForFunction(() => document.querySelector('#statusMain')?.textContent?.includes('Waiting for data'),null,{timeout:15000});
+  } catch (error) {
+    const details=await page.evaluate(()=>({
+      status:document.querySelector('#statusMain')?.textContent,
+      ready:document.readyState,
+      scripts:[...document.querySelectorAll('script[src]')].map(x=>x.src),
+      element:!!document.querySelector('#statusMain'),
+      pageContent:document.body?.innerText?.slice(0,900),
+    })).catch(e=>({captureError:e.message}));
+    const request=await page.evaluate(async()=>{let url=document.querySelector('script[type=module]')?.src; if(!url)return null;try{const res=await fetch(url,{cache:'no-store'});return {url,status:res.status,type:res.headers.get('content-type'),length:(await res.text()).length}}catch(err){return String(err)}}).catch(e=>({fetchError:e.message}));
+    throw new Error('Public preview initialization failed: '+JSON.stringify({details,request,errors:errors.slice(-8)}),{cause:error});
+  }
+  await page.locator('#dataFiles').setInputFiles({name:'synthetic-cw.csv',mimeType:'text/csv',
+    buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n3340,1,2\n3350,0,0\n')});
+  await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim()==='2',null,{timeout:20000});
+  await page.screenshot({path:'browser-preview/spinplot-wide.png',fullPage:true});
+  await page.locator('button.tab-btn[data-tab="scaling"]').click();
+  assert.match(await page.locator('button.tab-btn[data-tab="scaling"]').getAttribute('class'),/active/);
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  const [download] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#exportCsvBtn').click()]);
+  assert.match(download.suggestedFilename(),/\.csv$/i);
+  await download.saveAs('browser-preview/synthetic-global.csv');
+  const exportDisplay=async (path)=>{
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [d] = await Promise.all([
+      page.waitForEvent('download',{timeout:15000}),
+      page.locator('#exportDisplayCsvBtn').click()
+    ]);
+    await d.saveAs(path);
+    const [header,...rows]=fs.readFileSync(path,'utf8').trim().split(/\r?\n/).map(line=>line.split(','));
+    return {header,rows};
+  };
+  const coordinateFor=(data,curve)=>{
+    const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate');
+    assert.ok(i>=0&&j>=0,'Display CSV must contain curve index and coordinate');
+    const row=data.rows.find(r=>Number(r[i])===curve);
+    assert.ok(row,'Expected synthetic curve in display CSV');
+    return Number(row[j]);
+  };
+  const valueFor=(data,curve,field)=>{
+    const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate'),k=data.header.indexOf('Y_display');
+    assert.ok(i>=0&&j>=0&&k>=0,'Display CSV must contain coordinate, curve index and intensity');
+    const row=data.rows.find(r=>Number(r[i])===curve&&Number(r[j])===field);
+    assert.ok(row,'Expected synthetic curve/sample point in display CSV');
+    return Number(row[k]);
+  };
+
+  // The new frequency-alignment behavior is tested only against the current modularized build.
+  // The pre-migration reference does not contain these controls and remains an A/B baseline.
+  if (process.env.SPINPLOT_TEST_FREQUENCY_ALIGNMENT === '1') {
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    assert.equal(await page.locator('#globalFreqMode').inputValue(),'local_mean','Global frequency mode defaults to Local mean');
+    assert.equal(await page.locator('.subplot').first().locator('[data-field="freqMode"]').inputValue(),'local','New subplots default to local alignment');
+    assert.equal(await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').inputValue(),'mean','New subplots default to Local mean');
+    await page.locator('#freqTable [data-source-frequency="0"]').fill('9.5');
+    await page.locator('#freqTable [data-source-frequency="0"]').press('Tab');
+    assert.equal(Number(await page.locator('#freqTable [data-source-frequency="0"]').inputValue()),9.5,'Source frequency entry for first CSV curve must persist');
+    await page.locator('#freqTable [data-source-frequency="1"]').fill('9.7');
+    await page.locator('#freqTable [data-source-frequency="1"]').press('Tab');
+    assert.equal(Number(await page.locator('#freqTable [data-source-frequency="1"]').inputValue()),9.7,'Source frequency entry for second CSV curve must persist');
+    await page.locator('button.tab-btn[data-tab="scaling"]').click();
+    await page.locator('#baselineMode').selectOption('none');
+    const localMeanCSV=await exportDisplay('browser-preview/frequency-local-mean.csv');
+    assert.ok(Math.abs(coordinateFor(localMeanCSV,0)-3300*9.6/9.5)<1e-7,'Default Local mean must align both curves to 9.6 GHz');
+    assert.ok(Math.abs(coordinateFor(localMeanCSV,1)-3300*9.6/9.7)<1e-7,'Default Local mean must use each source frequency');
+
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await page.locator('#groupExpression').fill('0 / 1');
+    await page.locator('#applyGroupsBtn').click();
+    const localGroupsCSV=await exportDisplay('browser-preview/frequency-local-groups.csv');
+    assert.equal(coordinateFor(localGroupsCSV,0),3300,'Local mean aligns a single-curve subplot to its own source frequency');
+    assert.equal(coordinateFor(localGroupsCSV,1),3300,'Local mean is calculated independently for each subplot');
+
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    await page.locator('#globalFreqMode').selectOption('global_mean');
+    const globalMeanCSV=await exportDisplay('browser-preview/frequency-global-mean.csv');
+    assert.ok(Math.abs(coordinateFor(globalMeanCSV,0)-3300*9.6/9.5)<1e-7,'Global mean must use the mean frequency across all curves');
+    assert.ok(Math.abs(coordinateFor(globalMeanCSV,1)-3300*9.6/9.7)<1e-7,'Global mean target must apply to each subplot');
+
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    await page.locator('#globalFreqMode').selectOption('manual');
+    await page.locator('#targetFreq').fill('10');
+    const globalTargetCSV=await exportDisplay('browser-preview/frequency-global-target.csv');
+    assert.ok(Math.abs(coordinateFor(globalTargetCSV,0)-3300*10/9.5)<1e-7,'Global Manual target must affect untouched subplots');
+    assert.ok(Math.abs(coordinateFor(globalTargetCSV,1)-3300*10/9.7)<1e-7,'Global Manual target must scale every curve from its own source frequency');
+
+    const openFrequencySettings=async()=>{
+      const card=page.locator('.subplot').first();
+      if(await card.evaluate(el=>el.classList.contains('collapsed')))await card.locator('[data-action="collapse"]').click();
+      const processing=card.locator('details[data-section="processing"]');
+      if(!await processing.evaluate(el=>el.open))await processing.locator('summary').first().click();
+      const details=processing.locator('[data-field="freqMode"]').locator('xpath=ancestor::details[1]');
+      if(!await details.evaluate(el=>el.open))await details.locator('summary').click();
+    };
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await page.locator('#groupExpression').fill('0,1');
+    await page.locator('#applyGroupsBtn').click();
+    await openFrequencySettings();
+    await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+    await openFrequencySettings();
+    await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('manual');
+    await openFrequencySettings();
+    await page.locator('.subplot').first().locator('[data-field="localFreqTarget"]').fill('9.8');
+    const localTargetCSV=await exportDisplay('browser-preview/frequency-local-target.csv');
+    assert.ok(Math.abs(coordinateFor(localTargetCSV,0)-3300*9.8/9.5)<1e-7,'Local Manual target must override the global target');
+    assert.ok(Math.abs(coordinateFor(localTargetCSV,1)-3300*9.8/9.7)<1e-7,'Local Manual target must apply to every curve in the subplot');
+
+    // Restore the baseline fixture with missing source frequency metadata.
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    await page.locator('#targetFreq').fill('9.85');
+    await page.locator('#clearDataBtn').click();
+    await page.locator('#dataFiles').setInputFiles({name:'synthetic-cw.csv',mimeType:'text/csv',buffer:Buffer.from('B,Trace A,Trace B\n3300,0,0\n3310,1,2\n3320,-1,-2\n3330,0,0\n3340,1,2\n3350,0,0\n')});
+    await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim()==='2',null,{timeout:20000});
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await openFrequencySettings();
+    await page.locator('.subplot').first().locator('[data-field="freqMode"]').selectOption('local');
+    await openFrequencySettings();
+    await page.locator('.subplot').first().locator('[data-field="localFreqMode"]').selectOption('mean');
+  }
+  await page.locator('button.tab-btn[data-tab="scaling"]').click();
+  await page.locator('#baselineMode').selectOption('region');
+  await page.locator('#baselineRegions').fill('3300-3310');
+  const baselineCSV=await exportDisplay('browser-preview/region-baseline.csv');
+  assert.ok(Math.abs(valueFor(baselineCSV,0,3300)+0.5)<1e-10,'Regional baseline subtraction for first trace');
+  assert.ok(Math.abs(valueFor(baselineCSV,1,3300)+1)<1e-10,'Regional baseline subtraction for second trace');
+
+  // Project and config persistence: verify format numbers and legacy project reload.
+  const [projectDownload] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#saveProjectBtn').click()]);
+  const projectPath='browser-preview/synthetic-project.spinplot.json';
+  await projectDownload.saveAs(projectPath);
+  const project=JSON.parse(fs.readFileSync(projectPath,'utf8'));
+  assert.equal(project.type,'SpinPlotProject');
+  assert.equal(project.version,11);
+  assert.equal(project.config.version,10);
+  assert.equal(project.rawCurves.length,2);
+  const [configDownload] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#saveConfigBtn').click()]);
+  const configPath='browser-preview/synthetic-config.json';
+  await configDownload.saveAs(configPath);
+  const config=JSON.parse(fs.readFileSync(configPath,'utf8'));
+  assert.equal(config.version,10);
+  assert.ok(!Object.hasOwn(config,'rawCurves'));
+  for (const version of [9,10,11]) {
+    const fileName='synthetic-v'+version+'.spinplot.json';
+    await page.locator('#projectFile').setInputFiles({name:fileName,mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...project,version}))});
+    await page.waitForFunction((name)=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),fileName,{timeout:15000});
+    assert.equal((await page.locator('#dataCount').textContent()).trim(),'2');
+  }
+  const stacked={...project,config:{...project.config,subplots:project.config.subplots.map((sp,i)=>i===0?{...sp,mode:'stack',offsetMode:'manual',manualOffsets:'0, 3',offsetDirection:1}:sp)}};
+  const stackName='synthetic-stack.spinplot.json';
+  await page.locator('#projectFile').setInputFiles({name:stackName,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(stacked))});
+  await page.waitForFunction((name)=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),stackName,{timeout:15000});
+  const stackCSV=await exportDisplay('browser-preview/stack-display.csv');
+  assert.ok(Math.abs(valueFor(stackCSV,0,3300)+0.5)<1e-10,'Stack does not affect first trace');
+  assert.ok(Math.abs(valueFor(stackCSV,1,3300)-2)<1e-10,'Manual stack offset is display-only and applied to second trace');
+  // Complete A/B regression: Overlay, manual/automatic Stack in both directions.
+  const originalRaw=JSON.stringify(project.rawCurves);
+  const load=async (payload,name)=>{
+    await page.locator('#projectFile').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
+    try {
+      await page.waitForFunction(name=>document.querySelector('#log')?.textContent?.includes('Project loaded: '+name),name,{timeout:60000});
+    } catch(error) {
+      const diagnostics=await page.evaluate(()=>({status:document.querySelector('#status')?.textContent,log:document.querySelector('#log')?.textContent?.slice(-1200),count:document.querySelector('#dataCount')?.textContent}));
+      throw new Error(`Project load timeout for ${name}: ${JSON.stringify(diagnostics)}`,{cause:error});
+    }
+    await page.waitForTimeout(150);
+    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')),(await page.locator('#status').textContent())+' | '+errors.slice(-3).join(' | '));
+  };
+  const save=async path=>{const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#saveProjectBtn').click()]);await d.saveAs(path);return JSON.parse(fs.readFileSync(path));};
+  for(const mode of ['overlay','manual-positive','manual-negative','auto-positive','auto-negative']){
+    const manual=mode.startsWith('manual'),direction=mode.endsWith('negative')?-1:1,offset=mode==='overlay'?0:direction*(manual?3:4);
+    const fixture={...project,config:{...project.config,subplots:project.config.subplots.map(sp=>({...sp,mode:mode==='overlay'?'overlay':'stack',offsetMode:manual?'manual':'auto',offsetScale:1,manualOffsets:'0,3',offsetDirection:direction,annotationsEnabled:true,annotations:[{source:'x',x:3320,label:'Marker',y:.2}],labelMode:'legend'}))}};
+    await load(fixture,mode+'.spinplot.json');
+    const data=await exportDisplay('browser-preview/'+mode+'.csv');
+    assert.equal(valueFor(data,0,3300),-.5);assert.equal(valueFor(data,1,3300),-1+offset);
+    const saved=await save('browser-preview/'+mode+'.json');assert.equal(JSON.stringify(saved.rawCurves),originalRaw,'Display settings never change raw data');
+    await load(saved,mode+'-reload.spinplot.json');
+    const restored=await exportDisplay('browser-preview/'+mode+'-reload.csv');assert.deepEqual(restored,data,'Project reload preserves display values');
+  }
+  // Vector and raster files use the same prepared model as the canvas preview.
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  await page.locator('button.tab-btn[data-tab="subplots"]').click();
+  await page.locator('#canvasPreset').selectOption('square');
+  await page.locator('button.tab-btn[data-tab="export"]').click();
+  await page.locator('#exportDpi').selectOption('96');
+  for(const format of ['svg','png']){
+    await page.locator('#imageFormat').selectOption(format);
+    const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    const path='browser-preview/figure.'+format;await d.saveAs(path);const bytes=fs.readFileSync(path);
+    if(format==='svg'){
+      const result=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return {error:!!doc.querySelector('parsererror'),paths:doc.querySelectorAll('path').length,text:doc.documentElement.textContent,width:doc.documentElement.getAttribute('width')};},bytes.toString());
+      assert.equal(result.error,false);assert.ok(result.paths>10);assert.match(result.text,/Trace A/);assert.match(result.text,/Magnetic Field/);assert.match(result.text,/Marker/);assert.equal(result.width,'500');
+    }else{
+      assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(bytes.readUInt32BE(16),500);assert.equal(bytes.readUInt32BE(20),500);assert.ok(bytes.includes(Buffer.from('pHYs')));
+      const decoded=await page.evaluate(async b64=>{const img=new Image();img.src='data:image/png;base64,'+b64;await img.decode();return [img.naturalWidth,img.naturalHeight];},bytes.toString('base64'));assert.deepEqual(decoded,[500,500]);
+    }
+  }
+  // Exercise g labels and the shared 1D/2D renderer with acquired coordinates.
+  const fieldProject={...project,rawCurves:project.rawCurves.map(c=>({...c,freq:9.5})),config:{...project.config,controls:{...project.config.controls,baselineMode:'none',canvasPreset:'4x3'},subplots:project.config.subplots.map(sp=>({...sp,annotationsEnabled:true,annotations:[{source:'g',g:2.05,label:'g marker',y:.2}]}))}};
+  await load(fieldProject,'field-g.spinplot.json');
+  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+  const [gDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await gDownload.saveAs('browser-preview/field-g.svg');assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g factor/);assert.match(fs.readFileSync('browser-preview/field-g.svg','utf8'),/g marker/);
+  const matrix={name:'Synthetic 2D',x:{name:'Field',unit:'G',values:[3300,3320,3350]},y:{name:'Microwave attenuation',unit:'dB',values:[0,10]},real:[[1,2,3],[2,4,6]],imag:[[0,0,0],[0,0,0]],metadata:{}};
+  const mixed={...fieldProject,rawCurves:[...fieldProject.rawCurves,{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],config:{...fieldProject.config,controls:{...fieldProject.config.controls,canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},layout:{...project.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[fieldProject.config.subplots[0],{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:2,twoD:{index:2,settings:{showScanCorrelation:false}}}]}};
+  await load(mixed,'mixed.spinplot.json');await save('browser-preview/mixed.json');
+  const testProjectionTitleSize = process.env.SPINPLOT_TEST_PROJECTION_TITLE_SIZE === '1';
+  if (testProjectionTitleSize) {
+    await page.locator('button.tab-btn[data-tab="style"]').click();
+    await page.locator('#tickSize').fill('9');
+    await page.locator('#projectionTitleSize').fill('23');
+  }
+  await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+  const [mixedDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);await mixedDownload.saveAs('browser-preview/mixed.svg');
+  const mixedSvg=fs.readFileSync('browser-preview/mixed.svg','utf8');
+  assert.match(mixedSvg,/Synthetic 2D/);
+  if (testProjectionTitleSize) {
+    const svgTexts=[...mixedSvg.matchAll(/<text[^>]*style="font:([^"]*)"[^>]*>([^<]*)<\/text>/g)].map(match=>({font:match[1],text:match[2].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}));
+    assert.ok(svgTexts.some(item=>/projection/i.test(item.text)&&/^23px\b/.test(item.font)), 'Projection title text must use the independent 23 px setting');
+    assert.ok(svgTexts.some(item=>/^9px\b/.test(item.font)), 'Tick labels must retain their independent 9 px setting');
+  }
+  const [projectionDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);await projectionDownload.saveAs('browser-preview/projections.csv');
+  await page.screenshot({path:'browser-preview/mixed.png',fullPage:true});
+  assert.doesNotMatch(fs.readFileSync('browser-preview/mixed.svg','utf8'),/Y projection vs scan/,'2D import must not create an implicit scan plot');
+  if (process.env.SPINPLOT_TEST_FOOTPRINT === '1') {
+    const source2D=mixed.config.subplots.find(sp=>sp.twoD);
+    const footprints=['main','right','top','full'];
+    const footprintSettings={...(source2D.twoD?.settings||{}),showProjections:true,showXProjection:true,showYProjection:true,showXProjectionTitle:true,showYProjectionTitle:true,showColorbar:true,swap:false,xMode:'mean',yMode:'mean',xProjectionTitle:'TopPanel',yProjectionTitle:'RightPanel'};
+    const footprintSubplots=footprints.map((footprint,index)=>{
+      const subplot=JSON.parse(JSON.stringify(source2D));
+      return {...subplot,title:'Footprint '+footprint,mode:'heatmap',plotFootprint:footprint,gridRow:Math.floor(index/2)+1,gridCol:index%2+1,rowSpan:1,colSpan:1,twoD:{...subplot.twoD,index:2,settings:{...footprintSettings}}};
+    });
+    const footprintProject={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:2,spans:'1,1 / 1,1',gapX:20,gapY:20},subplots:footprintSubplots}};
+    await load(footprintProject,'plot-footprints.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Each 2D subplot exposes its saved footprint preset');
+    for(let index=0;index<footprints.length;index++){
+      const card=page.locator('.subplot').nth(index),footprint=footprints[index];
+      assert.equal(await card.locator('[data-twod="showXProjection"]').isDisabled(),!['top','full'].includes(footprint),'Top projection control follows footprint '+footprint);
+      assert.equal(await card.locator('[data-twod="showYProjection"]').isDisabled(),!['right','full'].includes(footprint),'Right projection control follows footprint '+footprint);
+    }
+    const firstFootprintCard=page.locator('.subplot').nth(0);
+    const footprintSelect=firstFootprintCard.locator('[data-field="plotFootprint"]');
+    await footprintSelect.evaluate(el=>{if(el.closest('details'))el.closest('details').open=true});
+    await footprintSelect.selectOption('top');
+    assert.equal(await footprintSelect.evaluate(el=>el.closest('details')?.open===true),true,'Changing footprint keeps the layout panel open');
+    assert.equal(await firstFootprintCard.locator('[data-twod="showXProjection"]').isDisabled(),false,'Top projection becomes available immediately');
+    assert.equal(await firstFootprintCard.locator('[data-twod="showYProjection"]').isDisabled(),true,'Right projection remains excluded immediately');
+    await firstFootprintCard.locator('[data-field="plotFootprint"]').selectOption('main');
+    const savedFootprints=await save('browser-preview/plot-footprints.json');
+    assert.deepEqual(savedFootprints.config.subplots.map(sp=>sp.plotFootprint),footprints,'Footprint settings persist in project files');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    await page.locator('#imageFormat').selectOption('svg');
+    const [footprintDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await footprintDownload.saveAs('browser-preview/plot-footprints.svg');
+    const footprintSvg=fs.readFileSync('browser-preview/plot-footprints.svg','utf8');
+    assert.equal([...footprintSvg.matchAll(/TopPanel/g)].length,2,'Only Top and Full footprints draw top projections');
+    assert.equal([...footprintSvg.matchAll(/RightPanel/g)].length,2,'Only Right and Full footprints draw right projections');
+    const footprintSize=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml');return [doc.documentElement.getAttribute('width'),doc.documentElement.getAttribute('height')];},footprintSvg);
+    assert.deepEqual(footprintSize,['1000','1000'],'SVG export retains the selected design canvas size');
+    await load(savedFootprints,'plot-footprints-reload.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await page.locator('[data-field="plotFootprint"]').evaluateAll(els=>els.map(el=>el.value)),footprints,'Footprint settings restore after project reload');
+    await page.screenshot({path:'browser-preview/plot-footprints.png',fullPage:true});
+    console.log('BROWSER PASS: per-subplot Plot footprint, row/column allocation, project restore and SVG canvas size');
+  }
+  if (process.env.SPINPLOT_TEST_TWOD_VIEW_MODES === '1') {
+    const source2D=mixed.config.subplots.find(sp=>sp.twoD);
+    const extraView=(title,row,mode)=>({...JSON.parse(JSON.stringify(source2D)),title,mode,gridRow:row,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings,swap:false,scanAxisMode:'attenuation'}}});
+    const viewMixed={...mixed,config:{...mixed.config,layout:{...mixed.config.layout,rows:2,cols:1,spans:'1 / 1'},subplots:[
+      {...source2D,title:'Synthetic 2D',mode:'overlay',gridRow:1,gridCol:1,rowSpan:1,colSpan:1,twoD:{...source2D.twoD,settings:{...source2D.twoD.settings,swap:false,scanAxisMode:'attenuation'}}},
+      extraView('Overlap',2,'overlap')
+    ]}};
+    await load(viewMixed,'2d-view-modes.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.equal(await page.locator('.subplot').count(),2,'No scan subplot is created on 2D import');
+    await page.locator('[data-field="mode"]').first().selectOption('scan');
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.subplot').count(),3,'Selecting Variable scan adds a separate subplot');
+    const modes=await page.locator('[data-field="mode"]').evaluateAll(els=>els.map(e=>e.value));
+    assert.deepEqual(modes,['overlay','scan','overlap'],'The source Heatmap remains alongside Variable scan and Overlap');
+    const scanCard=page.locator('.subplot').nth(1);
+    for(const key of ['xMode','yMode','projectionXMin','projectionXMax','projectionYMin','projectionYMax','showXProjection','showYProjection'])
+      assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),false,'Variable scan must not expose 2D projection control '+key);
+    for(const key of ['scanAxisMode','scanMeasurement','scanStatisticMin','scanStatisticMax'])
+      assert.equal(await scanCard.locator('[data-twod="'+key+'"]').isVisible(),true,'Variable scan control '+key+' must be visible');
+    await scanCard.locator('[data-twod="scanMeasurement"]').selectOption('stat:max');
+    await scanCard.locator('[data-twod="scanStatisticMin"]').fill('3320');
+    await scanCard.locator('[data-twod="scanStatisticMax"]').fill('3350');
+    await scanCard.locator('[data-twod="scanStatisticMax"]').press('Tab');
+    const savedViews=await save('browser-preview/2d-view-modes.json');
+    assert.equal(savedViews.config.subplots[0].mode,'overlay');
+    assert.equal(savedViews.config.subplots[1].mode,'scan');
+    assert.equal(savedViews.config.subplots[1].title,'','Variable scan starts without a subplot title');
+    assert.equal(savedViews.config.subplots[1].gridRow,savedViews.config.subplots[0].gridRow);
+    assert.equal(savedViews.config.subplots[1].gridCol,savedViews.config.subplots[0].gridCol+1,'Scan subplot is initially placed to the right of the source map');
+    assert.equal(savedViews.config.subplots[2].mode,'overlap');
+    assert.equal(savedViews.config.subplots[0].twoD.settings.yMode,'rms','Changing the scan statistic must not alter the source map right-projection statistic');
+    assert.equal(savedViews.config.subplots[0].twoD.settings.projectionXMin,3300,'Changing the scan interval must not alter the source map projection interval');
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatistic,'max');
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMin,3320);
+    assert.equal(savedViews.config.subplots[1].twoD.settings.scanStatisticMax,3350);
+    assert.equal(savedViews.config.layout.spans,'1,1 / 2','The added subplot is included in the saved layout');
+    await page.locator('button.tab-btn[data-tab="export"]').click();await page.locator('#imageFormat').selectOption('svg');
+    let viewsDownload;
+    try { [viewsDownload]=await Promise.all([page.waitForEvent('download',{timeout:8000}),page.locator('#exportImageBtnSide').click()]); }
+    catch (error) { throw new Error('2D view SVG export failed; status='+await page.locator('#status').textContent()+'; pageErrors='+errors.join(' | ')+'; '+error.message); }
+    await viewsDownload.saveAs('browser-preview/2d-view-modes.svg');
+    const viewsSvg=fs.readFileSync('browser-preview/2d-view-modes.svg','utf8');
+    assert.doesNotMatch(viewsSvg,/>Variable scan<\/text>/,'Variable scan subplot has no default title');assert.match(viewsSvg,/Overlap/);assert.match(viewsSvg,/Microwave attenuation/);assert.match(viewsSvg,/Microwave attenuation = 0/);
+  }
+  if(process.env.SPINPLOT_TEST_POWER_SATURATION === '1'){
+    const fields=Array.from({length:241},(_,i)=>3340+i*0.1);
+    const attenuation=Array.from({length:13},(_,i)=>i*3);
+    const syntheticRows=attenuation.map(dB=>{
+      const power=100*10**(-dB/10),width=2.3*Math.sqrt(1+power/20);
+      const amplitude=4*Math.sqrt(power)/(1+power/12);
+      const raw=fields.map(B=>((B-3352)/width)*Math.exp(-.5*((B-3352)/width)**2));
+      const range=Math.max(...raw)-Math.min(...raw);
+      return raw.map(v=>v*amplitude/range);
+    });
+    const saturationMatrix={name:'Synthetic saturation',x:{name:'Field',unit:'G',values:fields},
+      y:{name:'Microwave attenuation',unit:'dB',values:attenuation},
+      real:syntheticRows,imag:syntheticRows.map(row=>row.map(()=>0)),metadata:{}};
+    const baseSubplot=mixed.config.subplots[1];
+    const saturationSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
+      mode:'scan',title:'Saturation validation',gridRow:1,gridCol:1,curves:[],
+      twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
+        scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
+        scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false}}};
+    const saturationCurve={...mixed.rawCurves[2],name:'Synthetic saturation',
+      B:fields,y:syntheticRows[0],matrix:saturationMatrix};
+    const saturationProject={...mixed,rawCurves:[saturationCurve],
+      config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:1,spans:'1'},
+        subplots:[saturationSubplot]}};
+    await load(saturationProject,'synthetic-saturation.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const scanPanel=page.locator('.subplot').first();
+    assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
+    assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
+    assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
+    const fitText=await scanPanel.locator('.scan-fit-results').textContent();
+    assert.match(fitText,/Amplitude · Amplitude saturation/);
+    assert.match(fitText,/Linewidth · Homogeneous power broadening/);
+    assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
+    assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
+    const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
+      nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
+    assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
+    assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured power:/);
+    assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
+    assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
+    assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMax"]').count(),1,'Feature end belongs to the same interval row');
+    const lowerAuto=Number(await scanPanel.locator('.scan-fit-bounds [data-twod="scanFitPowerMinMW"]').getAttribute('placeholder'));
+    const upperAuto=Number(await scanPanel.locator('.scan-fit-bounds [data-twod="scanFitPowerMaxMW"]').getAttribute('placeholder'));
+    assert.ok(lowerAuto>0&&lowerAuto<0.04&&upperAuto>=90&&upperAuto<=110,'Default power limits should reflect measured power range, not 100x extrapolation');
+    const derived=scanPanel.locator('.curve-manager.scan-matrix');
+    assert.equal(await derived.locator('.scan-derived-name').count(),4,'Both features and both fitted curves are nested below the source');
+    assert.equal(await derived.locator('.scan-derived-style').count(),4,'Each derived curve has its own style in the separate right column');
+    const alignment=await derived.locator('.current-order-columns').evaluate(el=>{
+      const names=[...el.querySelectorAll('.scan-derived-name')].map(node=>node.getBoundingClientRect().top);
+      const styles=[...el.querySelectorAll('.scan-derived-style')].map(node=>node.getBoundingClientRect().top);
+      const list=el.querySelector('.order-list'),styleList=el.querySelector('.curve-style-list');
+      return {columnWidth:styleList.getBoundingClientRect().width,
+        heightGap:Math.abs(list.getBoundingClientRect().height-styleList.getBoundingClientRect().height),
+        positions:names.map((y,i)=>Math.abs(y-styles[i]))};
+    });
+    assert.ok(alignment.columnWidth<=38,'Derived styles must use the compact symbol column');
+    assert.ok(alignment.heightGap<=2,'Data and style boxes must have the same height');
+    assert.ok(alignment.positions.every(delta=>delta<=2),'Data rows and style rows must be vertically aligned');
+    assert.match((await derived.locator('[data-curve-style="-101"] option:checked').textContent()).trim(),
+      /^[━┄┈○●□■△▲◇◆]/,'Derived style selectors must use compact graphical symbols');
+    assert.equal(await scanPanel.locator('.scan-curve-style').isHidden(),true,'The redundant Scan style is hidden');
+    await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('native');
+    assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),false,
+      'Switching to acquired scan variable must collapse the power fit');
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/not calibrated power/,
+      'An attenuation axis in dB must not be mislabeled as measured mW');
+    await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('power');
+    assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
+      'Returning to power reopens an enabled fit');
+    await derived.locator('[data-curve-style="-101"]').selectOption('filled-circle');
+    await derived.locator('[data-curve-style="-103"]').selectOption('dotted-line');
+    const derivedOrder=()=>derived.locator('.scan-derived-name').evaluateAll(rows=>
+      rows.map(row=>Number(row.dataset.derivedId)));
+    assert.deepEqual(await derivedOrder(),[-101,-102,-103,-104]);
+    const fitRow=derived.locator('.scan-derived-name[data-derived-id="-103"]');
+    const amplitudeRow=derived.locator('.scan-derived-name[data-derived-id="-101"]');
+    assert.equal(await fitRow.getAttribute('draggable'),'true','Derived fit row is draggable');
+    assert.equal(await derived.locator('.matrix-data-row').getAttribute('draggable'),null,
+      'Original source data remains fixed, never dragged into the derived stack');
+    await fitRow.dragTo(amplitudeRow);
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Dropping the fit above amplitude must change the back-to-front paint order');
+    const alignedOrder=await derived.locator('.scan-derived-style').evaluateAll(rows=>
+      rows.map(row=>Number(row.dataset.derivedId)));
+    assert.deepEqual(alignedOrder,await derivedOrder(),
+      'Right style controls must move together with dragged derived data');
+    const savePath='browser-preview/synthetic-saturation.json';
+    const saved=await save(savePath);
+    const cfg=saved.config.subplots[0].twoD.settings;
+    assert.equal(cfg.scanFeatureMode,'both');
+    assert.equal(cfg.scanFitAmplitude,true);assert.equal(cfg.scanFitLinewidth,true);
+    assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
+    assert.equal(saved.config.subplots[0].curveStyles['-103'].style,'dotted-line');
+    assert.deepEqual(saved.config.subplots[0].scanDerivedOrder.slice(0,5),
+      [-100,-103,-101,-102,-104],
+      'Derived Z-order is serialized at subplot level without changing matrix data');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [csvDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export scan features CSV'}).click()]);
+    await csvDownload.saveAs('browser-preview/synthetic-saturation-features.csv');
+    const csv=fs.readFileSync('browser-preview/synthetic-saturation-features.csv','utf8');
+    assert.match(csv,/source_index,scan_value,power_or_scan_x,amplitude,linewidth,linewidth_unit,fit_amplitude/);
+    const bodyRows=csv.split(/\r?\n/).filter(line=>/^\d+,/.test(line));
+    assert.equal(bodyRows.length,13);
+    assert.ok(bodyRows.every(line=>line.split(',')[6]!==''&&line.split(',')[8]!==''));
+    await page.locator('#imageFormat').selectOption('svg');
+    const [svgDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await svgDownload.saveAs('browser-preview/synthetic-saturation.svg');
+    const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
+    assert.match(svg,/Peak-to-peak amplitude/);
+    assert.match(svg,/Peak-to-peak linewidth/);
+    assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
+      'SVG legend and drawing must use the dragged derived-curve order');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const excludePanel=scanPanel.locator('.scan-exclude-panel');
+    await excludePanel.locator('summary').click();
+    assert.equal(await excludePanel.evaluate(el=>getComputedStyle(el).borderTopWidth),'0px',
+      'Excluded-point controls should match the plain nested details style');
+    assert.equal(await excludePanel.locator('.scan-exclude-point').count(),13,'Every measured power has an inclusion checkbox');
+    await excludePanel.locator('[data-trace-index="0"]').uncheck();
+    const excludedProject=await save('browser-preview/synthetic-saturation-excluded.json');
+    assert.equal(excludedProject.config.subplots[0].twoD.settings.scanFitExcluded,'0');
+    assert.equal(await page.locator('.scan-derived-style [data-curve-style="-105"]').count(),1,'Excluded amplitude has a separate symbol style');
+    assert.equal(await page.locator('.scan-derived-style [data-curve-style="-106"]').count(),1,'Excluded linewidth has a separate symbol style');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [exclusionDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export scan features CSV'}).click()]);
+    await exclusionDownload.saveAs('browser-preview/synthetic-saturation-excluded.csv');
+    const excludedCsv=fs.readFileSync('browser-preview/synthetic-saturation-excluded.csv','utf8');
+    const firstRow=excludedCsv.split(/\r?\n/).find(line=>/^0,/.test(line));
+    assert.ok(firstRow,'Original excluded observation is preserved in the feature export');
+    assert.equal(firstRow.split(',')[10],'no','Excluded source trace 0 is not used in amplitude fit');
+    assert.equal(firstRow.split(',')[11],'no','Excluded source trace 0 is not used in linewidth fit');
+    await load(saved,'synthetic-saturation-reload.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
+    assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Reloading the saved project must restore the derived-curve drawing order');
+    await fitRow.focus();
+    await fitRow.press('Alt+ArrowDown');
+    assert.deepEqual(await derivedOrder(),[-101,-103,-102,-104],
+      'Keyboard reorder must follow the same Z-order rule as dragging');
+    const keyboardSaved=await save('browser-preview/synthetic-saturation-keyboard-order.json');
+    assert.equal(keyboardSaved.config.subplots[0].scanDerivedOrder.indexOf(-101)<
+      keyboardSaved.config.subplots[0].scanDerivedOrder.indexOf(-103),true);
+    await load(saved,'synthetic-saturation-reload-again.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
+      'Saved drag Z-order must remain stable after changes and a second reload');
+    assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
+    console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
+    const projectedSubplot={...saturationSubplot,mode:'overlay',
+      twoD:{index:0,settings:{...saturationSubplot.twoD.settings,
+        mode:'heatmap',xMode:'mean',yMode:'both',showProjections:true,
+        showXProjection:true,showYProjection:true,showColorbar:false,
+        xMin:3340,xMax:3364,yMin:0,yMax:36,
+        projectionXMin:3340,projectionXMax:3364,projectionYMin:0,projectionYMax:36}}};
+    const projectionProject={...saturationProject,
+      config:{...saturationProject.config,subplots:[projectedSubplot]}};
+    await load(projectionProject,'synthetic-right-projection.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const projectionCard=page.locator('.subplot').first();
+    assert.equal(await projectionCard.locator('[data-twod="yMode"]').inputValue(),'both');
+    assert.equal(await projectionCard.locator('.matrix-no-style .curve-style-list').isHidden(),true,
+      'Heatmap has no per-source curve style column');
+    assert.equal(await projectionCard.locator('.scan-curve-style').isHidden(),true,
+      'Heatmap must not show the unrelated Scan style');
+    const heatmapGrid=await projectionCard.locator('.matrix-no-style .current-order-columns').evaluate(el=>
+      getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length);
+    assert.equal(heatmapGrid,1,'Heatmap current data must occupy the whole data box');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [projectionDownload]=await Promise.all([page.waitForEvent('download'),
+      page.getByRole('button',{name:'Export projection CSV',exact:true}).click()]);
+    await projectionDownload.saveAs('browser-preview/synthetic-side-dual-features.csv');
+    const projectionCSV=fs.readFileSync('browser-preview/synthetic-side-dual-features.csv','utf8');
+    assert.match(projectionCSV,/axis,coordinate,projection,linewidth,linewidth_unit/);
+    const sideRows=projectionCSV.split(/\r?\n/).filter(row=>/^Y,/.test(row));
+    assert.equal(sideRows.length,13);
+    assert.ok(sideRows.every(row=>Number(row.split(',')[3])>0&&row.split(',')[4]==='G'),
+      'Right projection linewidth must come from field extrema of every acquired scan');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await projectionCard.locator('[data-twod="yMode"]').selectOption('linewidth');
+    const linewidthProjection=await save('browser-preview/synthetic-side-linewidth.json');
+    assert.equal(linewidthProjection.config.subplots[0].twoD.settings.yMode,'linewidth');
+    assert.equal(errors.length,0,'Per-field-scan linewidth projection must not cause browser errors');
+    // Large intensity values must stay decimal across the Y, Top, Side and Z
+    // scale controls when the explicit display mode is Linear.
+    const scaledMatrix={...saturationMatrix,
+      real:syntheticRows.map(row=>row.map(value=>value*1e7))};
+    const scaledCurve={...saturationCurve,matrix:scaledMatrix,y:scaledMatrix.real[0]};
+    const largeLinearProject={...projectionProject,rawCurves:[scaledCurve],
+      config:{...projectionProject.config,subplots:[{...projectedSubplot,
+        twoD:{...projectedSubplot.twoD,settings:{...projectedSubplot.twoD.settings,
+          yMode:'ptp',zScale:'linear',xProjectionScale:'linear',yProjectionScale:'linear',
+          showColorbar:true,showProjections:true}}}]}};
+    await page.evaluate(()=>{
+      window.__spinplotLinearLabels=[];
+      const base=CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText=function(value,...args){
+        window.__spinplotLinearLabels.push(String(value));
+        return base.call(this,value,...args);
+      };
+    });
+    await load(largeLinearProject,'synthetic-large-linear-axis.spinplot.json');
+    await page.waitForTimeout(180);
+    const linearLabels=await page.evaluate(()=>window.__spinplotLinearLabels);
+    assert.ok(linearLabels.some(label=>/^[-+]?\d{6,}(?:\.\d+)?$/.test(label)),
+      'Large Linear intensity ticks should be written as ordinary decimal numbers');
+    assert.equal(linearLabels.filter(label=>/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)[eE][-+]?\d+$/.test(label)).length,0,
+      'Linear Z colorbar and projection tick labels must not switch to exponential notation');
+    console.log('BROWSER PASS: compact scan UI, heatmap inventory and explicit Linear decimal labels');
+    console.log('BROWSER PASS: right projection peak-to-peak linewidth and dual amplitude/linewidth CSV');
+  }
+  // Current-branch-only interaction regression: wheel zoom -> colorbar double-click Auto Z,
+  // then verify that a heatmap-body double-click still restores X/Y ranges.
+  if (process.env.SPINPLOT_TEST_COLORBAR_DBLCLICK === '1') {
+    const colorbarProject={...fieldProject,
+      rawCurves:[{name:'Synthetic 2D',source:'synthetic',freq:9.5,B:matrix.x.values,y:[1.5,3,4.5],matrix}],
+      config:{...fieldProject.config,
+        controls:{...fieldProject.config.controls,baselineMode:'none',canvasPreset:'custom',canvasWidth:'1000',canvasHeight:'1000'},
+        layout:{...fieldProject.config.layout,rows:1,cols:1,spans:'1'},
+        subplots:[{...fieldProject.config.subplots[0],title:'Synthetic 2D',annotationsEnabled:false,curves:[],gridRow:1,
+          xUseGlobal:false,xMin:3305,xMax:3345,yUseGlobal:false,yMin:-2,yMax:12,
+          twoD:{index:0,settings:{mode:'heatmap',showColorbar:true,showProjections:false,showScanCorrelation:false,
+            xMin:3305,xMax:3345,yMin:-2,yMax:12,zMin:'',zMax:'',zUseGlobal:false}}}]
+      }
+    };
+    await load(colorbarProject,'colorbar-dblclick.spinplot.json');
+    const canvas=page.locator('#plotCanvas'),bounds=await canvas.boundingBox();
+    assert.ok(bounds&&bounds.width>0&&bounds.height>0,'2D canvas must be visible');
+    // Locate the vertical color gradient in canvas pixels rather than assuming a fixed layout fraction.
+    const barPoint=await canvas.evaluate(el=>{
+      const ctx=el.getContext('2d'),w=el.width,h=el.height,p=ctx.getImageData(0,0,w,h).data;
+      const xStart=Math.floor(w*0.65),xEnd=Math.floor(w*0.99),yStart=Math.floor(h*0.1),yEnd=Math.floor(h*0.95);
+      const counts=new Array(w).fill(0);let bestX=-1,bestCount=0;
+      for(let x=xStart;x<xEnd;x++){
+        const colors=new Set();
+        for(let y=yStart;y<yEnd;y++){const i=(y*w+x)*4;if(p[i+3])colors.add((p[i]<<16)|(p[i+1]<<8)|p[i+2]);}
+        counts[x]=colors.size;if(colors.size>bestCount){bestCount=colors.size;bestX=x;}
+      }
+      if(bestX<0)return {colors:0};
+      const threshold=Math.max(20,Math.floor(bestCount*0.8));let left=bestX,right=bestX;
+      while(left>xStart&&counts[left-1]>=threshold)left--;
+      while(right<xEnd-1&&counts[right+1]>=threshold)right++;
+      const rect=el.getBoundingClientRect();
+      return {x:rect.left+((left+right+1)/2)*(rect.width/w),y:rect.top+rect.height*0.5,colors:bestCount,width:right-left+1};
+    });
+    assert.ok(barPoint.colors>20,'A vertical colorbar gradient must be present in the 2D canvas');
+    const barX=barPoint.x,barY=barPoint.y;
+    await page.mouse.move(barX,barY);
+    await page.mouse.wheel(0,120);
+    await page.waitForTimeout(150);
+    const zoomed=await save('browser-preview/colorbar-zoomed.json');
+    const zoomedSettings=zoomed.config.subplots[0].twoD.settings;
+    assert.notEqual(zoomedSettings.zMin,'','Colorbar wheel must set a local Z minimum');
+    assert.notEqual(zoomedSettings.zMax,'','Colorbar wheel must set a local Z maximum');
+    assert.equal(zoomedSettings.zUseGlobal,false,'Colorbar wheel must use local Z range');
+    await page.mouse.dblclick(barX,barY);
+    await page.waitForTimeout(150);
+    const zReset=await save('browser-preview/colorbar-auto-z.json');
+    const zSettings=zReset.config.subplots[0].twoD.settings;
+    assert.ok(Number.isFinite(zSettings.zMin)&&Number.isFinite(zSettings.zMax)&&zSettings.zMax>zSettings.zMin,'Colorbar double-click must fill the fitted Z bounds numerically');
+    assert.equal(zSettings.zMin,2,'Colorbar auto-fit minimum must reflect the visible synthetic 2D sample range');
+    assert.equal(zSettings.zMax,4,'Colorbar auto-fit maximum must respect the current X window (3305–3345 G), excluding the 3350 G column');
+    assert.equal(zSettings.zUseGlobal,false,'Auto Z must store locally fitted numerical bounds');
+    assert.equal(zSettings.xMin,3305,'Colorbar double-click must not reset X');
+    assert.equal(zSettings.xMax,3345,'Colorbar double-click must not reset X');
+    assert.equal(zSettings.yMin,-2,'Colorbar double-click must not reset Y');
+    assert.equal(zSettings.yMax,12,'Colorbar double-click must not reset Y');
+    await page.mouse.dblclick(bounds.x+bounds.width*0.45,bounds.y+bounds.height*0.6);
+    await page.waitForTimeout(150);
+    const xyReset=await save('browser-preview/heatmap-axis-reset.json');
+    const xySettings=xyReset.config.subplots[0].twoD.settings;
+    assert.equal(xySettings.xMin,3300,'Heatmap double-click must still reset X minimum');
+    assert.equal(xySettings.xMax,3350,'Heatmap double-click must still reset X maximum');
+    assert.equal(xySettings.yMin,0,'Heatmap double-click must still reset Y minimum');
+    assert.equal(xySettings.yMax,10,'Heatmap double-click must still reset Y maximum');
+    assert.equal(xySettings.zMin,zSettings.zMin,'Heatmap XY reset must preserve the fitted Z minimum');
+    assert.equal(xySettings.zMax,zSettings.zMax,'Heatmap XY reset must preserve the fitted Z maximum');
+    // Restore the export control state so the pre-migration comparison remains apples-to-apples.
+    await page.locator('#imageFormat').selectOption('svg');
+  }
+
+  if (process.env.SPINPLOT_TEST_MANUAL_CURVE_HEATMAP === '1') {
+    await page.locator('button.tab-btn[data-tab="data"]').click();
+    await page.locator('#clearDataBtn').click();
+    await page.locator('#dataFiles').setInputFiles({name:'manual-curves.csv',mimeType:'text/csv',buffer:Buffer.from(
+      'B,Trace A,Trace B,Trace C\n3300,0,0,0\n3310,1,2,3\n3320,2,4,6\n3330,0,0,0\n3340,-1,-2,-3\n3350,0,0,0\n'
+    )});
+    await page.waitForFunction(() => document.querySelector('#dataCount')?.textContent?.trim() === '3', null, {timeout:20000});
+    await page.locator('button.tab-btn[data-tab="scaling"]').click();
+    await page.locator('#baselineMode').selectOption('none');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    const sourceCard = page.locator('.subplot').first();
+    const legendSection = sourceCard.locator('details[data-section="legend"]');
+    if (!await legendSection.evaluate(el => el.open)) await legendSection.locator('summary').first().click();
+    const labelBounds = await sourceCard.locator('.label-settings-row > .field > label').boundingBox();
+    const legendBounds = await sourceCard.locator('.label-settings-row .legend-position-field > summary').boundingBox();
+    const labelControl = await sourceCard.locator('[data-field="labelMode"]').boundingBox();
+    const legendControl = await sourceCard.locator('[data-field="legendPosition"]').boundingBox();
+    assert.ok(labelBounds && legendBounds && Math.abs(labelBounds.y - legendBounds.y) <= 1, 'Label mode and Legend position labels must align');
+    assert.ok(labelControl && legendControl && Math.abs(labelControl.y - legendControl.y) <= 1, 'Label mode and Legend position controls must align');
+    assert.equal(await sourceCard.locator('[data-field="mode"] option[value="heatmap"]').count(),1,'Manual 1D subplots must offer Heatmap');
+    assert.equal(await sourceCard.locator('[data-field="mode"] option[value="scan"]').count(),1,'Manual 1D subplots must offer Variable scan');
+    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Each curve must expose one combined line/symbol style selector');
+    if(process.env.SPINPLOT_TEST_EXTERNAL_CURVE_STYLE_LAYOUT==='1')assert.equal(await sourceCard.locator('.order-list [data-curve-style]').count(),0,'Curve style selectors must sit outside the scrollable order data box');
+    assert.equal(await sourceCard.locator('[data-curve-symbol]').count(),0,'Line and marker choices must use a single selector');
+    if(process.env.SPINPLOT_TEST_ADJACENT_SYMBOL_COLUMN==='1'){
+      assert.equal(await sourceCard.locator('.current-order-columns > .order-list').count(),1,'Curve names must remain in a standalone list');
+      assert.equal(await sourceCard.locator('.current-order-columns > .curve-style-list').count(),1,'Symbol controls must occupy a separate column');
+      const columns=await sourceCard.locator('.current-order-columns').evaluate(el=>{const names=el.querySelector('.order-list').getBoundingClientRect(),styles=el.querySelector('.curve-style-list').getBoundingClientRect();return {namesRight:names.right,stylesLeft:styles.left,gap:styles.left-names.right};});
+      assert.ok(columns.gap>=3,'Curve style column must be visually separated from the data list');
+      const compact=await sourceCard.locator('.current-order-columns > .curve-style-list').evaluate(el=>({w:el.getBoundingClientRect().width,labels:[...el.querySelectorAll('option')].map(x=>x.textContent.trim()),groups:el.querySelectorAll('optgroup').length}));
+      assert.ok(compact.w<=40,'Symbol selector column should be less than half of the previous 76 px width');
+      assert.equal(compact.groups,0,'Symbol-only menu should not show text group headings');
+      assert.ok(compact.labels.every(v=>/^[━┄┈○●□■△▲◇◆]+$/u.test(v)),'Style menu should use glyphs only');
+      const selected=await sourceCard.locator('[data-curve-style="1"] option:checked').textContent();
+      assert.match(selected.trim(),/^[━┄┈○●□■△▲◇◆]+$/u,'Styles must use glyphs rather than descriptive text');
+    }
+    await page.evaluate(() => {window.__markerFillCount=0;const original=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){window.__markerFillCount++;return original.apply(this,args);};});
+    await sourceCard.locator('[data-curve-style="1"]').selectOption('filled-triangle');
+    await sourceCard.locator('[data-curve-style="2"]').selectOption('dashed-filled-diamond');
+    await sourceCard.locator('[data-field="lineWidth"]').fill('2.8');
+    await sourceCard.locator('[data-field="lineWidth"]').press('Tab');
+    await sourceCard.locator('[data-field="symbolSize"]').fill('5.5');
+    await sourceCard.locator('[data-field="symbolSize"]').press('Tab');
+    await page.waitForTimeout(250);
+    assert.ok(await page.evaluate(()=>window.__markerFillCount>0),'Symbols must be drawn on the interactive canvas');
+    await sourceCard.locator('.order-item[data-curve="2"]').click();
+    await sourceCard.locator('[data-action="moveTop"]').click();
+    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1]);
+    await sourceCard.locator('[data-field="mode"]').selectOption('heatmap');
+    await page.waitForTimeout(200);
+    assert.equal(await sourceCard.locator('[data-field="mode"]').inputValue(),'heatmap','Manual curves must switch to Heatmap mode');
+    if(process.env.SPINPLOT_TEST_HEATMAP_DATA_PANEL==='1'){
+    assert.equal(await sourceCard.locator('[data-action="available"]').count(),1,'Derived Heatmap must retain Available curves');
+    assert.equal(await sourceCard.locator('.curve-tools button').count(),9,'Derived Heatmap must retain curve-management buttons');
+    assert.deepEqual(await sourceCard.locator('.order-item').evaluateAll(els=>els.map(el=>Number(el.dataset.curve))),[2,0,1],'Derived Heatmap must preserve Current order rows');
+    assert.equal(await sourceCard.locator('[data-curve-style]').count(),3,'Derived Heatmap must preserve per-curve style controls');
+    assert.equal(await sourceCard.locator('.curve-manager.matrix-data').count(),0,'Curve-derived Heatmap must not switch to the matrix-only data panel');
+    }
+    const heatmapCard = page.locator('.subplot').filter({has:page.locator('.manual-scan-variable')}).first();
+    assert.equal(await heatmapCard.locator('summary').filter({hasText:/^Projections$/}).evaluate(el=>el.parentElement.open),false,'Switching to Heatmap must keep projection-axis options collapsed');
+    assert.deepEqual(await sourceCard.locator('[data-field="mode"]').evaluate(el=>[...el.options].filter(o=>!o.hidden).map(o=>o.textContent.trim())),process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'?['Stack','Heatmap','Overlap','Contour','3D surface','Variable scan']:['Stack','Heatmap','Overlap','Variable scan'],'Curve-derived Heatmap must expose the supported plot modes');
+    if(process.env.SPINPLOT_TEST_SURFACE_CONTOUR==='1'){
+      const mode=sourceCard.locator('[data-field="mode"]');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').inputValue(),'linear','Z should default to a linear scale');
+      assert.equal(await sourceCard.locator('.subplot-section[data-section="plot"] > summary').textContent(),'Plot','Sidebar headings should be concise');
+      assert.equal(await sourceCard.locator('.processing-summary:visible').count(),0,'Explanatory processing text should move out of the sidebar');
+      await mode.selectOption('contour');
+      assert.equal(await mode.inputValue(),'contour','Contour must be a separate plotting mode');
+      const count=sourceCard.locator('[data-twod="contourLevels"]');
+      assert.equal(await count.inputValue(),'12','Contour must default to 12 levels');
+      await count.evaluate(el=>{el.value='8';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>{el.value='log';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await page.waitForTimeout(170);
+      await mode.selectOption('surface3d');
+      assert.equal(await mode.inputValue(),'surface3d','3D surface mode must be selectable');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>!!el.closest('label')?.querySelector('.help-tip')),true,'Logarithmic Z explanation should use a question-mark help control');
+      const view=sourceCard.locator('.subplot-section[data-section="plot"] .surface-view-controls');
+      assert.equal(await view.count(),1,'3D camera must appear inside Plot mode');
+      assert.equal(await view.evaluate(el=>el.open),false,'3D camera controls must default to collapsed');
+      await sourceCard.locator('[data-view3d="viewAzimuth"]').evaluate(el=>{el.value='85';el.dispatchEvent(new Event('input',{bubbles:true}));});
+      await page.waitForTimeout(250);
+      await page.locator('#plotCanvas').screenshot({path:'browser-preview/surface3d.png'});
+      const settings=await save('browser-preview/surface3d-settings.json');
+      assert.equal(settings.config.subplots[0].twoD.settings.viewAzimuth,85,'3D camera azimuth must persist');
+      assert.equal(settings.config.subplots[0].twoD.settings.zScale,'log','Log10 Z scale must persist in the project');
+      assert.equal(settings.config.subplots[0].twoD.settings.contourLevels,8,'Contour count must persist');
+      await mode.selectOption('heatmap');
+      await sourceCard.locator('[data-twod="zScale"]').evaluate(el=>{el.value='linear';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      if(process.env.SPINPLOT_TEST_AXIS_LOG==='1'){
+        assert.equal(await page.locator('#globalYScale').inputValue(),'linear','Global Y defaults to a linear axis');
+        const axisSelect=sourceCard.locator('[data-field="yScale"]');
+        assert.equal(await axisSelect.count(),1,'Subplot must expose an independent Y-axis scale');
+        await axisSelect.evaluate(el=>{el.value='log';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        assert.equal(await sourceCard.locator('[data-twod="xProjectionScale"]').count(),1,'Top projection has its own intensity scale');
+        assert.equal(await sourceCard.locator('[data-twod="yProjectionScale"]').count(),1,'Side projection has its own intensity scale');
+        await page.waitForTimeout(200);
+        const snap=await save('browser-preview/log-y-axes.json');
+        assert.equal(snap.config.subplots[0].yScale,'log','Subplot Log10 Y scale persists');
+        assert.equal(snap.config.subplots[0].twoD.settings.xProjectionNotation,'scientific','Top scientific notation persists');
+        assert.equal(snap.config.subplots[0].twoD.settings.yProjectionNotation,'scientific','Side scientific notation persists');
+        await axisSelect.evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="xProjectionNotation"]').evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+        await sourceCard.locator('[data-twod="yProjectionNotation"]').evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      }
+    }
+    if(process.env.SPINPLOT_TEST_AXIS_DISPLAY==='1'){
+      const readZ=()=>sourceCard.locator('[data-twod="zMin"],[data-twod="zMax"]').evaluateAll(els=>els.map(e=>Number(e.value)));
+      const setTwoD=async(key,value)=>sourceCard.locator('[data-twod="'+key+'"]').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));},value);
+      await setTwoD('zScale','scientific');
+      assert.deepEqual(await readZ(),(await readZ()).filter(Number.isFinite),'Scientific Z auto-fit should show both numeric limits');
+      assert.equal(await sourceCard.locator('[data-twod="zScale"]').inputValue(),'scientific','Scientific must be a peer of Linear and Log');
+      await setTwoD('zScale','log');
+      const logBounds=await readZ();
+      assert.ok(logBounds.every(Number.isFinite)&&logBounds[1]>logBounds[0],'Log/SymLog Z needs visible physical bounds');
+      await sourceCard.locator('button').filter({hasText:/^Auto Z$/}).evaluate(el=>el.click());
+      const fittedZ=await readZ();
+      assert.ok(fittedZ.every(Number.isFinite)&&fittedZ[1]>fittedZ[0],'Auto Z must populate the actual numeric range instead of empty fields');
+      const axisY=sourceCard.locator('[data-field="yScale"]');
+      await axisY.evaluate(el=>{el.value='scientific';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      const yLimits=await sourceCard.locator('[data-field="yMin"],[data-field="yMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      assert.ok(yLimits.every(Number.isFinite)&&yLimits[1]>yLimits[0],'Scientific Y must fit and fill subplot limits');
+      await setTwoD('xProjectionScale','scientific');
+      await setTwoD('yProjectionScale','scientific');
+      const topLimits=await sourceCard.locator('[data-twod="xProjectionMin"],[data-twod="xProjectionMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      const sideLimits=await sourceCard.locator('[data-twod="yProjectionMin"],[data-twod="yProjectionMax"]').evaluateAll(els=>els.map(el=>Number(el.value)));
+      assert.ok(topLimits.every(Number.isFinite)&&topLimits[1]>topLimits[0],'Top projection Scientific fills range');
+      assert.ok(sideLimits.every(Number.isFinite)&&sideLimits[1]>sideLimits[0],'Side projection Scientific fills range');
+      const snapshot=await save('browser-preview/three-way-axis-display.json');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.zScale,'log');
+      assert.equal(snapshot.config.subplots[0].yScale,'scientific');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.xProjectionScale,'scientific');
+      assert.equal(snapshot.config.subplots[0].twoD.settings.yProjectionScale,'scientific');
+      assert.ok(Number.isFinite(snapshot.config.subplots[0].twoD.settings.zMin));
+      await axisY.evaluate(el=>{el.value='inherit';el.dispatchEvent(new Event('change',{bubbles:true}));});
+      await setTwoD('zScale','linear');
+      await setTwoD('xProjectionScale','linear');
+      await setTwoD('yProjectionScale','linear');
+    }
+    assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must be collapsed by default');
+    assert.equal(await sourceCard.locator('[data-field="mode"]').evaluate(el=>{const panel=el.closest('.subplot-body')?.querySelector('.manual-scan-variable');return !!panel&&(el.compareDocumentPosition(panel)&Node.DOCUMENT_POSITION_FOLLOWING)!==0;}),true,'Scan-variable editor must appear after Plot mode');
+    await sourceCard.locator('.manual-scan-variable summary').click();
+    await page.evaluate(() => {window.__spinplotDrawnText=[];const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){window.__spinplotDrawnText.push(String(text));return original.call(this,text,...args);};});
+    assert.equal(await sourceCard.locator('[data-manual-scan="name"]').inputValue(),'Subplot index','Default manual scan variable name');
+    assert.equal(await sourceCard.locator('[data-manual-scan="unit"]').inputValue(),'','Scan variable unit defaults to blank');
+    assert.equal(await sourceCard.locator('[data-manual-scan="mode"]').inputValue(),'linear','Equal spacing is the default');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').count(),1,'Manual Heatmap must show one scan-variable editor, not duplicate panels');
+    assert.equal(await sourceCard.locator('[data-manual-scan="start"]').inputValue(),'1','Default scan variable starts at subplot index 1');
+    assert.equal(await sourceCard.locator('[data-manual-scan="step"]').inputValue(),'1','Default scan variable step is 1');
+    await sourceCard.locator('[data-manual-scan="start"]').fill('2');
+    await sourceCard.locator('[data-manual-scan="start"]').press('Tab');
+    await sourceCard.locator('[data-manual-scan="step"]').fill('2');
+    await sourceCard.locator('[data-manual-scan="step"]').press('Tab');
+    await page.waitForTimeout(150);
+    assert.ok(await page.evaluate(() => window.__spinplotDrawnText.includes('Subplot index')),'Curve-derived Heatmap must display its Y-axis title by default');
+    await sourceCard.locator('[data-manual-scan="mode"]').selectOption('array');
+    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 4, 6','Equal spacing values must follow Current order');
+    await sourceCard.locator('[data-manual-scan="name"]').fill('Temperature');
+    await sourceCard.locator('[data-manual-scan="name"]').press('Tab');
+    await sourceCard.locator('[data-manual-scan="unit"]').fill('K');
+    await sourceCard.locator('[data-manual-scan="unit"]').press('Tab');
+    await sourceCard.locator('[data-manual-scan="mode"]').selectOption('array');
+    await sourceCard.locator('[data-manual-scan="values"]').fill('2, 30, 6');
+    await sourceCard.locator('[data-manual-scan="values"]').press('Tab');
+    await sourceCard.locator('[data-field="mode"]').selectOption('scan');
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('.subplot').count(),2,'Manual Variable scan must create an independent subplot');
+    assert.equal(await page.locator('.subplot').nth(0).locator('[data-field="mode"]').inputValue(),'heatmap','Source heatmap must remain unchanged');
+    assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan','New subplot must use Variable scan mode');
+    const scanCard = page.locator('.subplot').nth(1);
+    assert.equal(await scanCard.locator('[data-field="scanCurveStyle"]').count(),1,'Variable scan must expose its own curve style');
+    await scanCard.locator('[data-field="scanCurveStyle"]').selectOption('filled-circle');
+    await scanCard.locator('[data-field="scanCurveStyle"]').press('Tab');
+    assert.equal(await scanCard.locator('[data-manual-scan="name"]').inputValue(),'Temperature');
+    assert.equal(await scanCard.locator('[data-manual-scan="unit"]').inputValue(),'K');
+    assert.equal(await sourceCard.locator('[data-manual-scan="values"]').inputValue(),'2, 30, 6','Custom scan values must follow the selected curve order');
+    assert.equal(await sourceCard.locator('.manual-scan-variable').evaluate(el=>el.open),false,'Scan-variable editor must remain collapsed in Heatmap mode');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const saved=await save('browser-preview/manual-curves.spinplot.json');
+    assert.equal(saved.rawCurves.length,3,'Derived heatmap must not append duplicate matrix data to the source data list');
+    assert.deepEqual(saved.config.subplots[0].curveStyles,{1:{style:'filled-triangle'},2:{style:'dashed-filled-diamond'}},'Combined per-curve styles must persist in saved projects');
+    assert.equal(saved.config.subplots[0].lineWidth,2.8,'Subplot line width must persist');
+    assert.equal(saved.config.subplots[0].symbolSize,5.5,'Subplot symbol size must persist');
+    assert.ok(saved.rawCurves.every(curve=>!curve.matrix),'Original raw curve records must remain 1D');
+    assert.equal(saved.config.subplots[0].twoD.derivedFromCurves,true);
+    assert.deepEqual(saved.config.subplots[0].twoD.curveIndices,[2,0,1]);
+    assert.deepEqual(saved.config.subplots[0].scanVariable.valuesByCurve,{0:30,1:6,2:2});
+    assert.equal(saved.config.subplots[0].yMin,2,'Heatmap Y minimum must follow edited custom scan values');
+    assert.equal(saved.config.subplots[0].yMax,30,'Heatmap Y maximum must follow edited custom scan values');
+    assert.equal(saved.config.subplots[0].scanVariable.name,'Temperature');
+    assert.equal(saved.config.subplots[0].scanVariable.unit,'K');
+    assert.equal(saved.config.subplots[1].twoD.derivedFromCurves,true);
+    assert.equal(saved.config.subplots[1].scanCurveStyle,'filled-circle','Variable scan style must be persisted independently');
+    assert.deepEqual(saved.config.subplots[1].scanVariable.valuesByCurve,{0:30,1:6,2:2});
+    let projectionDownload;
+    try {
+      [projectionDownload] = await Promise.all([
+        page.waitForEvent('download',{timeout:15000}),
+        page.getByRole('button',{name:'Export projection CSV',exact:true}).click()
+      ]);
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => ({
+        status: document.querySelector('#statusMain')?.textContent || '',
+        log: document.querySelector('#log')?.textContent || '',
+        exportButtonCount: [...document.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Export projection CSV').length,
+        exportButtonDisabled: [...document.querySelectorAll('button')].filter(button => button.textContent.trim() === 'Export projection CSV').map(button => button.disabled)
+      }));
+      throw new Error('Projection CSV download failed: ' + error.message + '; diagnostics=' + JSON.stringify({...diagnostics, pageErrors: errors.slice(-10)}));
+    }
+    await projectionDownload.saveAs('browser-preview/manual-curve-projections.csv');
+    const projectionRows=fs.readFileSync('browser-preview/manual-curve-projections.csv','utf8').trim().split(/\r?\n/).map(line=>line.split(','));
+    const yRows=projectionRows.filter(row=>row[0]==='Y');
+    assert.deepEqual(yRows.map(row=>Number(row[1])),[2,6,30],'Heatmap must use the custom non-uniform variable values');
+    const projected=yRows.map(row=>Number(row[2]));
+    assert.deepEqual(projected,[3,2,1],'Signal rows must remain mapped to the selected source curves after reordering');
+    await load(saved,'manual-curves-reload.spinplot.json');
+    assert.equal(await page.locator('.subplot').count(),2,'Manual heatmap and Variable scan must survive project reload');
+    assert.equal(await page.locator('.subplot').first().locator('[data-field="mode"]').inputValue(),'heatmap');
+    assert.equal(await page.locator('.subplot').nth(1).locator('[data-field="mode"]').inputValue(),'scan');
+    assert.equal(await page.locator('.subplot').first().locator('[data-manual-scan="values"]').inputValue(),'2, 30, 6');
+  }
+
+  // A legacy single-trace CSV can still be opened after a multi-curve project.
+  await page.locator('button.tab-btn[data-tab="scaling"]').click();
+  await page.locator('#baselineMode').selectOption('none');
+  await page.locator('#clearDataBtn').click();
+  await page.locator('#dataFiles').setInputFiles({name:'legacy.csv',mimeType:'text/csv',buffer:Buffer.from('B,Legacy\r\n3350,1\r\n3340,2\r\n3330,3\r\n')});
+  await page.waitForFunction(()=>document.querySelector('#dataCount').textContent.trim()==='1');
+  const legacy=await save('browser-preview/legacy.json');assert.deepEqual(legacy.rawCurves[0].B,[3350,3340,3330]);assert.deepEqual(legacy.rawCurves[0].y,[1,2,3]);
+  // Restore test data for responsive layout and screenshots.
+  await load(project,'responsive.spinplot.json');
+  for(const width of [1440,1100,760,420]){
+    await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
+    assert.equal(await page.locator('.tab-btn').count(),6);
+    const bounds=await page.locator('#plotCanvas').boundingBox();assert.ok(bounds.width>0&&bounds.height>0);
+    assert.ok(!await page.locator('#status').evaluate(e=>e.classList.contains('bad')));
+    await page.screenshot({path:'browser-preview/window-'+width+'.png',fullPage:true});
+  }
+  assert.equal(errors.length,0,'Browser script error: '+errors.join(' | '));
+  await page.close();
+  const narrow = await browser.newPage({viewport:{width:650,height:850}});
+  narrow.on('pageerror',err=>errors.push(err.message));
+  const responseN = await narrow.goto(url,{waitUntil:'networkidle',timeout:45000});
+  assert.equal(responseN.status(),200);
+  assert.equal(await narrow.locator('.tab-btn').count(),6);
+  await narrow.screenshot({path:'browser-preview/spinplot-narrow.png',fullPage:true});
+  assert.equal(errors.length,0,'Browser script error: '+errors.join(' | '));
+  fs.writeFileSync('browser-preview/result.json',JSON.stringify({url,errors,passed:true,viewports:[1440,1100,760,650,420]},null,2));
+  console.log('BROWSER PASS: CSV import/export, region baseline and stack display values, project v9/10/11, config v10, wide/narrow');
+} finally {
+  await browser.close();
+}

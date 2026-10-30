@@ -1,0 +1,40 @@
+name: SpinPlot temporary preview HTTP check
+on:
+  push:
+    branches:
+      - 'preview/modularization-*'
+    paths-ignore:
+      - 'preview-site/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check published preview and assets over HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://plastocyanin.org/previews/spinplot-modularization/"
+          ok=0
+          for attempt in {1..8}; do
+            if curl --fail --location --silent --show-error --max-time 15 "${base}" -o app.html; then
+              if grep -q 'SpinPlot 0.9.2' app.html; then ok=1; break; fi
+            fi
+            sleep 8
+          done
+          test "$ok" -eq 1
+          script="$(grep -oE 'src="\./assets/[^"]+\.js"' app.html | head -1 | cut -d '"' -f2)"
+          css="$(grep -oE 'href="\./assets/[^"]+\.css"' app.html | head -1 | cut -d '"' -f2)"
+          test -n "$script"
+          test -n "$css"
+          echo "JavaScript asset: $script"
+          echo "CSS asset: $css"
+          curl --fail --location --silent --show-error "${base}${script#./}" -o app.js
+          curl --fail --location --silent --show-error "${base}${css#./}" -o app.css
+          curl --fail --location --silent --show-error "${base}preview-check.html" -o check.html
+          test -s app.js
+          test -s app.css
+          grep -q '模块化临时预览' check.html
+          echo "Preview HTML, JavaScript, CSS, diagnostics: HTTP OK"
