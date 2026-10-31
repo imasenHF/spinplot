@@ -695,7 +695,7 @@ try {
       const columns=await sourceCard.locator('.current-order-columns').evaluate(el=>{const names=el.querySelector('.order-list').getBoundingClientRect(),styles=el.querySelector('.curve-style-list').getBoundingClientRect();return {namesRight:names.right,stylesLeft:styles.left,gap:styles.left-names.right};});
       assert.ok(columns.gap>=3,'Curve style column must be visually separated from the data list');
       const compact=await sourceCard.locator('.current-order-columns > .curve-style-list').evaluate(el=>({w:el.getBoundingClientRect().width,labels:[...el.querySelectorAll('option')].map(x=>x.textContent.trim()),groups:el.querySelectorAll('optgroup').length}));
-      assert.ok(compact.w<=40,'Symbol selector column should be less than half of the previous 76 px width');
+      assert.ok(compact.w>=54&&compact.w<=58,'Symbol selector column should match the 56 px style column');
       assert.equal(compact.groups,0,'Symbol-only menu should not show text group headings');
       assert.ok(compact.labels.every(v=>/^[━┄┈○●□■△▲◇◆]+$/u.test(v)),'Style menu should use glyphs only');
       const selected=await sourceCard.locator('[data-curve-style="1"] option:checked').textContent();
