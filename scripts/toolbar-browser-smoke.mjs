@@ -82,9 +82,9 @@ try {
   }
 
   for (const id of ['fitBtn', 'fitYBtn', 'measureBtn', 'clearMeasurementsBtn']) {
-    const height = await page.locator(`#${id}`).evaluate(
-      (element) => element.getBoundingClientRect().height,
-    );
+    const height = await page
+      .locator(`#${id}`)
+      .evaluate((element) => element.getBoundingClientRect().height);
     assert.equal(height, 27, `${id} in the plot toolbar must match the 27 px button height`);
   }
 
