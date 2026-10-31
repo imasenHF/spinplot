@@ -418,7 +418,7 @@ try {
       nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
     assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
     assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
-    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured power:/);
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMax"]').count(),1,'Feature end belongs to the same interval row');
