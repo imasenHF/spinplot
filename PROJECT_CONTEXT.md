@@ -1,6 +1,6 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-10-31（Asia/Shanghai）
+更新日期：2026-11-01（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。架构维护现状、分阶段优化顺序和验收要求见 [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
@@ -86,6 +86,8 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 软件可用于整理与可视化，但重要定量结论仍应与原始谱图、已知标准数据及独立计算对照。
 
 ## 5. 预览分支与待办
+
+- **工程质量体系（2026-11-01，Draft PR #10）：** 开发分支 `chore/quality-gate-browser-regression-20261101` 新增 `npm run test:browser`，由本地 Vite 服务运行现有一维/二维 Chromium 回归，并检查七个顶部工具栏按钮的顺序、可访问名称、28 × 27 px 尺寸、14 × 14 px 图标及文件选择器行为。绘图区操作按钮高度修正为 27 px。PR 质量工作流与正式 Pages 部署工作流均运行该浏览器测试，并上传截图 artifact。PR 尚未合并；当前代码已通过 [质量检查](https://github.com/imasenHF/spinplot/actions/runs/41223731200) 与 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41223731438)。应用版本 0.10.0、项目格式 11、配置格式 10 均未改变。
 
 - **架构维护规划（2026-10-30）：** 已根据正式 `main` 的 0.10.0 代码建立分阶段优化计划，范围包括统一质量检查、逐步收缩 `src/main.js`、拆分 `src/twod/ui.js`、统一文件读取接口及按性能测量决定是否引入 Worker。该文件目前仅记录规划，相关代码尚未按计划修改；实施时以 [ARCHITECTURE_IMPROVEMENT_PLAN.md](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md) 为准。
 
