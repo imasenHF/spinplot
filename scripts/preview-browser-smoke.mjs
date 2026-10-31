@@ -411,7 +411,7 @@ try {
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
     assert.match(fitText,/Amplitude · Amplitude saturation/);
-    assert.match(fitText,/Linewidth · Homogeneous power broadening/);
+    assert.match(fitText,/Linewidth · Power-dependent linewidth/);
     assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
     assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
     const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
