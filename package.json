@@ -8,8 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint src scripts --ext .js,.mjs",
-    "format:check": "prettier --check package.json eslint.config.js .prettierrc.json scripts/run-unit-tests.mjs",
+    "format:check": "prettier --check package.json eslint.config.js .prettierrc.json scripts/run-unit-tests.mjs scripts/run-browser-tests.mjs scripts/toolbar-browser-smoke.mjs",
     "test:unit": "node scripts/run-unit-tests.mjs",
+    "test:browser": "node scripts/run-browser-tests.mjs",
     "check": "npm run lint && npm run format:check && npm run test:unit && npm run build"
   },
   "dependencies": {
