@@ -436,7 +436,7 @@ try {
         heightGap:Math.abs(list.getBoundingClientRect().height-styleList.getBoundingClientRect().height),
         positions:names.map((y,i)=>Math.abs(y-styles[i]))};
     });
-    assert.ok(alignment.columnWidth<=38,'Derived styles must use the compact symbol column');
+    assert.ok(alignment.columnWidth>=54&&alignment.columnWidth<=58,'Derived styles must use the 56 px style column');
     assert.ok(alignment.heightGap<=2,'Data and style boxes must have the same height');
     assert.ok(alignment.positions.every(delta=>delta<=2),'Data rows and style rows must be vertically aligned');
     assert.match((await derived.locator('[data-curve-style="-101"] option:checked').textContent()).trim(),
