@@ -445,7 +445,7 @@ try {
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('native');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),false,
       'Switching to acquired scan variable must collapse the power fit');
-    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/not calibrated power/,
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Power calibration required/,
       'An attenuation axis in dB must not be mislabeled as measured mW');
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('power');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
