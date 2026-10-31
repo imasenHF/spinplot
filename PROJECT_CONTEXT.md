@@ -5,7 +5,7 @@
 
 ## 1. 定位与发布
 
-- **顶部工具栏（PR #7 已合并 main）：** 常驻七个独立按钮：Open Data、Open Project、Save Project、Undo、Redo、Clear Data、Export。高频文件/项目/图像操作分别使用文件夹、项目包、软盘、图片导出图标。取消顶部 Plot 和 Config 的保存/读取按钮；取消 Reset Config / Clear Config 入口（含 File 菜单和 Export 页）。Config 的保存与读取仍在 Export 页（Config / Project 面板已通过 PR #8 恢复可见）和 File 菜单；Tools 菜单的 Recalculate 及自动绘图功能保留。按钮维持经典桌面软件的立体边框，主工具栏按钮 34 px、图标 19 px，Export 保留文字。
+- **顶部工具栏（PR #7 已合并 main）：** 常驻七个独立按钮：Open Data、Open Project、Save Project、Undo、Redo、Clear Data、Export。高频文件/项目/图像操作分别使用文件夹、项目包、软盘、图片导出图标。取消顶部 Plot 和 Config 的保存/读取按钮；取消 Reset Config / Clear Config 入口（含 File 菜单和 Export 页）。Config 的保存与读取仍在 Export 页（Config / Project 面板已通过 PR #8 恢复可见）和 File 菜单；Tools 菜单的 Recalculate 及自动绘图功能保留。按钮维持经典桌面软件的立体边框；顶部普通按钮与绘图区操作栏采用同一规格（28 × 27 px，SVG 图标 14 × 14 px、1.7 px 笔画），Export 按钮高度 27 px、最小宽度 86 px，并保留文字。
 
 
 - **Legend 控件（PR #6 已合并 main）：** Style → Legend 增加 Global position（九宫格及 Outside top/right，默认 Upper right），Subplots → Legend & labels 在 Variable scan 中重新可见且默认展开；支持 Legend/Direct/Both/None、局部位置继承或覆盖，曲线绘图、SVG/PDF 导出和项目保存共用有效位置。旧配置未包含全局位置且使用默认 Upper right 时迁移为继承；其他局部位置保留。普通 Heatmap/Contour/3D 继续使用色标，不显示无意义的曲线 legend。
