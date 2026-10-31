@@ -54,6 +54,14 @@ npm run check
 npm run preview
 ```
 
+浏览器交互回归使用本地 Vite 服务和 Chromium。首次运行需安装 Playwright 及浏览器：
+
+```bash
+npm install --no-save playwright
+npx playwright install chromium
+npm run test:browser
+```
+
 `npm run check` 顺序运行 ESLint、Prettier 格式检查、单元测试和 `tsc --noEmit && vite build`。格式检查目前覆盖新增质量管理文件与 `package.json`，历史压缩源码将在独立提交中分批整理。应用产物位于 `dist/`。单项回归也可运行：
 
 ```bash
