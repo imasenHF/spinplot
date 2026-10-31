@@ -109,7 +109,9 @@ try {
 
   await page.screenshot({ path: 'browser-preview/toolbar.png', fullPage: true });
   assert.deepEqual(errors, [], `Toolbar browser regression raised errors: ${errors.join(' | ')}`);
-  console.log('Toolbar browser regression passed: seven actions, geometry, icons and file pickers.');
+  console.log(
+    'Toolbar browser regression passed: seven actions, geometry, icons and file pickers.',
+  );
 } finally {
   await browser.close();
 }
