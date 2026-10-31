@@ -5,7 +5,7 @@
 - 浏览器回归启用色标双击、频率对齐、二维视图、手动曲线 Heatmap、数据面板、样式列、Contour/3D、轴显示、功率饱和拟合、空投影空间等现有测试分支；截图保存至 `browser-preview/`。
 - 工具栏专项检查七个顶部操作的顺序与 aria-label、普通按钮 28 × 27 px、SVG 图标 14 × 14 px、Export 最小宽度 86 px、绘图区工具按钮高度 27 px、Open Data/Open Project 文件选择器及 Export 页 Config / Project 面板。
 - 修正 `src/styles/app.css` 中绘图区工具按钮 26 px 的覆盖规则为 27 px，使其与顶部工具栏一致。未改变按钮操作、数据结构、EPR 算法、应用版本或项目/配置文件格式。
-- `.github/workflows/quality.yml` 在 PR 中运行 `npm run check` 与 `npm run test:browser`；正式 `.github/workflows/pages.yml` 在部署前运行相同浏览器回归。浏览器截图以 Actions artifact 保存。当前运行：[质量检查 #41222844500](https://github.com/imasenHF/spinplot/actions/runs/41222844500)、[矢量 PDF 回归 #41222844492](https://github.com/imasenHF/spinplot/actions/runs/41222844492)，结果待完成后更新。
+- `.github/workflows/quality.yml` 在 PR 中运行 `npm run check` 与 `npm run test:browser`；正式 `.github/workflows/pages.yml` 在部署前运行相同浏览器回归。浏览器截图以 Actions artifact 保存。PR #10 当前代码已通过 [质量检查 #41223731200](https://github.com/imasenHF/spinplot/actions/runs/41223731200) 和 [矢量 PDF 回归 #41223731438](https://github.com/imasenHF/spinplot/actions/runs/41223731438)。质量检查包含 lint、格式检查、单元测试、生产构建、综合 Chromium 回归及工具栏专项检查。
 
 ## 2026-10-31 顶部工具栏按钮尺寸统一（PR #9，已合并 main）
 
