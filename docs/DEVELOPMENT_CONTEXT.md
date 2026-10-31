@@ -1,3 +1,12 @@
+## 2026-11-01 工程质量体系与浏览器回归（Draft PR #10）
+
+- 开发分支：`chore/quality-gate-browser-regression-20261101`；PR：[ #10 — unify SpinPlot browser regression in CI](https://github.com/imasenHF/spinplot/pull/10)。PR 尚未合并，正式 `main` 和线上版本保持不变。
+- 新增 `npm run test:browser` 与 `scripts/run-browser-tests.mjs`。脚本启动本地 Vite 服务，依次执行现有 `scripts/preview-browser-smoke.mjs` 的一维/二维交互回归，以及 `scripts/toolbar-browser-smoke.mjs` 的工具栏专项回归。
+- 浏览器回归启用色标双击、频率对齐、二维视图、手动曲线 Heatmap、数据面板、样式列、Contour/3D、轴显示、功率饱和拟合、空投影空间等现有测试分支；截图保存至 `browser-preview/`。
+- 工具栏专项检查七个顶部操作的顺序与 aria-label、普通按钮 28 × 27 px、SVG 图标 14 × 14 px、Export 最小宽度 86 px、绘图区工具按钮高度 27 px、Open Data/Open Project 文件选择器及 Export 页 Config / Project 面板。
+- 修正 `src/styles/app.css` 中绘图区工具按钮 26 px 的覆盖规则为 27 px，使其与顶部工具栏一致。未改变按钮操作、数据结构、EPR 算法、应用版本或项目/配置文件格式。
+- `.github/workflows/quality.yml` 在 PR 中运行 `npm run check` 与 `npm run test:browser`；正式 `.github/workflows/pages.yml` 在部署前运行相同浏览器回归。浏览器截图以 Actions artifact 保存。当前运行：[质量检查 #41222844500](https://github.com/imasenHF/spinplot/actions/runs/41222844500)、[矢量 PDF 回归 #41222844492](https://github.com/imasenHF/spinplot/actions/runs/41222844492)，结果待完成后更新。
+
 ## 2026-10-31 顶部工具栏按钮尺寸统一（PR #9，已合并 main）
 
 - 顶部 `.top-actions` 普通按钮与绘图区 `.toolbar` 中的通用按钮统一为 28 × 27 px；SVG 图标统一为 14 × 14 px，并沿用通用按钮的 1.7 px 笔画。
