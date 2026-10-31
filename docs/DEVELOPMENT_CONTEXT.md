@@ -13,7 +13,7 @@
 ## 2026-10-31 顶部常用工具栏整理（PR #7 已合并 main）
 
 - 删除顶部 Plot、Load Config、Save Config 和 Reset Config，移除 File 菜单及 Export 页的 Reset Config。保留七按钮的固定排列：Open Data、Open Project、Save Project | Undo、Redo | Clear Data | Export，Export 保留文字；Clear Data 保留现有动作语义。低频 Config 保存/读取在 Export 页与 File 菜单保留，Tools → Recalculate 与自动绘图保持可用。
-- 文件打开改用带 aria-label 的可聚焦 button 触发 file input；打开/保存项目保持格式兼容。更新 src/main.js 的事件绑定，避免查询已删除的按钮导致初始化失败；删除不可达的 Clear Config 函数与默认快照。新增明确区分数据文件、项目文件和图像导出的 SVG，顶部高频操作按钮与绘图区操作栏统一为 28 × 27 px，图标 14 × 14 px；Export 高度 27 px、最小宽度 86 px并保留文字。
+- 文件打开改用带 aria-label 的可聚焦 button 触发 file input；打开/保存项目保持格式兼容。更新 src/main.js 的事件绑定，避免查询已删除的按钮导致初始化失败；删除不可达的 Clear Config 函数与默认快照。新增明确区分数据文件、项目文件和图像导出的 SVG，顶部高频操作按钮与绘图区操作栏统一为 28 × 27 px，图标 14 × 14 px；Export 高度 27 px、最小宽度 86 px，并保留文字。
 - 更新脚本中已删除的顶部控件引用，Chromium 回归检查按钮集合、文件选择、保存项目、保存配置、图形导出和清除数据；已通过 [PR #7](https://github.com/imasenHF/spinplot/pull/7) 合并至 `main`；合并前质量及矢量 PDF 检查成功，Chromium 工具栏复测遇到连续文件下载测试问题，新测试工作流仍待确认。部署状态以最新 Pages 与生产 HTTP Actions 为准。
 
 ## 2026-10-31 Legend 控件修复（已合并 main，PR #6）
