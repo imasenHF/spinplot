@@ -1,3 +1,12 @@
+## 2026-11-02 Bruker 三参数幅度饱和模型（PR #11 草稿，自动检查通过）
+
+- 开发分支 `feat/bruker-power-saturation-model-20261101`，PR [#11](https://github.com/imasenHF/spinplot/pull/11) 仍为 Draft，尚未合并 `main`。正式版保持 0.10.0，项目格式 11、配置格式 10 均未改变。
+- Variable scan 幅度拟合采用 Bruker 三参数形式：`Spp(P) = I₀√P / (1 + P/P½)^(b/2)`。拟合参数为 `I₀`、`b` 和 `P½`；每项均可独立选择拟合或固定，固定时使用对应输入值。此处 `P½` 是模型分母中的特征功率参数，界面帮助不将其解释为任意 `b` 下曲线实际峰值的一半。
+- 幅度模型不再使用旧模型的偏置项 `C`；`C` 选项只保留在线宽模型。线宽拟合仍独立使用 `ΔBpp(P) = A√(1 + P/Psat) + C`，不与幅度模型共用特征功率。
+- 幅度求解器在对数功率与指数 `b` 平面进行有界网格搜索，再用 Nelder–Mead 局部精修；`I₀` 在给定形状参数时通过线性最小二乘求解。拟合曲线、结果注释、参数保存和旧项目缺省迁移均已同步修改。
+- 验收：PR 提交 `79209b5` 的 [质量检查 41330611838](https://github.com/imasenHF/spinplot/actions/runs/41330611838)、[Legend 浏览器回归 41330611849](https://github.com/imasenHF/spinplot/actions/runs/41330611849) 和 [矢量 PDF 浏览器回归 41330611827](https://github.com/imasenHF/spinplot/actions/runs/41330611827) 均成功。质量检查包含 lint、格式检查、全部单元测试、生产构建及综合 Chromium 回归；另两项分别检查 Legend 行为与矢量 PDF 输出。
+- 尚未执行真实 EPR 实验数据的模型适用性比较、参数不确定度分析和人工界面视觉验收。PR 保持 Draft；未部署正式站点，未创建新版本标签。
+
 ## 2026-11-01 工程质量体系与浏览器回归（PR #10 已合并并发布）
 
 - PR [#10](https://github.com/imasenHF/spinplot/pull/10) 已于 2026-11-01 合并至 `main`（提交 `decd90c7a77bdfd5772400abd8396e0d0354409d`），正式站点已发布；原开发分支为 `chore/quality-gate-browser-regression-20261101`。应用版本仍为 0.10.0，项目/配置文件格式分别为 11/10。
