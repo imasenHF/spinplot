@@ -423,7 +423,7 @@ try {
     assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
     const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
       nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
-    assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
+    assert.equal(formulaParentheses.length,6,'Bruker amplitude denominator and both function arguments use explicit parentheses');
     assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
