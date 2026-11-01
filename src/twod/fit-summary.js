@@ -9,7 +9,7 @@ export function scanFitResultLines(data, selection = []) {
     for (const key of selection) {
       if (key === 'formula') {
         fields.push(name === 'Amplitude'
-          ? 'S(P) = I₀√P/(1 + P/P½)^(b/2)'
+          ? 'Spp(P) = I₀√P/(1 + P/P½)^(b/2)'
           : 'ΔB(P) = A√(1 + P/Psat) + C');
         continue;
       }

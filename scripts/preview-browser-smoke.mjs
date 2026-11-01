@@ -527,7 +527,7 @@ try {
     assert.equal(firstRow.split(',')[11],'no','Excluded source trace 0 is not used in linewidth fit');
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Bruker P-half saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Reloading the saved project must restore the derived-curve drawing order');

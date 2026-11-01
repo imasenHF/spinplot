@@ -17,7 +17,7 @@ test('Bruker amplitude summary reports I0, exponent and P-half model parameter',
   const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['formula', 'I0', 'b', 'half']);
   assert.deepEqual(lines, [
     'Amplitude',
-    'S(P) = I₀√P/(1 + P/P½)^(b/2)',
+    'Spp(P) = I₀√P/(1 + P/P½)^(b/2)',
     'I₀ = 3.25',
     'b = 1.4',
     'P½ = 12.5 mW',
@@ -29,7 +29,7 @@ test('invalid fits have no plotted result', () => {
 test('amplitude and linewidth summaries use their own parameter sets', () => {
   const lines = scanFitResultLines({ valid: true, amplitudeFit, linewidthFit },
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
-  assert.ok(lines.includes('S(P) = I₀√P/(1 + P/P½)^(b/2)'));
+  assert.ok(lines.includes('Spp(P) = I₀√P/(1 + P/P½)^(b/2)'));
   assert.ok(lines.includes('ΔB(P) = A√(1 + P/Psat) + C'));
   assert.ok(lines.includes('I₀ = 3.25'));
   assert.ok(lines.includes('b = 1.4'));
