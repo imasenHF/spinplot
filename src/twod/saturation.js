@@ -55,6 +55,59 @@ function score(points, predict) {
   const sse = residuals.reduce((sum, value) => sum + value * value, 0);
   return { sse, residuals, predict };
 }
+function refineAmplitudeShape(start, evaluate, xBounds, bBounds) {
+  const clamp = (value, bounds) => Math.max(bounds[0], Math.min(bounds[1], value));
+  const make = (x, b) => {
+    const logPower = clamp(x, xBounds), exponent = clamp(b, bBounds);
+    const candidate = evaluate(Math.exp(logPower), exponent);
+    return { x: logPower, b: exponent, candidate, value: candidate?.sse ?? Infinity };
+  };
+  const xStep = Math.max((xBounds[1] - xBounds[0]) / 100, 1e-7);
+  const bStep = Math.max((bBounds[1] - bBounds[0]) / 100, 1e-7);
+  const xOffset = start[0] + xStep <= xBounds[1] ? xStep : -xStep;
+  const bOffset = start[1] + bStep <= bBounds[1] ? bStep : -bStep;
+  let simplex = [
+    make(start[0], start[1]),
+    make(start[0] + xOffset, start[1]),
+    make(start[0], start[1] + bOffset),
+  ];
+  for (let iteration = 0; iteration < 800; iteration++) {
+    simplex.sort((a, b) => a.value - b.value);
+    const [best, second, worst] = simplex;
+    const diameter = Math.max(
+      Math.hypot(best.x - second.x, best.b - second.b),
+      Math.hypot(best.x - worst.x, best.b - worst.b),
+    );
+    const spread = Math.abs(worst.value - best.value);
+    if (diameter < 1e-11 || spread < 1e-24) break;
+
+    const cx = (best.x + second.x) / 2;
+    const cb = (best.b + second.b) / 2;
+    const reflected = make(cx + (cx - worst.x), cb + (cb - worst.b));
+    if (reflected.value < best.value) {
+      const expanded = make(cx + 2 * (reflected.x - cx), cb + 2 * (reflected.b - cb));
+      simplex[2] = expanded.value < reflected.value ? expanded : reflected;
+    } else if (reflected.value < second.value) {
+      simplex[2] = reflected;
+    } else {
+      const outside = reflected.value < worst.value;
+      const contracted = outside
+        ? make(cx + 0.5 * (reflected.x - cx), cb + 0.5 * (reflected.b - cb))
+        : make(cx + 0.5 * (worst.x - cx), cb + 0.5 * (worst.b - cb));
+      if (contracted.value < (outside ? reflected.value : worst.value)) {
+        simplex[2] = contracted;
+      } else {
+        simplex = [
+          best,
+          make(best.x + 0.5 * (second.x - best.x), best.b + 0.5 * (second.b - best.b)),
+          make(best.x + 0.5 * (worst.x - best.x), best.b + 0.5 * (worst.b - best.b)),
+        ];
+      }
+    }
+  }
+  simplex.sort((a, b) => a.value - b.value);
+  return simplex[0].candidate;
+}
 function fitBrukerAmplitude(points, {
   fitI0 = true, fitB = true, fitPhalf = true,
   fixedI0 = 1, fixedB = 2, fixedPhalf = 1,
@@ -112,19 +165,17 @@ function fitBrukerAmplitude(points, {
     const bCount = fitB ? 80 : 1;
     const pStep = pCount > 1 ? (pRight - pLeft) / (pCount - 1) : 0;
     const bStep = bCount > 1 ? (bRight - bLeft) / (bCount - 1) : 0;
-    let passBest = null, bestPIndex = 0, bestBIndex = 0;
+    let passBest = null;
     for (let bi = 0; bi < bCount; bi++) {
       const b = fitB ? bLeft + bi * bStep : fixed.b;
       for (let pi = 0; pi < pCount; pi++) {
         const pHalf = fitPhalf ? Math.exp(pLeft + pi * pStep) : fixed.Phalf;
         const candidate = evaluate(pHalf, b);
-        if (candidate && (!passBest || candidate.sse < passBest.sse)) {
-          passBest = candidate; bestPIndex = pi; bestBIndex = bi;
-        }
+        if (candidate && (!passBest || candidate.sse < passBest.sse)) passBest = candidate;
       }
     }
     if (!passBest) break;
-    best = passBest;
+    if (!best || passBest.sse < best.sse) best = passBest;
     if (!fitPhalf && !fitB) break;
     if (fitPhalf) {
       const center = Math.log(best.Phalf);
@@ -137,6 +188,15 @@ function fitBrukerAmplitude(points, {
       bLeft = Math.max(bMin, best.b - width);
       bRight = Math.min(bMax, best.b + width);
     }
+  }
+  if (best && fitPhalf && fitB) {
+    const refined = refineAmplitudeShape(
+      [Math.log(best.Phalf), best.b],
+      evaluate,
+      [Math.log(lower), Math.log(upper)],
+      [bMin, bMax],
+    );
+    if (refined && refined.sse < best.sse) best = refined;
   }
   if (!best) return { valid: false, reason: 'Unable to identify Bruker saturation-model parameters.' };
 
