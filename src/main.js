@@ -367,9 +367,9 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
       for(const [which,fit] of [['amplitude',data.amplitudeFit],['linewidth',data.linewidthFit]]){
         if(!fit?.valid)continue;
         const isLine=which==='linewidth';
-        const values=data.points.map(p=>fit.parameters.A*
-          (isLine?Math.sqrt(1+p.x/fit.parameters.P):Math.sqrt(p.x)/(1+p.x/fit.parameters.P))
-          +fit.parameters.C);
+        const values=data.points.map(p=>isLine
+          ?fit.parameters.A*Math.sqrt(1+p.x/fit.parameters.P)+fit.parameters.C
+          :fit.parameters.I0*Math.sqrt(p.x)/(1+p.x/fit.parameters.Phalf)**(fit.parameters.b/2));
         curves.push(makeCurve((isLine?'Linewidth':'Amplitude')+' fit',values,
           isLine&&data.featureMode==='both'?'right':'left',true,isLine?'linewidthFit':'amplitudeFit'));
       }
@@ -391,7 +391,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
       (sp.scanCurveStyle&&sp.scanCurveStyle!=='line'?sp.scanCurveStyle:'solid-filled-circle'))};
   }
  }
- const fitResults=scanFitResultLines(data,t.scanFitShow===true?['formula','P','half','A','C','r2','rmse','n']:[]);
+ const fitResults=scanFitResultLines(data,t.scanFitShow===true?['formula','I0','b','half','P','A','C','r2','rmse','n']:[]);
  const renderSp={...sp,fitResultLines:fitResults,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,fitResultFontFamily:t.scanFitLabelFont||'inherit',fitResultOpacity:t.scanFitLabelOpacity??0,fitResultBorder:t.scanFitLabelBorder===true,fitResultX:t.scanFitLabelX??50,fitResultY:t.scanFitLabelY??65,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.labelMode,
     legendPosition:sp.legendPosition,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};

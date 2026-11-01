@@ -59,6 +59,12 @@ export function defaults(d) {
     scanFitAmplitude: false,
     scanFitLinewidth: false,
     scanFitOffset: false,
+    scanFitI0: 1,
+    scanFitB: 2,
+    scanFitPhalfMW: 1,
+    scanFitFitI0: true,
+    scanFitFitB: true,
+    scanFitFitPhalf: true,
     scanFitExcluded: '',
     scanFitPowerMinMW: '',
     scanFitPowerMaxMW: '',
@@ -341,6 +347,7 @@ export function controls(card, sp, d, onChange) {
     };
     l.append(e);
     parent.append(l);
+    return e;
   }
   function select(parent, key, title, opts) {
     const l = document.createElement('label');
@@ -381,6 +388,7 @@ export function controls(card, sp, d, onChange) {
     text.textContent = title;
     l.append(e, text);
     parent.append(l);
+    return e;
   }
   // Fit from the current visible matrix and show real numerical limits.
   function fitZ(){
@@ -511,7 +519,34 @@ export function controls(card, sp, d, onChange) {
     }
   });
   check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
-  check(fitBody,'scanFitOffset','Fit constant offset (C)');
+  const linewidthOffsetToggle=check(fitBody,'scanFitOffset','Fit linewidth offset (C)');
+  const amplitudeParameterHeading=document.createElement('div');
+  amplitudeParameterHeading.className='scan-fit-section-heading';
+  amplitudeParameterHeading.style.gridColumn='1 / -1';
+  amplitudeParameterHeading.textContent='Amplitude model parameters';
+  fitBody.append(amplitudeParameterHeading);
+  const amplitudeParameterGrid=document.createElement('div');
+  amplitudeParameterGrid.className='scan-fit-parameter-grid';
+  amplitudeParameterGrid.style.gridColumn='1 / -1';
+  fitBody.append(amplitudeParameterGrid);
+  const amplitudeParameterFields=new Map();
+  for(const [key,fitKey,label] of [
+    ['scanFitI0','scanFitFitI0','I₀'],
+    ['scanFitB','scanFitFitB','b'],
+    ['scanFitPhalfMW','scanFitFitPhalf','P½ (mW)']
+  ]){
+    const row=document.createElement('div');
+    row.className='scan-fit-parameter-row';
+    const field=input(row,key,label,'number');
+    field.min=key==='scanFitB'?'0.01':'0';
+    field.title='Fit enabled: calculated value. Fit disabled: fixed value.';
+    const toggle=check(row,fitKey,'Fit');
+    toggle.setAttribute('aria-label','Fit '+label);
+    field.readOnly=toggle.checked;
+    toggle.addEventListener('change',()=>{field.readOnly=toggle.checked;});
+    amplitudeParameterGrid.append(row);
+    amplitudeParameterFields.set(key,field);
+  }
   const excludePanel=document.createElement('details');
   excludePanel.className='advanced-layout scan-exclude-panel';
   excludePanel.style.gridColumn='1 / -1';
@@ -541,8 +576,8 @@ export function controls(card, sp, d, onChange) {
   fitBody.append(fitBounds);
   const fitBoundTitle=document.createElement('div');
   fitBoundTitle.style.gridColumn='1 / -1';
-  fitBoundTitle.textContent='Fit parameter range (mW)';
-  fitBoundTitle.title='Blank bounds use the included measured powers. Custom bounds permit extrapolation.';
+  fitBoundTitle.textContent='Characteristic power range (mW)';
+  fitBoundTitle.title='Search bounds for P½ (amplitude) and Psat (linewidth). Blank bounds use included measured powers.';
   fitBounds.append(fitBoundTitle);
   input(fitBounds,'scanFitPowerMinMW','Min','number');
   input(fitBounds,'scanFitPowerMaxMW','Max','number');
@@ -629,13 +664,16 @@ export function controls(card, sp, d, onChange) {
     field.type='text';
     field.readOnly=true;
     field.value=value;
-    field.title=label==='P½'?'Ascending-branch power at half the fitted peak after subtracting offset C.':label==='Psat'?'Characteristic saturation power; for amplitude this is the fitted peak power.':'Calculated result; not editable';
+    field.title=label.includes('P½')?'P½ is the characteristic power parameter in the Bruker amplitude model.':label==='I₀'?'Low-power amplitude coefficient in the Bruker model.':label==='b'?'Dimensionless power-saturation exponent.':label==='Psat'?'Characteristic power in the linewidth broadening model.':'Calculated result; not editable';
     holder.append(field);
     parent.append(holder);
   }
   function refreshFitResults(){
     if(sp.mode!=='scan')return;
     fitControls.hidden=s.scanFeatureMode==='statistic'&&s.scanStatistic!=='ptp';
+    amplitudeParameterHeading.hidden=!s.scanFitAmplitude;
+    amplitudeParameterGrid.hidden=!s.scanFitAmplitude;
+    linewidthOffsetToggle.parentElement.hidden=!s.scanFitLinewidth;
     const scanCoordinateAxis=orient(d,s.component,s.swap).y;
     const powerMode=s.scanAxisMode==='power';
     const calibratedNativePower=!powerMode&&calibratedPowerFactor(scanCoordinateAxis)===1
@@ -699,11 +737,9 @@ export function controls(card, sp, d, onChange) {
       excludeHeading.textContent='Exclude points from fit ('+excluded.size+' excluded)';
     }
     if(!data.valid){results.textContent=data.reason||'No valid scan data';return;}
-    for(const [key,title,fit,enabled,formula] of [
-      ['amplitude','Amplitude',data.amplitudeFit,s.scanFitAmplitude,
-       'Spp(P) = A√P / (1 + P/Psat) + C'],
-      ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth,
-       'ΔBpp(P) = A√(1 + P/Psat) + C']
+    for(const [key,title,fit,enabled] of [
+      ['amplitude','Amplitude',data.amplitudeFit,s.scanFitAmplitude],
+      ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth]
     ]){
       if(!enabled)continue;
       const section=document.createElement('div');
@@ -711,13 +747,13 @@ export function controls(card, sp, d, onChange) {
       section.style.gridColumn='1 / -1';
       const head=document.createElement('div');
       head.style.fontWeight='600';
-      head.textContent=title+' · '+(key==='amplitude'?'Amplitude saturation':'Power-dependent linewidth');
+      head.textContent=title+' · '+(key==='amplitude'?'Bruker P-half saturation':'Power-dependent linewidth');
       const eq=document.createElement('div');
       eq.className='scan-fit-equation';
       // Static MathML is parsed as native mathematical markup in Chromium.
       // No user-provided strings are interpolated into these expressions.
       eq.innerHTML=key==='amplitude'
-        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><msqrt><mi>P</mi></msqrt></mrow><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></mfrac><mo>+</mo><mi>C</mi></mrow></math>'
+        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Bruker P-half amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>I</mi><mn>0</mn></msub><msqrt><mi>P</mi></msqrt></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac><mo stretchy="false">)</mo></mrow><mfrac><mi>b</mi><mn>2</mn></mfrac></msup></mrow></mfrac></mrow></math>'
         :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
       section.append(head,eq);
       if(!fit?.valid){
@@ -727,10 +763,24 @@ export function controls(card, sp, d, onChange) {
       }else{
         const grid=document.createElement('div');
         grid.className='grid2 scan-fit-parameters';
-        outputField(grid,'Psat',formatNumber(fit.parameters.P),'mW');
-        if(key==='amplitude')outputField(grid,'P½',formatNumber(fit.parameters.PHalf),'mW');
-        outputField(grid,'A',formatNumber(fit.parameters.A));
-        outputField(grid,s.scanFitOffset?'C':'C · fixed',formatNumber(fit.parameters.C));
+        if(key==='amplitude'){
+          const flags=fit.parameterFit||{};
+          outputField(grid,flags.I0===false?'I₀ · fixed':'I₀',formatNumber(fit.parameters.I0));
+          outputField(grid,flags.b===false?'b · fixed':'b',formatNumber(fit.parameters.b));
+          outputField(grid,flags.Phalf===false?'P½ · fixed':'P½',formatNumber(fit.parameters.Phalf),'mW');
+          for(const [stateKey,paramKey] of [['scanFitI0','I0'],['scanFitB','b'],['scanFitPhalfMW','Phalf']]){
+            const value=fit.parameters[paramKey];
+            if(Number.isFinite(value)){
+              s[stateKey]=value;
+              const field=amplitudeParameterFields.get(stateKey);
+              if(field)field.value=formatNumber(value);
+            }
+          }
+        }else{
+          outputField(grid,'Psat',formatNumber(fit.parameters.P),'mW');
+          outputField(grid,'A',formatNumber(fit.parameters.A));
+          outputField(grid,s.scanFitOffset?'C':'C · fixed',formatNumber(fit.parameters.C));
+        }
         outputField(grid,'RMSE',formatNumber(fit.rmse));
         outputField(grid,'R²',fit.r2==null?'—':formatNumber(fit.r2));
         outputField(grid,'No. of points',String(fit.n));
@@ -752,7 +802,7 @@ export function controls(card, sp, d, onChange) {
   solverHelp.type='button';
   solverHelp.className='help-tip';
   solverHelp.textContent='?';
-  solverHelp.dataset.help='Amplitude Psat is the fitted peak power. P½ is the lower-power half-height crossing of S(P)−C, equal to (2−√3)² × Psat. The linewidth fit has an independent Psat. Bounded logarithmic search and linear least squares determine parameters. Blank limits use included measured powers. Four distinct powers are needed, or five if C is fitted.';
+  solverHelp.dataset.help='Amplitude uses the Bruker model Spp(P) = I₀√P / (1 + P/P½)^(b/2). I₀, b and P½ can each be fitted or held fixed independently. The fitted b search range is 0.1–8; blank characteristic-power limits use included measured powers. The linewidth model is fitted separately and can include an offset C.';
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
@@ -1318,11 +1368,22 @@ export function scanCorrelationData(d, s) {
       const tokens=String(s.scanFitExcluded??'').trim().split(/[,;\s]+/).filter(Boolean);
       if(tokens.some(t=>!/^\d+$/.test(t)))return {valid:false,reason:'Exclude trace indices must be non-negative integers.'};
       const optionalBound=value=>value===''||value==null?null:Number(value);
-      return fitSaturation(featurePoints.map(p=>({index:p.index,power:p.x,signal:p[feature]})),{
-        model,allowOffset:s.scanFitOffset===true,
+      const common={
         excludedIndices:tokens.map(Number),
         minPower:optionalBound(s.scanFitPowerMinMW),
         maxPower:optionalBound(s.scanFitPowerMaxMW)
+      };
+      const fitOptions=model==='amplitude'?{
+        ...common,
+        fitI0:s.scanFitFitI0!==false,
+        fitB:s.scanFitFitB!==false,
+        fitPhalf:s.scanFitFitPhalf!==false,
+        fixedI0:Number(s.scanFitI0),
+        fixedB:Number(s.scanFitB),
+        fixedPhalf:Number(s.scanFitPhalfMW)
+      }:{...common,allowOffset:s.scanFitOffset===true};
+      return fitSaturation(featurePoints.map(p=>({index:p.index,power:p.x,signal:p[feature]})),{
+        model,...fitOptions
       });
     };
     return {valid:true,x:featurePoints.map(p=>p.x),scan:featurePoints.map(p=>p.scan),
