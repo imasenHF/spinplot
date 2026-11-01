@@ -47,6 +47,7 @@ for (const b of [1.2, 2, 3.4]) {
   assert.ok(Math.abs(result.parameters.I0 / 4 - 1) < 0.002, 'I0=' + result.parameters.I0);
   assert.ok(Math.abs(result.parameters.b - b) < 0.003, 'b=' + result.parameters.b);
   assert.ok(Math.abs(result.parameters.Phalf / 12 - 1) < 0.002, 'Phalf=' + result.parameters.Phalf);
+  console.log('FIT DEBUG', { b, parameters: result.parameters, rmse: result.rmse, warning: result.warning });
   assert.ok(result.rmse < 1e-6);
   assert.ok(result.r2 > 0.999999);
 }
