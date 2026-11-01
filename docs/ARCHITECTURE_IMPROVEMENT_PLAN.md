@@ -1,10 +1,10 @@
 # SpinPlot 架构与维护性优化规划
 
-更新日期：2026-10-30（Asia/Shanghai）
+更新日期：2026-11-01（Asia/Shanghai）
 
-状态：**阶段 0 已开始实施。** 已建立统一 lint、格式检查、单元测试和构建入口，并在正式 Pages CI 中执行；PR 检查和浏览器统一入口仍需继续完善。阶段 1–4 尚未开始。 本文件定义后续源码整理的目标、顺序和验收边界，不代表相关模块已经拆分，也不授权改变现有功能、科学数据语义或项目文件格式。
+状态：**阶段 0 的统一检查与浏览器回归入口已实现，Draft PR #10 的质量检查与矢量 PDF 回归均已通过。** PR 质量工作流和正式 Pages 部署工作流均运行 `npm run check` 与 `npm run test:browser`；JSDoc 类型检查试点和依赖清理仍待处理。PR 尚未合并，阶段 1–4 尚未开始。本文件定义后续源码整理的目标、顺序和验收边界，不代表相关模块已经拆分，也不授权改变现有功能、科学数据语义或项目文件格式。
 
-审查基线：正式 `main`，HEAD `5759d756d56daaefbbf9f8caab4c40bcd13ab964`；应用版本 **0.10.0**，项目格式 **11**，配置格式 **10**。后续执行前必须重新读取最新代码、分支、测试和工作流状态。
+审查基线：正式 `main`，HEAD `6834c09c3c5df97fe936cf5073d6588ac48afc54`（2026-10-31）；开发分支 `chore/quality-gate-browser-regression-20261101`，Draft PR [#10](https://github.com/imasenHF/spinplot/pull/10)。应用版本 **0.10.0**，项目格式 **11**，配置格式 **10**。后续执行前必须重新读取最新代码、分支、测试和工作流状态。
 
 ## 1. 优化目标
 
@@ -42,7 +42,7 @@
 
 **文件读取路径需要统一。** 常规导入和批量作图分别组织文件解析流程，CIQTEK、BES3T、CSV 等读取逻辑分布在应用入口和二维模块。增加格式时容易出现重复处理和行为差异。
 
-**质量检查入口已开始统一。** `package.json` 已增加 `lint`、`format:check`、`test:unit`、`check`；格式检查暂限质量管理文件，浏览器测试仍沿用现有工作流。完整数值测试和浏览器基线对照主要位于 `modularization-preview.yml`，其触发范围为 `preview/modularization-*`；正式 Pages 工作流目前执行安装和生产构建，生产 HTTP 检查主要验证已部署页面版本及脚本资源。
+**质量检查入口已统一到 PR 与正式部署流程。** `package.json` 提供 `lint`、`format:check`、`test:unit`、`test:browser`、`check`；`npm run check` 执行静态检查、单元测试和生产构建，`npm run test:browser` 启动本地 Vite 服务并运行 Chromium 交互回归。PR 质量工作流与正式 Pages 工作流均执行这两项检查；浏览器截图作为 Actions artifact 保存。格式检查覆盖质量配置和新测试入口，不对历史压缩源码做全量格式化。Draft PR #10 的质量检查与矢量 PDF 浏览器回归已通过；PR 尚未合并，正式 `main` 与线上版本保持不变。
 
 **JavaScript 类型检查覆盖有限。** `tsconfig.json` 设置了 TypeScript strict，但未启用 `allowJs` / `checkJs`，不能据此认为主体 JavaScript 已经过严格类型检查。
 
@@ -105,7 +105,7 @@ Canvas / SVG / PDF 渲染
 
 ### 阶段 0：建立统一质量基线
 
-**当前实施记录（2026-10-30）：** 已添加 ESLint 9、Prettier 3 配置与脚本，`scripts/run-unit-tests.mjs` 逐一执行所有 `src/**/*.test.js` 文件；正式 Pages 运行 `npm run check`。现有浏览器专项工作流与真实仪器数据验证保持独立；历史源码暂不重新格式化。后续仍需 PR 检查、浏览器入口统一与 JSDoc 类型检查试点。
+**当前实施记录（2026-11-01，Draft PR #10 的 CI 已通过）：** ESLint 9、Prettier 3、统一单元测试和 `npm run check` 已在正式 Pages 与 PR 质量工作流中执行。新增 `npm run test:browser`，由 `scripts/run-browser-tests.mjs` 启动本地 Vite 服务，运行现有综合 Chromium 回归和工具栏专项检查；PR 与正式 Pages 部署前均运行。浏览器截图上传为 Actions artifact。格式检查覆盖新增质量脚本，历史源码暂不重新格式化。JSDoc 类型检查试点与依赖清理仍待执行。
 
 
 **优先级：最高；不改变应用行为。**

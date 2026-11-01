@@ -80,7 +80,7 @@ input[type=checkbox]{appearance:auto;accent-color:#173f5f;box-shadow:none;border
 .row,.noise-controls,.annotation-actions{padding-top:3px;padding-bottom:3px;min-height:30px;align-items:center}
 .input-action{min-height:28px;align-items:center}
 .input-action .tool-btn,#applyLayoutSizeBtn{height:22px;min-height:22px;padding:2px}
-.toolbar>button,.toolbar>.tool-btn{height:26px;min-height:26px;white-space:nowrap;flex-shrink:0;padding-top:3px;padding-bottom:3px}
+.toolbar>button,.toolbar>.tool-btn{height:27px;min-height:27px;white-space:nowrap;flex-shrink:0;padding-top:3px;padding-bottom:3px}
 .curve-tools{min-height:30px;padding-top:3px;padding-bottom:3px}
 .annotation-heading{min-height:30px;padding-top:3px;padding-bottom:3px}
 .card h3{padding-top:2px;padding-bottom:2px}

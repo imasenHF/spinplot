@@ -411,14 +411,14 @@ try {
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
     assert.match(fitText,/Amplitude · Amplitude saturation/);
-    assert.match(fitText,/Linewidth · Homogeneous power broadening/);
+    assert.match(fitText,/Linewidth · Power-dependent linewidth/);
     assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
     assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
     const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
       nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
     assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
     assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
-    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured power:/);
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMax"]').count(),1,'Feature end belongs to the same interval row');
@@ -436,7 +436,7 @@ try {
         heightGap:Math.abs(list.getBoundingClientRect().height-styleList.getBoundingClientRect().height),
         positions:names.map((y,i)=>Math.abs(y-styles[i]))};
     });
-    assert.ok(alignment.columnWidth<=38,'Derived styles must use the compact symbol column');
+    assert.ok(alignment.columnWidth>=54&&alignment.columnWidth<=58,'Derived styles must use the 56 px style column');
     assert.ok(alignment.heightGap<=2,'Data and style boxes must have the same height');
     assert.ok(alignment.positions.every(delta=>delta<=2),'Data rows and style rows must be vertically aligned');
     assert.match((await derived.locator('[data-curve-style="-101"] option:checked').textContent()).trim(),
@@ -445,7 +445,7 @@ try {
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('native');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),false,
       'Switching to acquired scan variable must collapse the power fit');
-    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/not calibrated power/,
+    assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Power calibration required/,
       'An attenuation axis in dB must not be mislabeled as measured mW');
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('power');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
@@ -695,7 +695,7 @@ try {
       const columns=await sourceCard.locator('.current-order-columns').evaluate(el=>{const names=el.querySelector('.order-list').getBoundingClientRect(),styles=el.querySelector('.curve-style-list').getBoundingClientRect();return {namesRight:names.right,stylesLeft:styles.left,gap:styles.left-names.right};});
       assert.ok(columns.gap>=3,'Curve style column must be visually separated from the data list');
       const compact=await sourceCard.locator('.current-order-columns > .curve-style-list').evaluate(el=>({w:el.getBoundingClientRect().width,labels:[...el.querySelectorAll('option')].map(x=>x.textContent.trim()),groups:el.querySelectorAll('optgroup').length}));
-      assert.ok(compact.w<=40,'Symbol selector column should be less than half of the previous 76 px width');
+      assert.ok(compact.w>=54&&compact.w<=58,'Symbol selector column should match the 56 px style column');
       assert.equal(compact.groups,0,'Symbol-only menu should not show text group headings');
       assert.ok(compact.labels.every(v=>/^[━┄┈○●□■△▲◇◆]+$/u.test(v)),'Style menu should use glyphs only');
       const selected=await sourceCard.locator('[data-curve-style="1"] option:checked').textContent();
