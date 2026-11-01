@@ -413,7 +413,7 @@ try {
     for(const key of ['scanFitFitI0','scanFitFitB','scanFitFitPhalf'])
       assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').isChecked(),true,key+' should default to fitting');
     for(const key of ['scanFitI0','scanFitB','scanFitPhalfMW'])
-      assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').getAttribute('readonly'),'true',key+' should display a read-only fitted value');
+      assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').evaluate(element=>element.readOnly),true,key+' should display a read-only fitted value');
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
     assert.match(fitText,/Amplitude · Bruker P-half saturation/);
     assert.match(fitText,/Linewidth · Power-dependent linewidth/);
