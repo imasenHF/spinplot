@@ -394,7 +394,9 @@ export function renderFigure(
     }
     if (visible.length < rows.length) {
       const more = `… (${rows.length-visible.length} more)`;
-      while (visible.length && contentHeight + (visible.length ? rowGap : 0) + lineHeight > maxHeight) {
+      while (visible.length) {
+        const nextGap = gapAfter(visible.at(-1));
+        if (contentHeight + nextGap + lineHeight <= maxHeight) break;
         contentHeight -= visible.pop().height;
         if (visible.length) contentHeight -= gapAfter(visible.at(-1));
       }
