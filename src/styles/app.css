@@ -242,3 +242,7 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-parameter-row input[type=number]{width:100%;min-width:0}
 @media(max-width:520px){.scan-fit-parameter-grid{grid-template-columns:1fr}}
 
+
+.scan-fit-results-heading{display:flex;align-items:center;gap:14px}
+.scan-refit-button{min-height:23px;padding:1px 10px;flex:0 0 auto;font-weight:normal}
+.scan-fit-display>.scan-residual-mode{grid-column:1/-1}

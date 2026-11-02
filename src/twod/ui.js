@@ -73,6 +73,7 @@ export function defaults(d) {
     scanFitDisplay: [],
     scanFitShow: false,
     scanFitResidualShow: false,
+    scanFitResidualMode: 'absolute',
     scanFitLabelPosition: 'lower_right',
     scanFitLabelSize: 12,
     scanFitLabelFont: 'inherit',
@@ -151,6 +152,7 @@ export function migrate(d, s) {
     if (s[k] === undefined) s[k] = s.showProjections !== false;
   for (const k of ['showXProjectionRange', 'showYProjectionRange'])
     if (s[k] === undefined) s[k] = s.showProjectionRanges !== false;
+  if (!['absolute', 'relative'].includes(s.scanFitResidualMode)) s.scanFitResidualMode = 'absolute';
   const base = defaults(d);
   if (s.scanFitShow === undefined) s.scanFitShow = Array.isArray(s.scanFitDisplay) && s.scanFitDisplay.length > 0;
   if (s.scanStatistic === undefined) s.scanStatistic = s.yMode || base.scanStatistic;
@@ -632,10 +634,15 @@ export function controls(card, sp, d, onChange) {
   showResidualCheck.dataset.twod='scanFitResidualShow';
   showResidualCheck.checked=s.scanFitResidualShow===true;
   showResidualCheck.setAttribute('aria-label','Show fit residual subplot');
-  showResidual.title='Absolute residuals are observed minus fitted values and share the displayed power coordinate.';
+  showResidual.title='Residuals share the displayed power coordinate; choose absolute or relative values below.';
   showResidualCheck.onchange=()=>{s.scanFitResidualShow=showResidualCheck.checked;onChange();};
   showResidual.append(showResidualCheck,document.createTextNode('Show fit residuals'));
   displayPanel.append(showResidual);
+  const residualMode=select(displayPanel,'scanFitResidualMode','Residual type',[
+    ['absolute','Absolute'],['relative','Relative (%)']
+  ]);
+  residualMode.parentElement.classList.add('scan-residual-mode');
+  residualMode.title='Absolute: observed - fitted. Relative (%): 100 × (observed - fitted) / |fitted|. Points with |fitted| ≤ 10⁻¹² of the maximum |fitted| are omitted; the title reports their count. Residual-panel RMSE follows this display mode.';
   const position=document.createElement('label');
   position.className='control-label';position.textContent='Position';
   const positionSelect=document.createElement('select');
@@ -706,8 +713,18 @@ export function controls(card, sp, d, onChange) {
   results.style.gridColumn='1 / -1';
   fitBody.insertBefore(results,displayPanel);
   const resultsHeading=document.createElement('div');
-  resultsHeading.className='scan-fit-section-heading';
-  resultsHeading.textContent='Fit results';
+  resultsHeading.className='scan-fit-section-heading scan-fit-results-heading';
+  const resultsTitle=document.createElement('span');
+  resultsTitle.textContent='Fit results';
+  const refitButton=document.createElement('button');
+  refitButton.type='button';
+  refitButton.className='scan-refit-button';
+  refitButton.textContent='Refit';
+  refitButton.setAttribute('aria-label','Refit with current settings');
+  refitButton.title='Recalculate enabled fits using the current models, parameter constraints, power range and included points.';
+  refitButton.disabled=true;
+  refitButton.onclick=()=>{refreshFitResults();onChange({refit:true});};
+  resultsHeading.append(resultsTitle,refitButton);
   fitBody.insertBefore(resultsHeading,results);
   const annotationHeading=document.createElement('div');
   annotationHeading.className='scan-fit-section-heading';
@@ -751,6 +768,7 @@ export function controls(card, sp, d, onChange) {
       if(field&&!Number.isFinite(Number(s[key])))field.placeholder=formatNumber(fallback);
     }
     results.replaceChildren();
+    refitButton.disabled=true;
     if(s.scanFeatureMode==='statistic')return;
     let data;
     try{data=scanCorrelationData(d,s);}catch(error){
@@ -800,6 +818,7 @@ export function controls(card, sp, d, onChange) {
       }
       excludeHeading.textContent='Exclude points from fit ('+excluded.size+' excluded)';
     }
+    refitButton.disabled=!(canFitPower&&data.valid&&(data.amplitudeFit||data.linewidthFit));
     if(!data.valid){results.textContent=data.reason||'No valid scan data';return;}
     for(const [key,title,fit,enabled] of [
       ['amplitude','Amplitude',data.amplitudeFit,s.scanFitAmplitude],

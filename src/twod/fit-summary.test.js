@@ -97,3 +97,44 @@ test('disabled or invalid fits do not contribute residual points', () => {
   assert.deepEqual(scanFitResidualSeries(data), []);
   assert.deepEqual(scanFitResidualSeries({ ...data, valid: false }), []);
 });
+
+test('relative residuals use absolute fitted denominators and their own percentage RMSE', () => {
+  const data = { valid:true, amplitudeFit:{ ...amplitudeFit, points:[
+    {index:0,power:4,fitted:2,residual:0.4},
+    {index:1,power:9,fitted:-4,residual:-0.4},
+  ]} };
+  const before = JSON.stringify(data);
+  const [relative] = scanFitResidualSeries(data,{mode:'relative',displayX:Math.sqrt});
+  assert.deepEqual(relative.points,[{index:0,x:2,y:20},{index:1,x:3,y:-10}]);
+  assert.equal(relative.label,'Amplitude relative residual');
+  assert.equal(relative.unit,'%');
+  assert.ok(Math.abs(relative.rmse-Math.sqrt(250))<1e-12);
+  assert.equal(relative.omittedCount,0);
+  assert.equal(scanFitResidualSeries(data)[0].rmse,amplitudeFit.rmse);
+  assert.equal(JSON.stringify(data),before,'Display mode must not mutate fit values or observations');
+});
+test('relative residuals guard zero and near-zero fits independently of signal units', () => {
+  for(const scale of [1e-15,1,1e15]){
+    const fit = {...linewidthFit, points:[
+      {index:0,power:1,fitted:2*scale,residual:0.2*scale},
+      {index:1,power:2,fitted:0,residual:scale},
+      {index:2,power:3,fitted:1e-13*scale,residual:scale},
+      {index:3,power:4,fitted:NaN,residual:scale},
+    ]};
+    const [series] = scanFitResidualSeries({valid:true,linewidthFit:fit},{mode:'relative',linewidthUnit:'G'});
+    assert.equal(series.unit,'%');
+    assert.equal(series.omittedCount,3);
+    assert.equal(series.points.length,1);
+    assert.ok(Math.abs(series.points[0].y-10)<1e-12);
+    assert.ok(Math.abs(series.rmse-10)<1e-12);
+  }
+});
+test('all-zero fitted values retain an empty relative lane with undefined count and no RMSE', () => {
+  const [series] = scanFitResidualSeries({valid:true,amplitudeFit:{...amplitudeFit,points:[
+    {index:0,power:1,fitted:0,residual:1},
+    {index:1,power:2,fitted:0,residual:0},
+  ]}},{mode:'relative'});
+  assert.deepEqual(series.points,[]);
+  assert.equal(series.rmse,null);
+  assert.equal(series.omittedCount,2);
+});

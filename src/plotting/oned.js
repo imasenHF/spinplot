@@ -519,7 +519,7 @@ export function renderFigure(
   }
   function drawFitResidualPanel(ctx, series, geom, X, xTicks, font, tickSize, titleSize, theme, colorForSeries) {
     const { x0, y0, pw, ph } = geom;
-    const visible = Array.isArray(series) ? series.filter(item => Array.isArray(item.points) && item.points.length) : [];
+    const visible = Array.isArray(series) ? series.filter(item => Array.isArray(item.points)) : [];
     ctx.save();
     ctx.strokeStyle = theme.axis;
     ctx.lineWidth = 0.8;
@@ -555,7 +555,8 @@ export function renderFigure(
       ctx.textBaseline = 'middle';
       const unit = item.unit ? ' (' + item.unit + ')' : '';
       const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) + (item.unit || '') : '';
-      ctx.fillText(item.label + unit + rmse, x0 + pw / 2, top - titleOffset, Math.max(10, pw - 8));
+      const omitted = item.omittedCount ? ' · ' + item.omittedCount + ' undefined' : '';
+      ctx.fillText(item.label + unit + rmse + omitted, x0 + pw / 2, top - titleOffset, Math.max(10, pw - 8));
       ctx.strokeRect(x0, top, pw, bottom - top);
       ctx.font = `${Math.max(8, tickSize - 2)}px ${font}`;
       ctx.textAlign = 'right';

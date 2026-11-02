@@ -53,6 +53,7 @@ export function scanFitResidualSeries(data, {
   displayX = value => value,
   amplitudeUnit = '',
   linewidthUnit = '',
+  mode = 'absolute',
 } = {}) {
   if (!data?.valid) return [];
   const series = [];
@@ -61,12 +62,28 @@ export function scanFitResidualSeries(data, {
     ['linewidth', 'Linewidth residual', data.linewidthFit, linewidth, -104, linewidthUnit],
   ]) {
     if (!enabled || !fit?.valid || !Array.isArray(fit.points)) continue;
-    const points = fit.points.map(point => ({
-      x: displayX(point.power),
-      y: point.residual,
-      index: point.index,
-    })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
-    if (points.length) series.push({ key, label, unit, curveIndex, rmse: fit.rmse, points });
+    const relative = mode === 'relative';
+    const candidates = fit.points.map(point => ({ ...point, x: displayX(point.power) }))
+      .filter(point => Number.isFinite(point.x) && Number.isFinite(point.residual));
+    // Scale the zero guard to this fit's signal units rather than imposing an absolute cutoff.
+    const fittedScale = candidates.reduce((max, point) => Number.isFinite(point.fitted)
+      ? Math.max(max, Math.abs(point.fitted)) : max, 0);
+    const threshold = fittedScale * 1e-12;
+    const points = candidates.filter(point => !relative ||
+      Number.isFinite(point.fitted) && Math.abs(point.fitted) > threshold)
+      .map(point => ({
+        x: point.x,
+        y: relative ? 100 * (point.residual / Math.abs(point.fitted)) : point.residual,
+        index: point.index,
+      })).filter(point => Number.isFinite(point.y));
+    if (!points.length && (!relative || !candidates.length)) continue;
+    const largest = points.reduce((max, point) => Math.max(max, Math.abs(point.y)), 0);
+    const relativeRmse = !points.length ? null : largest === 0 ? 0 : largest * Math.sqrt(
+      points.reduce((sum, point) => sum + (point.y / largest) ** 2, 0) / points.length);
+    series.push({ key, label: relative ? label.replace(' residual', ' relative residual') : label,
+      unit: relative ? '%' : unit, curveIndex,
+      rmse: relative ? relativeRmse : fit.rmse, points,
+      omittedCount: relative ? candidates.length - points.length : 0 });
   }
   return series;
 }
