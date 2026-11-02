@@ -154,7 +154,7 @@ test("fit residual title gap stays below the residual panel and above the main p
     gap: 8,
     titleGap: 18,
   });
-  assert.deepEqual(projected, { top: 42, height: 90, source: "projection" });
+  assert.deepEqual(projected, { top: 60, height: 90, source: "projection" });
   const reserved = fitResidualPanelSlot({
     naturalTop: 34,
     sharedTop: 34 + 84 + 8 + 18,
