@@ -440,12 +440,12 @@ try {
         const right=frames.filter(f=>Math.round(f.x)===xs.at(-1));
         const top=items=>items.filter(f=>f.h<f.w*0.5).sort((a,b)=>a.h-b.h)[0]||null;
         const main=items=>items.sort((a,b)=>b.h-a.h)[0]||null;
-        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right)};
+        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames};
       });
     };
     const residualLayoutBefore=await captureResidualLayout();
     assert.ok(residualLayoutBefore.leftTop&&residualLayoutBefore.leftMain&&residualLayoutBefore.rightMain,
-      'Mixed 2D/Variable scan layout must expose both projection and main plot frames');
+      'Mixed 2D/Variable scan layout must expose both projection and main plot frames: '+JSON.stringify(residualLayoutBefore));
     assert.ok(Math.abs(residualLayoutBefore.leftMain.y-residualLayoutBefore.rightMain.y)<0.5,
       'Variable scan main plot remains aligned with the 2D map while residual display is off');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
