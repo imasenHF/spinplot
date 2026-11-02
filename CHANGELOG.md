@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.11.0 — 2026-11-02
+
+- Replace Variable scan peak-to-peak amplitude fitting with the Bruker three-parameter model `Spp(P) = I₀√P / (1 + P/P½)^(b/2)`. Allow I₀, b and P½ to be fitted or fixed independently; remove the amplitude offset C while retaining the separate linewidth broadening model. Validate the model against a locally supplied CIQTEK Field-Power EPR sample without publishing the experimental file.
+
 - Restore the Export tab’s Config / Project panel, which had previously been moved outside the sidebar and hidden. Save/Load Config and project file controls are visible again without adding low-frequency buttons to the top toolbar; Chromium and PDF regressions cover the repaired path.
 
 - Simplify the primary toolbar to seven standalone actions: Open Data, Open Project, Save Project, Undo, Redo, Clear Data, and Export Figure. Replace similar file-operation icons with distinct folder/package/floppy/image glyphs, keep Export text, and match the plotting toolbar at 27 px button height and 14 px SVG icon size. Remove the redundant top Plot and Config buttons and all Reset Config UI; retain File menu and Export panel Config save/load, Tools → Recalculate, and automatic redrawing. Preserve project/config formats and update browser regression coverage.
