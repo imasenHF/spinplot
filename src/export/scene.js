@@ -47,6 +47,10 @@ export function vectorScene(design, metric, render) {
       const [a, b, c, d, e, f] = st.m;
       st.m = [a, b, c, d, a * x + c * y + e, b * x + d * y + f];
     },
+    scale(x, y = x) {
+      const [a, b, c, d, e, f] = st.m;
+      st.m = [a * x, b * x, c * y, d * y, e, f];
+    },
     rotate(v) {
       const [a, b, c, d, e, f] = st.m,
         C = Math.cos(v),

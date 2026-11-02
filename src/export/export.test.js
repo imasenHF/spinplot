@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { globalCurvesCSV, displayCurvesCSV } from "./csv.js";
 import { parseCSV, parseMergedCSV } from "../data/csv.js";
 import { svgFromScene } from "./svg.js";
+import { vectorScene } from "./scene.js";
 import { exportProjectPayload, exportConfigPayload } from "./project.js";
 import { parseProjectCurves } from "../project/project.js";
 test("legacy and multi-curve CSV roundtrip; quote names and missing values", () => {
@@ -48,6 +49,25 @@ test("display export uses yd and records offset, raw global export uses y", () =
   assert.equal(rows[1][rows[0].indexOf("stack_offset")], "5");
   assert.match(globalCurvesCSV([c]), /1,3/);
 });
+test("vector scene applies Canvas scale transforms to text and paths", () => {
+  const { scene } = vectorScene({ width: 100, height: 50 },
+    { font: "12px Arial", measureText: value => ({ width: String(value).length * 6 }) },
+    canvas => {
+      const ctx = canvas.getContext("2d");
+      ctx.translate(10, 5);
+      ctx.scale(2, 3);
+      ctx.fillText("tabbed", 4, 6);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(5, 5);
+      ctx.stroke();
+    });
+  assert.deepEqual(scene[0].m, [2, 0, 0, 3, 10, 5]);
+  assert.equal(scene[0].x, 4);
+  assert.equal(scene[0].y, 6);
+  assert.match(scene[1].d, /M 10 5 L 20 20/);
+});
+
 test("SVG serializes vector paths, clipping, transformed Unicode and escaping", () => {
   const svg = svgFromScene({
     design: { width: 500, height: 300 },

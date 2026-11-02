@@ -140,6 +140,20 @@ export function fitResultSummaryWidth(rows, plotWidth) {
   return Math.min(plotWidth - 12, contentWidth);
 }
 
+export function fitResultTabbedTextLayout(text, measureText, tabWidth) {
+  const measure = typeof measureText === "function" ? measureText : () => 0;
+  const step = Number.isFinite(tabWidth) && tabWidth > 0 ? tabWidth : 1;
+  let cursor = 0;
+  const cells = String(text).split("\t").map((value, index) => {
+    if (index) cursor = (Math.floor(cursor / step) + 1) * step;
+    const width = Math.max(0, Number(measure(value)) || 0);
+    const cell = { text: value, offset: cursor, width };
+    cursor += width;
+    return cell;
+  });
+  return { cells, width: cursor };
+}
+
 export function renderFigure(
   canvas,
   logicalW,
@@ -396,12 +410,21 @@ export function renderFigure(
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
     ctx.font = `${size}px ${chosenFont}`;
+    const tabWidth = ctx.measureText("    ").width;
     const rows = lines.map((line) => {
       const formula = scanFitFormulaType(line);
       if (formula) {
         const formulaSize = size * 1.08;
         const metrics = measureScanFitFormula(ctx, formula, formulaSize, chosenFont);
         return { text: line, formula, formulaSize, width: metrics.width, height: metrics.height };
+      }
+      if (line.includes("\t")) {
+        const layout = fitResultTabbedTextLayout(
+          line,
+          (value) => ctx.measureText(value).width,
+          tabWidth,
+        );
+        return { text: line, cells: layout.cells, width: layout.width, height: lineHeight };
       }
       return { text: line, width: ctx.measureText(line).width, height: lineHeight };
     });
@@ -469,7 +492,17 @@ export function renderFigure(
         drawScanFitFormula(ctx, row.formula, left + 8, rowY, row.formulaSize * scale, chosenFont, theme.text);
       } else {
         ctx.font = `${size}px ${chosenFont}`;
-        ctx.fillText(row.text, left + 8, rowY, width - 16);
+        if (row.cells) {
+          const availableWidth = Math.max(1, width - 16);
+          const scale = row.width > availableWidth ? availableWidth / row.width : 1;
+          ctx.save();
+          ctx.translate(left + 8, rowY);
+          ctx.scale(scale, 1);
+          for (const cell of row.cells) ctx.fillText(cell.text, cell.offset, 0);
+          ctx.restore();
+        } else {
+          ctx.fillText(row.text, left + 8, rowY, width - 16);
+        }
       }
       rowY += row.height + gapAfter(row);
     }

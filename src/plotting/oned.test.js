@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,clampFitResultPosition,fitResultLowerRight,fitResultSummaryWidth} from './oned.js';
+import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,clampFitResultPosition,fitResultLowerRight,fitResultSummaryWidth,fitResultTabbedTextLayout} from './oned.js';
 import {processSubplot} from '../processing/oned.js';
 const curves=Object.freeze([Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([1,2,3])}),Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([2,4,6])})]);
 test('Overlay/Stack preserve frozen source; automatic/manual offsets and both directions',()=>{
@@ -52,6 +52,17 @@ test('fit-result summary width follows the widest rendered row without a fixed f
  assert.equal(fitResultSummaryWidth([{width:164},{width:138}],500),180);
  assert.equal(fitResultSummaryWidth([{width:164}],150),138);
  assert.equal(fitResultSummaryWidth([],500),70);
+});
+
+test('fit-result tab-separated cells use consistent left-aligned tab stops',()=>{
+ const layout=fitResultTabbedTextLayout('b = 1.4\tRMSE = 0.12',text=>text.length*10,40);
+ assert.deepEqual(layout,{
+  cells:[
+   {text:'b = 1.4',offset:0,width:70},
+   {text:'RMSE = 0.12',offset:80,width:110},
+  ],
+  width:190,
+ });
 });
 
 test('fit-result lower-right anchor never exceeds the plot right edge',()=>{
