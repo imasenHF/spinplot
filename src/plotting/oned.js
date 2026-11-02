@@ -417,8 +417,9 @@ export function renderFigure(
     const fx = Math.max(0,Math.min(1,(Number(sp.fitResultX) || 0)/100));
     const fy = Math.max(0,Math.min(1,(Number(sp.fitResultY) || 0)/100));
     const [lx, ly] = legendXY(position, x0, y0, pw, ph, width, height);
+    const rightLegend = resolveLegendPosition(sp.legendPosition, $('globalLegendPosition')?.value) === 'outside_right';
     const lowerRight = fitResultLowerRight(x0, y0, pw, ph, width, height,
-      sp.secondaryYAxis ? x0 + pw : geom.cellRight);
+      sp.secondaryYAxis || rightLegend ? x0 + pw : geom.cellRight);
     const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12)
       : position === 'lower_right' ? lowerRight.left : lx;
     const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12)
