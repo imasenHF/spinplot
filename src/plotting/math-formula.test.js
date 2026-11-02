@@ -32,7 +32,7 @@ test('plot formula lines are recognized by model', () => {
 test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
   const ctx = context();
   const metrics = measureScanFitFormula(ctx, 'amplitude', 12, 'Times New Roman');
-  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2.4,
+  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2.85,
     'The formula row must include the lower P½ subscript and clearance before the next parameter row');
   const drawn = drawScanFitFormula(ctx, 'amplitude', 10, 20, 12, 'Times New Roman', '#111');
   assert.equal(drawn.type, 'amplitude');
@@ -45,6 +45,10 @@ test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
   assert.ok(text.includes('0'));
   assert.ok(text.includes('1/2'));
   assert.ok(text.includes('b/2'));
+  const scripts = ctx.calls.filter(call => call.type === 'text' && ['1/2', 'b/2'].includes(call.text));
+  assert.equal(scripts.length, 2);
+  assert.ok(scripts.find(call => call.text === 'b/2').y < scripts.find(call => call.text === '1/2').y,
+    'The exponent and denominator subscript must occupy distinct vertical levels');
   assert.ok(!text.some(value => value.includes('√')),
     'The radical is a vector path, not a Unicode checkmark-shaped glyph');
 });
@@ -52,7 +56,7 @@ test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
 test('linewidth formula is laid out with a radical overbar', () => {
   const ctx = context();
   const metrics = measureScanFitFormula(ctx, 'linewidth', 12, 'Georgia');
-  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2,
+  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2.3,
     'The radical formula row must leave clearance before the next parameter row');
   drawScanFitFormula(ctx, 'linewidth', 0, 0, 12, 'Georgia', '#222');
   const text = ctx.calls.filter(call => call.type === 'text').map(call => call.text);
