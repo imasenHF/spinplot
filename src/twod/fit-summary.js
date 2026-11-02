@@ -31,3 +31,29 @@ export function scanFitResultLines(data, selection = []) {
   }
   return lines;
 }
+
+
+// Extract residuals from the fitted observations; excluded and invalid points are absent.
+export function scanFitResidualSeries(data, {
+  amplitude = true,
+  linewidth = true,
+  displayX = value => value,
+  amplitudeUnit = '',
+  linewidthUnit = '',
+} = {}) {
+  if (!data?.valid) return [];
+  const series = [];
+  for (const [key, label, fit, enabled, curveIndex, unit] of [
+    ['amplitude', 'Amplitude residual', data.amplitudeFit, amplitude, -103, amplitudeUnit],
+    ['linewidth', 'Linewidth residual', data.linewidthFit, linewidth, -104, linewidthUnit],
+  ]) {
+    if (!enabled || !fit?.valid || !Array.isArray(fit.points)) continue;
+    const points = fit.points.map(point => ({
+      x: displayX(point.power),
+      y: point.residual,
+      index: point.index,
+    })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (points.length) series.push({ key, label, unit, curveIndex, rmse: fit.rmse, points });
+  }
+  return series;
+}

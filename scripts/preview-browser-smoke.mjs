@@ -407,6 +407,8 @@ try {
     await load(saturationProject,'synthetic-saturation.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const scanPanel=page.locator('.subplot').first();
+    const residualToggle=scanPanel.locator('[data-twod="scanFitResidualShow"]');
+    assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
@@ -425,6 +427,33 @@ try {
       nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
     assert.equal(formulaParentheses.length,6,'Bruker amplitude denominator and both function arguments use explicit parentheses');
     assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
+    const powerScale=scanPanel.locator('[data-twod="scanPowerXScale"]');
+    assert.equal(await powerScale.inputValue(),'power','Power coordinates default to linear P');
+    const opacitySlider=scanPanel.locator('.scan-fit-opacity-slider');
+    assert.equal(await opacitySlider.count(),1,'The annotation opacity control uses the custom slider');
+    const sliderStyle=await opacitySlider.evaluate(el=>({
+      appearance:getComputedStyle(el).appearance,
+      border:getComputedStyle(el).border,
+      shadow:getComputedStyle(el).boxShadow,
+      output:el.parentElement.querySelector('output')?.textContent
+    }));
+    assert.equal(sliderStyle.appearance,'none','The range control uses the themed button-like slider');
+    assert.match(sliderStyle.border,/solid/);
+    assert.notEqual(sliderStyle.shadow,'none');
+    assert.equal(sliderStyle.output,'0%');
+    for(const [key,value] of [['xMin','4'],['xMax','100'],['xStep','2']]){
+      await scanPanel.locator('[data-field="'+key+'"]').evaluate((el,v)=>{
+        el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));
+      },value);
+    }
+    await powerScale.selectOption('sqrt');
+    assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'2');
+    assert.equal(await scanPanel.locator('[data-field="xMax"]').inputValue(),'10');
+    assert.equal(await scanPanel.locator('[data-field="xStep"]').inputValue(),'',
+      'A linear tick step is cleared when the nonlinear square-root axis is selected');
+    await powerScale.selectOption('power');
+    assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'4');
+    assert.equal(await scanPanel.locator('[data-field="xMax"]').inputValue(),'100');
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
@@ -449,7 +478,11 @@ try {
     assert.match((await derived.locator('[data-curve-style="-101"] option:checked').textContent()).trim(),
       /^[━┄┈○●□■△▲◇◆]/,'Derived style selectors must use compact graphical symbols');
     assert.equal(await scanPanel.locator('.scan-curve-style').isHidden(),true,'The redundant Scan style is hidden');
+    await powerScale.selectOption('sqrt');
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('native');
+    assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'',
+      'Changing the acquired scan coordinate resets power-specific X bounds');
+    assert.equal(await powerScale.isHidden(),true,'The power-coordinate selector is hidden for a non-power scan axis');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),false,
       'Switching to acquired scan variable must collapse the power fit');
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Power calibration required/,
@@ -457,6 +490,23 @@ try {
     await scanPanel.locator('[data-twod="scanAxisMode"]').selectOption('power');
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
       'Returning to power reopens an enabled fit');
+    assert.equal(await powerScale.isVisible(),true,'The power-coordinate selector returns with the calibrated power axis');
+    assert.equal(await powerScale.inputValue(),'sqrt','The selected power coordinate is retained while the scan axis is temporarily changed');
+    await powerScale.selectOption('power');
+    for(const [key,value] of [['xMin','4'],['xMax','100'],['xStep','2']]){
+      await scanPanel.locator('[data-field="'+key+'"]').evaluate((el,v)=>{
+        el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));
+      },value);
+    }
+    await powerScale.selectOption('sqrt');
+    await scanPanel.locator('.scan-fit-display > .switch input').first().check();
+    await residualToggle.check();
+    await opacitySlider.evaluate(el=>{
+      el.value='0.35';
+      el.dispatchEvent(new Event('input',{bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    assert.equal(await scanPanel.locator('.scan-fit-opacity-value').textContent(),'35%');
     await derived.locator('[data-curve-style="-101"]').selectOption('filled-circle');
     await derived.locator('[data-curve-style="-103"]').selectOption('dotted-line');
     const derivedOrder=()=>derived.locator('.scan-derived-name').evaluateAll(rows=>
@@ -483,6 +533,12 @@ try {
     assert.ok(Math.abs(cfg.scanFitI0-4)<0.02,'Fitted I0 should be saved with the subplot settings');
     assert.ok(Math.abs(cfg.scanFitB-2)<0.02,'Fitted exponent should be saved with the subplot settings');
     assert.ok(Math.abs(cfg.scanFitPhalfMW-12)<0.05,'Fitted P-half should be saved with the subplot settings');
+    assert.equal(cfg.scanPowerXScale,'sqrt','The square-root display mode is saved with the scan settings');
+    assert.equal(cfg.scanFitLabelOpacity,0.35,'The annotation opacity is saved with the scan settings');
+    assert.equal(cfg.scanFitShow,true,'The annotation visibility setting is saved');
+    assert.equal(cfg.scanFitResidualShow,true,'The residual subplot visibility setting is saved');
+    assert.equal(saved.config.subplots[0].xMin,'2');
+    assert.equal(saved.config.subplots[0].xMax,'10');
     assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
     assert.equal(saved.config.subplots[0].curveStyles['-103'].style,'dotted-line');
     assert.deepEqual(saved.config.subplots[0].scanDerivedOrder.slice(0,5),
@@ -496,15 +552,39 @@ try {
     assert.match(csv,/source_index,scan_value,power_or_scan_x,amplitude,linewidth,linewidth_unit,fit_amplitude/);
     const bodyRows=csv.split(/\r?\n/).filter(line=>/^\d+,/.test(line));
     assert.equal(bodyRows.length,13);
-    assert.ok(bodyRows.every(line=>line.split(',')[6]!==''&&line.split(',')[8]!==''));
+    assert.ok(bodyRows.every(line=>line.split(',')[6]!==''&&line.split(',')[8]!=='')); 
+    const exportedPowers=bodyRows.map(line=>Number(line.split(',')[2])).filter(Number.isFinite);
+    assert.ok(Math.max(...exportedPowers)>10,'Feature CSV retains physical microwave power in mW rather than √mW display coordinates');
     await page.locator('#imageFormat').selectOption('svg');
     const [svgDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await svgDownload.saveAs('browser-preview/synthetic-saturation.svg');
     const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
+    assert.match(svg,/Square-root microwave power/);
+    assert.match(svg,/√mW/);
+    assert.match(svg,/pp/);
+    assert.match(svg,/1\/2/);
+    assert.ok(!svg.includes('Spp(P) = I₀√P/(1 + P/P½)^(b/2)'),
+      'The plot annotation must render the equation typographically rather than as a plain formula string');
     assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
       'SVG legend and drawing must use the dragged derived-curve order');
+    assert.match(svg,/Amplitude residual/,'SVG includes the amplitude residual lane');
+    assert.match(svg,/Linewidth residual/,'SVG includes the linewidth residual lane');
+    await page.locator('#imageFormat').selectOption('pdf');
+    const [residualPdfDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await residualPdfDownload.saveAs('browser-preview/synthetic-saturation-residuals.pdf');
+    assert.equal(fs.readFileSync('browser-preview/synthetic-saturation-residuals.pdf').subarray(0,5).toString(),'%PDF-',
+      'Fit residual subplot exports through the vector PDF path');
+    await page.locator('#imageFormat').selectOption('svg');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await residualToggle.uncheck();
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [blankResidualDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await blankResidualDownload.saveAs('browser-preview/synthetic-saturation-no-residuals.svg');
+    const blankResidualSvg=fs.readFileSync('browser-preview/synthetic-saturation-no-residuals.svg','utf8');
+    assert.doesNotMatch(blankResidualSvg,/Amplitude residual|Linewidth residual/,
+      'Disabling residual display leaves the reserved upper panel blank');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const excludePanel=scanPanel.locator('.scan-exclude-panel');
     await excludePanel.locator('summary').click();
@@ -527,6 +607,10 @@ try {
     assert.equal(firstRow.split(',')[11],'no','Excluded source trace 0 is not used in linewidth fit');
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.equal(await page.locator('[data-twod="scanPowerXScale"]').first().inputValue(),'sqrt');
+    assert.equal(await page.locator('[data-twod="scanFitResidualShow"]').first().isChecked(),true,
+      'Project reload restores the residual subplot visibility');
+    assert.equal(await page.locator('.scan-fit-opacity-value').first().textContent(),'35%');
     assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Bruker P-half saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
@@ -543,7 +627,7 @@ try {
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Saved drag Z-order must remain stable after changes and a second reload');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
-    console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
+    console.log('BROWSER PASS: dual Y axes, saturation fits, residual subplot, feature CSV and project restore');
     const projectedSubplot={...saturationSubplot,mode:'overlay',
       twoD:{index:0,settings:{...saturationSubplot.twoD.settings,
         mode:'heatmap',xMode:'mean',yMode:'both',showProjections:true,

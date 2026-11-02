@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.11.1 — 2026-11-02
+
+- Render Variable scan fit equations in the plot annotation with vector mathematical typography (fraction bars, subscripts, superscripts and radical overbars), shared by Canvas, SVG and PDF output. Restyle the background-opacity range control with the application's raised button treatment and a percentage readout.
+- Add a square-root microwave-power X coordinate (`√P`, √mW) alongside linear `P` (mW). Transform only the displayed X coordinate; retain physical power for fitting, feature calculations and scan-feature CSV. Convert local axis bounds when switching modes and clear the manual tick step. Support both attenuation-derived power and calibrated native mW coordinates.
+- Add an optional Variable scan fit-residual panel above the main fit plot. Amplitude and linewidth residuals use separate symmetric vertical scales, scatter points, zero references and RMSE labels; both share the main plot's P / √P X coordinate. Only valid fitted observations are drawn, so excluded and invalid points are omitted. The upper panel remains reserved and blank when display is disabled. Persist the display toggle in existing subplot settings without changing project/config formats.
+
 ## 0.11.0 — 2026-11-02
 
 - Replace Variable scan peak-to-peak amplitude fitting with the Bruker three-parameter model `Spp(P) = I₀√P / (1 + P/P½)^(b/2)`. Allow I₀, b and P½ to be fitted or fixed independently; remove the amplitude offset C while retaining the separate linewidth broadening model. Validate the model against a locally supplied CIQTEK Field-Power EPR sample without publishing the experimental file.

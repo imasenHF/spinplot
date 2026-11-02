@@ -3,6 +3,7 @@ import { orient, projections, reduce, validate, axisKind, fieldToGauss } from '.
 import { peakFeatures, fitSaturation } from './saturation.js';
 import { tickFormatter } from './ticks.js';
 import {moveScanDerivedOrder,sortScanDerived} from './scan-order.js';
+import { convertScanPowerBounds } from './scan-x-axis.js';
 import { COLOR_SCHEMES, continuousPalettePosition } from './palettes.js';
 import { zFraction, zRange, zTicks, zoomZ } from './zscale.js';
 import { contourSegments } from './contours.js';
@@ -53,6 +54,7 @@ export function defaults(d) {
     showYProjection: true,
     showScanCorrelation: false,
     scanAxisMode: 'native',
+    scanPowerXScale: 'power',
     scanPowerReferenceMW: Number.isFinite(referencePower) && referencePower > 0 ? referencePower : '',
     scanStatistic: 'rms',
     scanFeatureMode: 'statistic',
@@ -70,6 +72,7 @@ export function defaults(d) {
     scanFitPowerMaxMW: '',
     scanFitDisplay: [],
     scanFitShow: false,
+    scanFitResidualShow: false,
     scanFitLabelPosition: 'lower_right',
     scanFitLabelSize: 12,
     scanFitLabelFont: 'inherit',
@@ -460,6 +463,39 @@ export function controls(card, sp, d, onChange) {
   const scanAxisSelect=select(scanSettings,'scanAxisMode','Scan X axis',[
     ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
+  const powerXScaleSelect=select(scanSettings,'scanPowerXScale','Power X coordinate',[
+    ['power','P (mW)'],['sqrt','√P (√mW)']
+  ]);
+  const powerXScaleControl=powerXScaleSelect.closest('label');
+  powerXScaleControl.classList.add('scan-power-x-scale-control');
+  powerXScaleSelect.onchange=()=>{
+    const previous=s.scanPowerXScale||'power',next=powerXScaleSelect.value;
+    if(previous===next)return;
+    const current=(key,globalId)=>sp.xUseGlobal
+      ?document.getElementById(globalId)?.value??''
+      :sp[key];
+    const bounds=convertScanPowerBounds({
+      min:current('xMin','globalXMin'),
+      max:current('xMax','globalXMax'),
+      step:current('xStep','globalXStep')
+    },previous,next);
+    sp.xUseGlobal=false;
+    sp.linkX=false;
+    sp.xMin=bounds.min;
+    sp.xMax=bounds.max;
+    sp.xStep='';
+    const globalToggle=card.querySelector('[data-field=xUseGlobal]');
+    if(globalToggle)globalToggle.checked=false;
+    const linkToggle=card.querySelector('[data-field=linkX]');
+    if(linkToggle)linkToggle.checked=false;
+    for(const [key,value] of [['xMin',bounds.min],['xMax',bounds.max],['xStep','']]){
+      const field=card.querySelector('[data-field='+key+']');
+      if(field)field.value=value;
+    }
+    s.scanPowerXScale=next;
+    onChange();
+    refreshFitResults();
+  };
   // A single user-facing measurement selector; preserve the original
   // scanFeatureMode/scanStatistic fields so saved v11 projects stay compatible.
   const initialMeasurement=s.scanFeatureMode==='statistic'?'stat:'+s.scanStatistic:s.scanFeatureMode;
@@ -591,6 +627,16 @@ export function controls(card, sp, d, onChange) {
   showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;onChange();};
   showFit.append(showFitCheck,document.createTextNode('Show results on plot'));
   displayPanel.replaceChildren(showFit);
+  const showResidual=document.createElement('label'),showResidualCheck=document.createElement('input');
+  showResidual.className='switch';
+  showResidualCheck.type='checkbox';
+  showResidualCheck.dataset.twod='scanFitResidualShow';
+  showResidualCheck.checked=s.scanFitResidualShow===true;
+  showResidualCheck.setAttribute('aria-label','Show fit residual subplot');
+  showResidual.title='Residuals use included valid fit points and share the P / √P horizontal coordinate.';
+  showResidualCheck.onchange=()=>{s.scanFitResidualShow=showResidualCheck.checked;onChange();};
+  showResidual.append(showResidualCheck,document.createTextNode('Show fit residuals'));
+  displayPanel.append(showResidual);
   const position=document.createElement('label');
   position.className='control-label';position.textContent='Position';
   const positionSelect=document.createElement('select');
@@ -629,12 +675,25 @@ export function controls(card, sp, d, onChange) {
   const backgroundLabel=document.createElement('label');
   backgroundLabel.className='control-label';
   backgroundLabel.textContent='Background opacity';
+  const opacityControl=document.createElement('div');
+  opacityControl.className='scan-fit-opacity-control';
   const opacityInput=document.createElement('input');
+  opacityInput.className='scan-fit-opacity-slider';
   opacityInput.type='range';opacityInput.min='0';opacityInput.max='1';opacityInput.step='0.05';
   opacityInput.value=String(s.scanFitLabelOpacity??0);
   opacityInput.setAttribute('aria-label','Fit label background opacity');
-  opacityInput.onchange=()=>{s.scanFitLabelOpacity=Math.max(0,Math.min(1,Number(opacityInput.value)||0));onChange();};
-  backgroundLabel.append(opacityInput);displayPanel.append(backgroundLabel);
+  const opacityValue=document.createElement('output');
+  opacityValue.className='scan-fit-opacity-value';
+  function syncOpacityDisplay(){
+    const value=Math.max(0,Math.min(1,Number(opacityInput.value)||0));
+    opacityValue.textContent=Math.round(value*100)+'%';
+    opacityInput.style.setProperty('--range-progress',(value*100)+'%');
+  }
+  opacityInput.addEventListener('input',syncOpacityDisplay);
+  opacityInput.onchange=()=>{s.scanFitLabelOpacity=Math.max(0,Math.min(1,Number(opacityInput.value)||0));syncOpacityDisplay();onChange();};
+  opacityControl.append(opacityInput,opacityValue);
+  backgroundLabel.append(opacityControl);displayPanel.append(backgroundLabel);
+  syncOpacityDisplay();
   const borderLabel=document.createElement('label');
   borderLabel.className='switch';
   const borderInput=document.createElement('input');
@@ -680,6 +739,12 @@ export function controls(card, sp, d, onChange) {
       &&String(scanCoordinateAxis.unit||'').trim().toLowerCase()==='mw';
     const canFitPower=powerMode||calibratedNativePower;
     powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(scanCoordinateAxis);
+    powerXScaleControl.hidden=!canFitPower;
+    const powerUnit=s.scanPowerXScale==='sqrt'?'√mW':'mW';
+    for(const key of ['xMin','xMax','xStep']){
+      const field=card.querySelector('[data-field='+key+']');
+      if(field)field.title=canFitPower?'Displayed X-axis coordinate in '+powerUnit+'.':'';
+    }
     const signalAxis=orient(d,s.component,s.swap).x.values;
     const signalMin=Math.min(...signalAxis),signalMax=Math.max(...signalAxis);
     for(const [key,fallback] of [['scanStatisticMin',signalMin],['scanStatisticMax',signalMax]]){
@@ -806,8 +871,22 @@ export function controls(card, sp, d, onChange) {
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;
+  let previousScanAxisMode=s.scanAxisMode;
   scanAxisSelect.onchange=()=>{
-    fitControls.open=scanAxisSelect.value==='power'&&!!(s.scanFitAmplitude||s.scanFitLinewidth);
+    const next=scanAxisSelect.value;
+    if(previousScanAxisMode!==next){
+      sp.xUseGlobal=false;sp.linkX=false;sp.xMin='';sp.xMax='';sp.xStep='';
+      const globalToggle=card.querySelector('[data-field=xUseGlobal]');
+      if(globalToggle)globalToggle.checked=false;
+      const linkToggle=card.querySelector('[data-field=linkX]');
+      if(linkToggle)linkToggle.checked=false;
+      for(const key of ['xMin','xMax','xStep']){
+        const field=card.querySelector('[data-field='+key+']');
+        if(field)field.value='';
+      }
+      previousScanAxisMode=next;
+    }
+    fitControls.open=next==='power'&&!!(s.scanFitAmplitude||s.scanFitLinewidth);
     onScanAxisChange();
     refreshFitResults();
   };
