@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep the Variable scan fit-result annotation fully inside the main plot rectangle for lower-right, nine-grid and custom placements; clamp horizontal and vertical coordinates to the plot bounds.
+
 ## 0.11.4 — 2026-11-02
 
 - Compact Variable scan fit-result annotations: display amplitude `I₀` and `b` on one row, and `R²` and `RMSE` on one row. Calculate annotation width from the widest rendered formula/parameter row instead of enforcing a 250 px minimum; retain 8 px horizontal content padding and the plot-area width limit. Canvas, SVG and PDF share the same layout.

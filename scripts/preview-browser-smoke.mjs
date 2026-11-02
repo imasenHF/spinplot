@@ -476,9 +476,15 @@ try {
     const plotCanvasWidth=await page.locator('#plotCanvas').evaluate(el=>el.clientWidth);
     assert.ok(fitSummaryFrame,'Lower-right fit summary must render a measurable frame');
     assert.ok(fitSummaryFrame.x+fitSummaryFrame.w>=plotCanvasWidth*0.85,
-      'Lower-right fit summary uses the available right side of its subplot cell');
+      'Lower-right fit summary remains near the right side of the plot');
     assert.ok(fitSummaryFrame.w<plotCanvasWidth*0.4,
       'Fit summary width follows its formula and grouped parameter rows instead of reserving a wide fixed minimum');
+    assert.ok(fitSummaryFrame.x>=residualLayoutBefore.rightMain.x-0.5
+      &&fitSummaryFrame.x+fitSummaryFrame.w<=residualLayoutBefore.rightMain.x+residualLayoutBefore.rightMain.w+0.5,
+      'Fit summary frame must stay within the Variable scan plot horizontal bounds');
+    assert.ok(fitSummaryFrame.y>=residualLayoutBefore.rightMain.y-0.5
+      &&fitSummaryFrame.y+fitSummaryFrame.h<=residualLayoutBefore.rightMain.y+residualLayoutBefore.rightMain.h+0.5,
+      'Fit summary frame must stay within the Variable scan plot vertical bounds');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);

@@ -112,10 +112,27 @@ export function resolveYAxisTitleVisibility(sp, globalHidden = false) {
   return !globalHidden;
 }
 
+export function clampFitResultPosition(x0, y0, pw, ph, width, height, left, top) {
+  const minLeft = x0 + 6;
+  const maxLeft = Math.max(minLeft, x0 + pw - width - 6);
+  const minTop = y0 + 4;
+  const maxTop = Math.max(minTop, y0 + ph - height - 4);
+  return {
+    left: Math.max(minLeft, Math.min(maxLeft, left)),
+    top: Math.max(minTop, Math.min(maxTop, top)),
+  };
+}
+
 export function fitResultLowerRight(x0, y0, pw, ph, width, height, cellRight) {
   const plotRight = x0 + pw;
-  const rightEdge = Number.isFinite(cellRight) ? Math.max(plotRight, cellRight) : plotRight;
-  return { left: rightEdge - width - 6, top: y0 + ph - height - 6 };
+  const rightEdge = Number.isFinite(cellRight)
+    ? Math.min(plotRight, Math.max(x0, cellRight))
+    : plotRight;
+  return clampFitResultPosition(
+    x0, y0, pw, ph, width, height,
+    rightEdge - width - 6,
+    y0 + ph - height - 6,
+  );
 }
 
 export function fitResultSummaryWidth(rows, plotWidth) {
@@ -425,10 +442,13 @@ export function renderFigure(
     const rightLegend = resolveLegendPosition(sp.legendPosition, $('globalLegendPosition')?.value) === 'outside_right';
     const lowerRight = fitResultLowerRight(x0, y0, pw, ph, width, height,
       sp.secondaryYAxis || rightLegend ? x0 + pw : geom.cellRight);
-    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12)
+    const rawLeft = custom ? x0 + 6 + fx*Math.max(0,pw-width-12)
       : position === 'lower_right' ? lowerRight.left : lx;
-    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12)
+    const rawTop = custom ? y0 + 6 + fy*Math.max(0,ph-height-12)
       : position === 'lower_right' ? lowerRight.top : ly;
+    const { left, top } = clampFitResultPosition(
+      x0, y0, pw, ph, width, height, rawLeft, rawTop,
+    );
     const opacity = clamp(Number(sp.fitResultOpacity ?? 0), 0, 1);
     if (opacity > 0) {
       ctx.fillStyle = theme.bg === '#11181b' ? `rgba(17,24,27,${opacity})` : `rgba(255,255,255,${opacity})`;
