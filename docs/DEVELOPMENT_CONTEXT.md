@@ -1,12 +1,12 @@
-## 2026-11-02 Bruker 三参数幅度饱和模型与真实数据验证（PR #11）
+## 2026-11-02 Bruker 三参数幅度饱和模型与真实数据验证（PR #11 已合并并发布）
 
-- 开发分支 `feat/bruker-power-saturation-model-20261101`，PR [#11](https://github.com/imasenHF/spinplot/pull/11) 已完成 Bruker 幅度模型实现。发布候选版本为 0.11.0；项目格式 11、配置格式 10 不变。
-- Variable scan 幅度拟合采用 `Spp(P) = I₀√P / (1 + P/P½)^(b/2)`。I₀、b 和 P½ 可独立拟合或固定；P½ 是分母中的特征功率参数，实际峰值功率在 b>1 时为 `Pmax=P½/(b−1)`。幅度模型不再使用偏置 C；线宽拟合独立保留 `ΔBpp(P) = A√(1 + P/Psat) + C`。
+- PR [#11](https://github.com/imasenHF/spinplot/pull/11) 已于 2026-11-02 合并至正式 `main`，合并提交 [34cf1421](https://github.com/imasenHF/spinplot/commit/34cf1421e29013168a3896bc373d1dfb0d0d1cc0)。应用版本为 **0.11.0**，GitHub Release [v0.11.0](https://github.com/imasenHF/spinplot/releases/tag/v0.11.0) 已创建；项目格式 11、配置格式 10 不变。
+- Variable scan 幅度拟合采用 `Spp(P) = I₀√P / (1 + P/P½)^(b/2)`。I₀、b 和 P½ 可独立拟合或固定；P½ 是分母中的特征功率参数，实际峰值功率在 b>1 时为 `Pmax=P½/(b−1)`。幅度模型不含偏置 C；线宽拟合独立使用 `ΔBpp(P) = A√(1 + P/Psat) + C`。
 - 幅度求解器在对数功率与指数 b 平面进行有界网格搜索，再用 Nelder–Mead 局部精修；给定形状参数时 I₀ 通过线性最小二乘求解。拟合曲线、结果注释、参数保存和旧项目缺省迁移均已同步修改。
-- **真实数据验证：** 使用用户提供的本地 CIQTEK Field-Power EPR 文件完成解析与数值拟合；全部轨迹坐标一致，仪器功率/衰减元数据可按默认规则计算 0 dB 参考功率。ReData 峰峰幅度拟合收敛，未触及搜索边界，R² 约 0.99994；排除扫描两端部分数据及分别固定单个参数后，拟合参数保持稳定。实验文件及逐点数据未提交公开仓库。
-- 本次样本的 b 与 P½ 存在较强拟合相关性；局部协方差检查已完成，但尚未建立完整参数不确定度评估。峰峰线宽受磁场采样步长量化，本样本仅有少量离散线宽值，线宽拟合质量低于幅度拟合，不作为本次幅度模型验收标准。
-- 自动验收：提交 [8eba20b](https://github.com/imasenHF/spinplot/commit/8eba20b716e5a0a1403b1471eb58d45763777670) 的 [质量检查 41330830562](https://github.com/imasenHF/spinplot/actions/runs/41330830562)、[Legend 浏览器回归 41330830557](https://github.com/imasenHF/spinplot/actions/runs/41330830557) 和 [矢量 PDF 浏览器回归 41330830432](https://github.com/imasenHF/spinplot/actions/runs/41330830432) 均成功。质量检查包含 lint、格式检查、全部单元测试、生产构建及综合 Chromium 回归。
-- 真实文件解析和数值拟合在本地完成；Chromium UI 回归使用合成矩阵，未声称真实文件已完成浏览器视觉验收。未将实验文件复制到公开仓库。
+- **真实数据验证：** 使用用户提供的本地 CIQTEK Field-Power EPR 文件完成解析与数值拟合；ReData 峰峰幅度拟合收敛、未触及搜索边界，R² 约 0.99994；扫描范围敏感性和单参数固定路径均已复核。实验文件及逐点数据未提交公开仓库。
+- 本次样本的 b 与 P½ 存在较强拟合相关性；局部协方差检查已完成，但完整参数不确定度评估仍待开展。峰峰线宽受磁场采样步长量化，拟合质量低于幅度拟合，不作为本次幅度模型验收标准。
+- 最终 PR 提交 [d6530a75](https://github.com/imasenHF/spinplot/commit/d6530a7509b676fde3aa44da1bb9343ff174c1cf) 的 [质量检查 41383926560](https://github.com/imasenHF/spinplot/actions/runs/41383926560)、[Legend 浏览器回归 41383926648](https://github.com/imasenHF/spinplot/actions/runs/41383926648) 和 [矢量 PDF 浏览器回归 41383926566](https://github.com/imasenHF/spinplot/actions/runs/41383926566) 均成功。质量检查包含 lint、格式检查、全部单元测试、生产构建及综合 Chromium 回归。
+- 正式发布链已完成：v0.11.0 标签指向合并提交；发布工作流在生产 HTTP 检查成功后创建该标签。Chromium UI 回归使用合成矩阵；真实文件完成本地解析与数值验证，未声称完成真实文件的浏览器视觉验收。
 
 ## 2026-11-01 工程质量体系与浏览器回归（PR #10 已合并并发布）
 
