@@ -18,8 +18,8 @@ test('Bruker amplitude summary reports I0, exponent and P-half model parameter',
   assert.deepEqual(lines, [
     'Amplitude',
     'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)',
-    'I₀ = 3.25    b = 1.4',
     'P½ = 12.5 mW',
+    'I₀ = 3.25\tb = 1.4',
   ]);
 });
 test('invalid fits have no plotted result', () => {
@@ -30,11 +30,11 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
   assert.ok(lines.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'));
   assert.ok(lines.includes('ΔB(P) = A·sqrt(1 + P/Psat) + C'));
-  assert.ok(lines.includes('I₀ = 3.25    b = 1.4'));
+  assert.ok(lines.includes('I₀ = 3.25\tb = 1.4'));
   assert.ok(!lines.includes('I₀ = 3.25'));
   assert.ok(!lines.includes('b = 1.4'));
-  assert.ok(lines.includes('R² = 0.99456    RMSE = 0.12'));
-  assert.ok(lines.includes('R² = 0.992    RMSE = 0.2'));
+  assert.ok(lines.includes('R² = 0.99456\tRMSE = 0.12'));
+  assert.ok(lines.includes('R² = 0.992\tRMSE = 0.2'));
   assert.ok(lines.includes('P½ = 12.5 mW'));
   assert.ok(lines.includes('Psat = 0.25 mW'));
   assert.ok(lines.includes('C = 1'));
@@ -42,12 +42,13 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
 });
 
 
-test('amplitude and fit-quality values share rows only when both fields are selected', () => {
-  const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['I0', 'b', 'r2', 'rmse']);
+test('amplitude summary orders P-half before I0/b and tab-separates aligned columns', () => {
+  const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['I0', 'b', 'r2', 'rmse', 'half']);
   assert.deepEqual(lines, [
     'Amplitude',
-    'I₀ = 3.25    b = 1.4',
-    'R² = 0.99456    RMSE = 0.12',
+    'P½ = 12.5 mW',
+    'I₀ = 3.25\tb = 1.4',
+    'R² = 0.99456\tRMSE = 0.12',
   ]);
   assert.deepEqual(scanFitResultLines({ valid: true, amplitudeFit }, ['I0']), [
     'Amplitude', 'I₀ = 3.25',
