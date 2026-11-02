@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add Absolute / Relative (%) residual display, with fitted-value normalization, scale-relative zero protection, an undefined-point count and percentage RMSE in relative panels. Persist the mode with old-file defaults; retain absolute fit objectives and result RMSE.
+- Add Refit beside Fit results to recompute the enabled models using current parameter constraints, feature interval, power bounds and excluded points. Retain existing automatic updates.
+
 - Display residual quantity, unit and RMSE as centered titles above each Variable scan residual frame, using Projection titles typography. Reserve a title gap between amplitude and linewidth residual lanes while retaining the total upper slot and main-plot geometry. Preserve observed-minus-fitted residual values.
 
 - Arrange amplitude fit-result details as `P½`, `I₀` / `b`, `R²` / `RMSE`, then point count. Use actual tabs and one shared measured column stop so `b` and `RMSE` start at the same x coordinate, including when rows are scaled to fit a narrow plot. Preserve the linewidth summary, model and file formats.

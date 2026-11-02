@@ -30,7 +30,7 @@
 
 阶段 B 采用 `emptyProjectionSpace`，为每个子图提供 `none / top / right / both` 四种占位方式。无投影子图可按需占用同行的上投影预留区、同列的右投影预留区；可同时占用两处。投影显示开关保持独立，色标和坐标标题等必要边距不会被占用。该设置默认 `none`，适用于 1D、2D 与 Variable scan。此前三模式坐标与二维预览的回归见 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
 
-Variable scan 的 Power fit 可选显示幅度与线宽残差。残差面板优先占用同行二维图的上投影位置，使用相同的横向范围和高度；没有上投影时单独预留顶部区域。残差作为独立的辅助绘图区绘制，不再切分主拟合图内部区域。关闭显示时仍保留空白位置。拟合公式注释增加排版宽度、公式字号和上下行距，屏幕、SVG 与 PDF 使用同一绘图布局。
+Variable scan 的 Power fit 可选显示幅度与线宽残差，并通过 Residual type 切换 Absolute / Relative (%)，默认 Absolute。相对残差按拟合值绝对值归一化，零值附近的未定义点不显示；具体定义与数值保护见 [项目记录](PROJECT_CONTEXT.md)。Fit results 标题旁的 Refit 按当前模型、参数约束、范围和排除点重新拟合。残差面板优先占用同行二维图的上投影位置，使用相同的横向范围和高度；没有上投影时单独预留顶部区域。残差作为独立的辅助绘图区绘制，不再切分主拟合图内部区域。关闭显示时仍保留空白位置。拟合公式注释增加排版宽度、公式字号和上下行距，屏幕、SVG 与 PDF 使用同一绘图布局。
 
 ## 使用与科研限制
 

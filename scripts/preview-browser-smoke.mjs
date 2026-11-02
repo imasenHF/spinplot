@@ -456,7 +456,7 @@ try {
               tabWidth:this.measureText('    ').width*Math.abs(transform.a),
             });
           }
-          if(/^(Amplitude|Linewidth) residual/.test(value)){
+          if(/^(Amplitude|Linewidth)( relative)? residual/.test(value)){
             window.__residualTitleCalls.push({text:value,x:Number(args[0]),y:Number(args[1]),
               align:this.textAlign,baseline:this.textBaseline,font:this.font});
           }
@@ -788,6 +788,65 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Saved drag Z-order must remain stable after changes and a second reload');
+    const refitButton=scanPanel.getByRole('button',{name:'Refit with current settings',exact:true});
+    assert.equal(await refitButton.isEnabled(),true,'Refit is enabled for calibrated, enabled fits');
+    const refitPlacement=await refitButton.evaluate(button=>{
+      const a=button.getBoundingClientRect(),b=button.parentElement.querySelector('span').getBoundingClientRect();
+      return {sameRow:Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2,after:a.left>b.right};
+    });
+    assert.ok(refitPlacement.sameRow&&refitPlacement.after,'Refit belongs beside the Fit results heading');
+    const readAmplitudeResults=()=>scanPanel.locator('.scan-fit-results .scan-fit-model').first()
+      .locator('label').evaluateAll(labels=>Object.fromEntries(labels.map(label=>[
+        label.firstChild.textContent.trim().replace(' · fixed',''),label.querySelector('input')?.value])));
+    const refitExclude=scanPanel.locator('.scan-exclude-panel');
+    await refitExclude.evaluate(element=>{element.open=true;});
+    await refitExclude.locator('[data-trace-index="0"]').uncheck();
+    await scanPanel.locator('[data-twod="scanFitPowerMinMW"]').fill('0.05');
+    await scanPanel.locator('[data-twod="scanFitPowerMaxMW"]').fill('40');
+    await scanPanel.locator('[data-twod="scanFitFitB"]').uncheck();
+    await scanPanel.locator('[data-twod="scanFitB"]').fill('1.5');
+    await refitButton.click();
+    const refittedValues=await readAmplitudeResults();
+    assert.equal(Number(refittedValues.b),1.5,'Refit uses the current fixed b, including the just-edited value');
+    assert.equal(Number(refittedValues['No. of points']),12,'Refit retains the excluded source point');
+    assert.ok(Number(refittedValues['P½ (mW)'])>=0.05&&Number(refittedValues['P½ (mW)'])<=40,
+      'Refit follows current characteristic-power bounds');
+    const residualMode=scanPanel.locator('[data-twod="scanFitResidualMode"]');
+    assert.equal(await residualMode.inputValue(),'absolute','Older projects default to absolute residuals');
+    await residualMode.selectOption('relative');
+    assert.deepEqual(await readAmplitudeResults(),refittedValues,'Relative display keeps the fitted parameters and absolute fit RMSE');
+    const relativeLayout=await captureResidualLayout();
+    assert.equal(relativeLayout.residualTitleCalls.length,2);
+    for(const title of relativeLayout.residualTitleCalls)assert.match(title.text,/relative residual \(%\)/,
+      'Relative residual title identifies the percentage unit');
+    const relativeSaved=await save('browser-preview/synthetic-relative-refit.json');
+    const relativeSettings=relativeSaved.config.subplots[0].twoD.settings;
+    assert.equal(relativeSettings.scanFitResidualMode,'relative');
+    assert.equal(relativeSettings.scanFitFitB,false);assert.equal(relativeSettings.scanFitB,1.5);
+    assert.equal(relativeSettings.scanFitExcluded,'0');
+    assert.equal(relativeSaved.version,11);assert.equal(relativeSaved.config.version,10);
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    await page.locator('#imageFormat').selectOption('svg');
+    const [relativeSvgDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await relativeSvgDownload.saveAs('browser-preview/synthetic-relative-residuals.svg');
+    const relativeSvg=fs.readFileSync('browser-preview/synthetic-relative-residuals.svg','utf8');
+    assert.match(relativeSvg,/Amplitude relative residual \(%\)/);
+    assert.match(relativeSvg,/Linewidth relative residual \(%\)/);
+    assert.match(relativeSvg,/RMSE [^<]*%/);
+    assert.doesNotMatch(relativeSvg,/NaN|Infinity/);
+    await page.locator('#imageFormat').selectOption('pdf');
+    const [relativePdfDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await relativePdfDownload.saveAs('browser-preview/synthetic-relative-residuals.pdf');
+    assert.equal(fs.readFileSync('browser-preview/synthetic-relative-residuals.pdf').subarray(0,5).toString(),'%PDF-');
+    await load(relativeSaved,'synthetic-relative-refit-reload.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    assert.equal(await scanPanel.locator('[data-twod="scanFitResidualMode"]').inputValue(),'relative',
+      'Project reload preserves relative residual display');
+    await page.screenshot({path:'browser-preview/synthetic-relative-refit.png',fullPage:true});
+    await scanPanel.locator('[data-twod="scanFitAmplitude"]').uncheck();
+    await scanPanel.locator('[data-twod="scanFitLinewidth"]').uncheck();
+    assert.equal(await scanPanel.getByRole('button',{name:'Refit with current settings',exact:true}).isDisabled(),true,
+      'Refit is disabled when no model is enabled');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
     console.log('BROWSER PASS: dual Y axes, saturation fits, top-projection residual layout, feature CSV and project restore');
     const projectedSubplot={...saturationSubplot,mode:'overlay',
