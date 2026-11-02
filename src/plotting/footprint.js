@@ -72,8 +72,7 @@ export function fitResidualPanelSlot({
     const top = shared
       - Math.max(0, Number(topProjection.gapY) || 0)
       - Math.max(0, Number(topProjection.gSpace) || 0)
-      - height
-      - reservedTitleGap;
+      - height;
     if (height > 0 && top >= natural && top + height <= shared)
       return { top, height, source: "projection" };
   }
