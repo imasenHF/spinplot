@@ -24,7 +24,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 应用：https://plastocyanin.org/spinplot/
 - 构建：Vite、JavaScript（含部分独立模块）、TypeScript 检查；`package.json` 中包含 React 依赖，但主体界面尚未改造成 React 应用。
 - 发布：`main` 触发 GitHub Actions，产物为 `dist/`，部署路径为 `/spinplot/`；不单独声明 `CNAME`。
-- 正式 `main` 当前版本：**0.11.0**，发布标签计划为 [`v0.11.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.11.0)。应用版本以 `package.json` 为准；项目格式 11、配置格式 10 独立管理。
+- 正式 `main` 当前版本：**0.11.0**，已发布标签 [`v0.11.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.11.0)。应用版本以 `package.json` 为准；项目格式 11、配置格式 10 独立管理。
 - 项目文件格式：**11**；配置文件格式：**10**；两者均与应用版本号相互独立。
 
 ## 2. 已实现功能范围
