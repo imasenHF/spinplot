@@ -72,6 +72,7 @@ export function defaults(d) {
     scanFitPowerMaxMW: '',
     scanFitDisplay: [],
     scanFitShow: false,
+    scanFitResidualShow: false,
     scanFitLabelPosition: 'lower_right',
     scanFitLabelSize: 12,
     scanFitLabelFont: 'inherit',
@@ -626,6 +627,16 @@ export function controls(card, sp, d, onChange) {
   showFitCheck.onchange=()=>{s.scanFitShow=showFitCheck.checked;onChange();};
   showFit.append(showFitCheck,document.createTextNode('Show results on plot'));
   displayPanel.replaceChildren(showFit);
+  const showResidual=document.createElement('label'),showResidualCheck=document.createElement('input');
+  showResidual.className='switch';
+  showResidualCheck.type='checkbox';
+  showResidualCheck.dataset.twod='scanFitResidualShow';
+  showResidualCheck.checked=s.scanFitResidualShow===true;
+  showResidualCheck.setAttribute('aria-label','Show fit residual subplot');
+  showResidual.title='Residuals use included valid fit points and share the P / √P horizontal coordinate.';
+  showResidualCheck.onchange=()=>{s.scanFitResidualShow=showResidualCheck.checked;onChange();};
+  showResidual.append(showResidualCheck,document.createTextNode('Show fit residuals'));
+  displayPanel.append(showResidual);
   const position=document.createElement('label');
   position.className='control-label';position.textContent='Position';
   const positionSelect=document.createElement('select');

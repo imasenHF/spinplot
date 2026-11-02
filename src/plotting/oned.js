@@ -421,6 +421,71 @@ export function renderFigure(
     }
     ctx.restore();
   }
+  function drawFitResidualPanel(ctx, series, geom, X, xTicks, font, tickSize, theme, colorForSeries) {
+    const { x0, y0, pw, ph } = geom;
+    const visible = Array.isArray(series) ? series.filter(item => Array.isArray(item.points) && item.points.length) : [];
+    ctx.save();
+    ctx.strokeStyle = theme.axis;
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(x0, y0, pw, ph);
+    if (!visible.length) {
+      ctx.fillStyle = theme.text;
+      ctx.font = `10px ${font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('No valid fit residuals', x0 + pw / 2, y0 + ph / 2);
+      ctx.restore();
+      return;
+    }
+    const laneGap = visible.length > 1 ? 3 : 0;
+    const laneHeight = (ph - laneGap * (visible.length - 1)) / visible.length;
+    const format = value => Number(value.toPrecision(3)).toString();
+    visible.forEach((item, index) => {
+      const laneY = y0 + index * (laneHeight + laneGap);
+      const titleSize = Math.max(8, Math.min(10, tickSize - 1));
+      const top = laneY + titleSize + 5;
+      const bottom = laneY + laneHeight - 5;
+      if (!(bottom > top + 4)) return;
+      const points = item.points.map(point => ({ x: X(point.x), value: point.y }))
+        .filter(point => Number.isFinite(point.x) && Number.isFinite(point.value) && point.x >= x0 && point.x <= x0 + pw);
+      let maximum = 0;
+      for (const point of points) maximum = Math.max(maximum, Math.abs(point.value));
+      const limit = maximum > 0 ? maximum * 1.12 : 1e-6;
+      const Y = value => bottom - ((value + limit) / (2 * limit)) * (bottom - top);
+      const color = colorForSeries(item) || theme.text;
+      ctx.fillStyle = theme.text;
+      ctx.font = `${titleSize}px ${font}`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const unit = item.unit ? ' (' + item.unit + ')' : '';
+      const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) : '';
+      ctx.fillText(item.label + unit + rmse, x0 + 4, laneY + 1, Math.max(10, pw - 8));
+      ctx.font = `${Math.max(8, tickSize - 2)}px ${font}`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(format(limit), x0 - 5, top);
+      ctx.fillText('0', x0 - 5, Y(0));
+      ctx.fillText('−' + format(limit), x0 - 5, bottom);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, top, pw, bottom - top);
+      ctx.clip();
+      for (const tick of xTicks) {
+        const px = X(tick);
+        drawAxisLine(ctx, px, top, px, bottom, theme.minorGrid, 0.55);
+      }
+      ctx.setLineDash([3, 3]);
+      drawAxisLine(ctx, x0, Y(0), x0 + pw, Y(0), theme.axis, 0.8);
+      ctx.setLineDash([]);
+      for (const point of points)
+        drawMarker(ctx, point.x, Y(point.value), 2.4, 'circle', color, theme.bg, true);
+      ctx.restore();
+      drawAxisLine(ctx, x0, top, x0, bottom, theme.axis, 0.7);
+      if (index < visible.length - 1)
+        drawAxisLine(ctx, x0, laneY + laneHeight, x0 + pw, laneY + laneHeight, theme.majorGrid, 0.7);
+    });
+    ctx.restore();
+  }
   function drawMeasurements(ctx, sp, X, r, font) {
     ctx.save();
     ctx.beginPath();
@@ -747,9 +812,21 @@ export function renderFigure(
       }
       if (sp.secondaryYAxis) insetR = Math.max(insetR, 78);
       const x0 = cellX + insetL,
-        y0 = cellY + insetT,
-        pw = cellW - insetL - insetR,
+        pw = cellW - insetL - insetR;
+      let y0 = cellY + insetT,
         ph = cellH - insetT - insetB;
+      const residualCount = Array.isArray(sp.fitResidualSeries) ? sp.fitResidualSeries.length : 0;
+      const residualHeight = sp.fitResidualPanelEnabled
+        ? Math.min(residualCount > 1 ? 108 : 84, Math.max(residualCount > 1 ? 68 : 48, ph * (residualCount > 1 ? 0.32 : 0.26)))
+        : 0;
+      const residualGap = residualHeight ? 8 : 0;
+      const residualGeom = residualHeight && ph - residualHeight - residualGap >= 48
+        ? { x0, y0, pw, ph: residualHeight }
+        : null;
+      if (residualGeom) {
+        y0 += residualHeight + residualGap;
+        ph -= residualHeight + residualGap;
+      }
       if (!(pw > 40 && ph > 28))
         throw new Error(`Subplot ${si + 1}: plot area too small`);
       const X = (v) => x0 + ((v - m.xmin) / (m.xmax - m.xmin)) * pw,
@@ -809,6 +886,12 @@ export function renderFigure(
         yt = yScale === "log" ? scaledTicks(yBottom,yTop,"log",5) : ticksWithStep(m.ymin, m.ymax, m.yStep, 5),
         xminor = minorTicks(m.xmin, m.xmax, xt),
         yminor = yScale === "log" ? [] : minorTicks(m.ymin, m.ymax, yt);
+      if (residualGeom && sp.fitResidualShow === true) {
+        drawFitResidualPanel(ctx, sp.fitResidualSeries, residualGeom, X, xt, font, tickSize, theme, item => {
+          const index = curves.findIndex(curve => curve.index === item.curveIndex);
+          return index >= 0 ? curveColor(index, curves.length, sp) : theme.text;
+        });
+      }
       if ($("showMinorGrid").checked) {
         for (const t of xminor)
           drawAxisLine(ctx, X(t), y0, X(t), y0 + ph, theme.minorGrid, 0.55);

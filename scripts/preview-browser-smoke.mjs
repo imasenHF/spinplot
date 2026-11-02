@@ -407,6 +407,8 @@ try {
     await load(saturationProject,'synthetic-saturation.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const scanPanel=page.locator('.subplot').first();
+    const residualToggle=scanPanel.locator('[data-twod="scanFitResidualShow"]');
+    assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
@@ -498,6 +500,7 @@ try {
     }
     await powerScale.selectOption('sqrt');
     await scanPanel.locator('.scan-fit-display > .switch input').first().check();
+    await residualToggle.check();
     await opacitySlider.evaluate(el=>{
       el.value='0.35';
       el.dispatchEvent(new Event('input',{bubbles:true}));
@@ -533,6 +536,7 @@ try {
     assert.equal(cfg.scanPowerXScale,'sqrt','The square-root display mode is saved with the scan settings');
     assert.equal(cfg.scanFitLabelOpacity,0.35,'The annotation opacity is saved with the scan settings');
     assert.equal(cfg.scanFitShow,true,'The annotation visibility setting is saved');
+    assert.equal(cfg.scanFitResidualShow,true,'The residual subplot visibility setting is saved');
     assert.equal(saved.config.subplots[0].xMin,'2');
     assert.equal(saved.config.subplots[0].xMax,'10');
     assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
@@ -565,6 +569,22 @@ try {
       'The plot annotation must render the equation typographically rather than as a plain formula string');
     assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
       'SVG legend and drawing must use the dragged derived-curve order');
+    assert.match(svg,/Amplitude residual/,'SVG includes the amplitude residual lane');
+    assert.match(svg,/Linewidth residual/,'SVG includes the linewidth residual lane');
+    await page.locator('#imageFormat').selectOption('pdf');
+    const [residualPdfDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await residualPdfDownload.saveAs('browser-preview/synthetic-saturation-residuals.pdf');
+    assert.equal(fs.readFileSync('browser-preview/synthetic-saturation-residuals.pdf').subarray(0,5).toString(),'%PDF-',
+      'Fit residual subplot exports through the vector PDF path');
+    await page.locator('#imageFormat').selectOption('svg');
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
+    await residualToggle.uncheck();
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [blankResidualDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
+    await blankResidualDownload.saveAs('browser-preview/synthetic-saturation-no-residuals.svg');
+    const blankResidualSvg=fs.readFileSync('browser-preview/synthetic-saturation-no-residuals.svg','utf8');
+    assert.doesNotMatch(blankResidualSvg,/Amplitude residual|Linewidth residual/,
+      'Disabling residual display leaves the reserved upper panel blank');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const excludePanel=scanPanel.locator('.scan-exclude-panel');
     await excludePanel.locator('summary').click();
@@ -588,6 +608,8 @@ try {
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.equal(await page.locator('[data-twod="scanPowerXScale"]').first().inputValue(),'sqrt');
+    assert.equal(await page.locator('[data-twod="scanFitResidualShow"]').first().isChecked(),true,
+      'Project reload restores the residual subplot visibility');
     assert.equal(await page.locator('.scan-fit-opacity-value').first().textContent(),'35%');
     assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Bruker P-half saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
@@ -605,7 +627,7 @@ try {
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Saved drag Z-order must remain stable after changes and a second reload');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
-    console.log('BROWSER PASS: dual Y axes, saturation fits, parameters, feature CSV and project restore');
+    console.log('BROWSER PASS: dual Y axes, saturation fits, residual subplot, feature CSV and project restore');
     const projectedSubplot={...saturationSubplot,mode:'overlay',
       twoD:{index:0,settings:{...saturationSubplot.twoD.settings,
         mode:'heatmap',xMode:'mean',yMode:'both',showProjections:true,

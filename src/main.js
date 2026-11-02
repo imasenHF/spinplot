@@ -1,5 +1,5 @@
 import {axisEps,niceTicks,ticksWithStep,configuredGTicks} from './processing/axis.js';
-import {scanFitResultLines} from './twod/fit-summary.js';
+import {scanFitResultLines,scanFitResidualSeries} from './twod/fit-summary.js';
 import { scanPowerXCoordinate, scanPowerXAxis } from './twod/scan-x-axis.js';
 import {svgFromScene} from './export/svg.js';
 import 'svg2pdf.js';
@@ -337,14 +337,14 @@ function addVariableScanSubplot(source,sourceIndex){
 }
 function derivedTwoDPlotModel(sp,i,matrixOverride){
  const manual=!!sp.twoD.derivedFromCurves,sourceIndex=sp.twoD.index,ids=manual?sp.twoD.curveIndices:[sourceIndex],d=matrixOverride||subplotMatrix(sp),t=sp.twoD.settings;
- let data,xAxis,yAxis,curves=[],notice='';const frequency=subplotGFrequency(sp,ids);
+ let data,xAxis,yAxis,curves=[],notice='',displayPowerX=value=>value;const frequency=subplotGFrequency(sp,ids);
  if(sp.mode==='scan'){
   data=TwoD.scanCorrelationData(d,t);
   xAxis=data.xAxis||(t.swap?d.y:d.x);
   yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
   const powerAxis=t.scanAxisMode==='power'||String(xAxis?.unit||'').trim().toLowerCase()==='mw';
   const powerXScale=powerAxis?(t.scanPowerXScale||'power'):'power';
-  const displayPowerX=value=>scanPowerXCoordinate(value,powerXScale);
+  displayPowerX=value=>scanPowerXCoordinate(value,powerXScale);
   if(data.valid&&powerXScale==='sqrt')xAxis=scanPowerXAxis(xAxis,powerXScale);
   if(data.valid){
     const feature=data.featureMode&&data.featureMode!=='statistic';
@@ -397,7 +397,9 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }
  }
  const fitResults=scanFitResultLines(data,t.scanFitShow===true?['formula','I0','b','half','P','A','C','r2','rmse','n']:[]);
- const renderSp={...sp,fitResultLines:fitResults,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,fitResultFontFamily:t.scanFitLabelFont||'inherit',fitResultOpacity:t.scanFitLabelOpacity??0,fitResultBorder:t.scanFitLabelBorder===true,fitResultX:t.scanFitLabelX??50,fitResultY:t.scanFitLabelY??65,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.labelMode,
+ const fitResidualSeries=scanFitResidualSeries(data,{amplitude:t.scanFitAmplitude===true,linewidth:t.scanFitLinewidth===true,displayX:displayPowerX,linewidthUnit:data?.axisUnit||''});
+ const fitResidualPanelEnabled=sp.mode==='scan'&&Boolean(data?.valid&&data.featureMode&&data.featureMode!=='statistic'&&(data.amplitudeFit||data.linewidthFit));
+ const renderSp={...sp,fitResultLines:fitResults,fitResidualShow:t.scanFitResidualShow===true,fitResidualPanelEnabled,fitResidualSeries,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,fitResultFontFamily:t.scanFitLabelFont||'inherit',fitResultOpacity:t.scanFitLabelOpacity??0,fitResultBorder:t.scanFitLabelBorder===true,fitResultX:t.scanFitLabelX??50,fitResultY:t.scanFitLabelY??65,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||axisLabelText(xAxis),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.labelMode,
     legendPosition:sp.legendPosition,
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
  const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves.filter(c=>!c.rightAxis),xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
