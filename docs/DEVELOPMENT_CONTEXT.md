@@ -2,8 +2,9 @@
 
 - 幅度拟合结果依次显示公式、P½、I₀/b、R²/RMSE 和 No. of points。P½ 与点数各占独立一行；I₀ 与 b 同行，R² 与 RMSE 同行。两行采用实际制表符，共用根据左列最大文本宽度计算的制表位，b 与 RMSE 起始位置左对齐；窄图中两行使用相同水平缩放比例。
 - Canvas、SVG、PDF 共用布局；线宽拟合排版、模型、参数、项目格式 11、配置格式 10 不变。
-- 应用版本维持 0.11.4，已发布标签不移动。单元与浏览器回归检查行配对、两列起始位置、绘图区边界及矢量导出；本次 CI 和部署状态以对应 PR / Actions 为准。
+- 应用版本维持 0.11.4，已发布标签不移动。单元与浏览器回归检查行配对、两列起始位置、绘图区边界及矢量导出；本次验收完成。
 
+- PR [#18](https://github.com/imasenHF/spinplot/pull/18) 已合并，提交 `20d08da338a9b0240c1d55ecb4d28706780e0aaf`。quality [41475159465](https://github.com/imasenHF/spinplot/actions/runs/41475159465)、Legend [41475159762](https://github.com/imasenHF/spinplot/actions/runs/41475159762)、正式 Pages（含综合 Chromium 与矢量 PDF）[41475565528](https://github.com/imasenHF/spinplot/actions/runs/41475565528)、生产 HTTP [41475949217](https://github.com/imasenHF/spinplot/actions/runs/41475949217) 均成功。已复核 CI 截图和 SVG，b/RMSE 起始横坐标一致。
 
 ---
 
