@@ -13,16 +13,15 @@ const linewidthFit = {
 test('scan fit results are hidden by default', () => {
   assert.deepEqual(scanFitResultLines({ valid: true, amplitudeFit }), []);
 });
-test('Bruker amplitude summary places P-half above the tab-aligned b/RMSE row', () => {
+test('Bruker amplitude summary places P-half above paired parameter rows', () => {
   const lines = scanFitResultLines({ valid: true, amplitudeFit },
     ['formula', 'I0', 'b', 'half', 'r2', 'rmse', 'n']);
   assert.deepEqual(lines, [
     'Amplitude',
     'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)',
-    'I₀ = 3.25',
     'P½ = 12.5 mW',
-    'b = 1.4\tRMSE = 0.12',
-    'R² = 0.99456',
+    'I₀ = 3.25\tb = 1.4',
+    'R² = 0.99456\tRMSE = 0.12',
     'No. of points = 8',
   ]);
 });
@@ -34,10 +33,9 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
   assert.ok(lines.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'));
   assert.ok(lines.includes('ΔB(P) = A·sqrt(1 + P/Psat) + C'));
-  assert.ok(lines.includes('I₀ = 3.25'));
+  assert.ok(lines.includes('I₀ = 3.25\tb = 1.4'));
   assert.ok(lines.includes('P½ = 12.5 mW'));
-  assert.ok(lines.includes('b = 1.4\tRMSE = 0.12'));
-  assert.ok(lines.includes('R² = 0.99456'));
+  assert.ok(lines.includes('R² = 0.99456\tRMSE = 0.12'));
   assert.ok(lines.includes('R² = 0.992    RMSE = 0.2'));
   assert.ok(lines.includes('Psat = 0.25 mW'));
   assert.ok(lines.includes('C = 1'));
@@ -45,19 +43,18 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
 });
 
 
-test('amplitude b and RMSE share a tabbed row while R-squared stays separate', () => {
+test('amplitude pairs I0 with b and R-squared with RMSE, with single-field fallbacks', () => {
   const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['I0', 'b', 'r2', 'rmse']);
   assert.deepEqual(lines, [
     'Amplitude',
-    'I₀ = 3.25',
-    'b = 1.4\tRMSE = 0.12',
-    'R² = 0.99456',
+    'I₀ = 3.25\tb = 1.4',
+    'R² = 0.99456\tRMSE = 0.12',
   ]);
   assert.deepEqual(scanFitResultLines({ valid: true, amplitudeFit }, ['I0']), [
     'Amplitude', 'I₀ = 3.25',
   ]);
   assert.deepEqual(scanFitResultLines({ valid: true, amplitudeFit }, ['b', 'rmse']), [
-    'Amplitude', 'b = 1.4\tRMSE = 0.12',
+    'Amplitude', 'b = 1.4', 'RMSE = 0.12',
   ]);
 });
 

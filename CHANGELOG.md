@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Reorder amplitude fit-result details to show `P½` above the `b`/`RMSE` row; render `b` and `RMSE` in left-aligned tab-separated columns. Keep `R²` and point count on separate rows and preserve the existing linewidth summary layout.
+- Arrange amplitude fit-result details as `P½`, `I₀` / `b`, `R²` / `RMSE`, then point count. Use actual tabs and one shared measured column stop so `b` and `RMSE` start at the same x coordinate, including when rows are scaled to fit a narrow plot. Preserve the linewidth summary, model and file formats.
 
 - Keep the Variable scan fit-result annotation fully inside the main plot rectangle for lower-right, nine-grid and custom placements; clamp horizontal and vertical coordinates to the plot bounds.
 

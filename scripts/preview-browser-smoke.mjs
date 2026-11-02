@@ -504,15 +504,18 @@ try {
     const rmseCall=findFitTextCall('RMSE ='),r2Call=findFitTextCall('R² =');
     assert.ok(i0Call&&halfCall&&bCall&&rmseCall&&r2Call,
       'Amplitude fit summary must expose I0, P-half, b, RMSE and R-squared text positions: '+JSON.stringify(fitTextCalls));
-    assert.ok(i0Call.y<halfCall.y&&halfCall.y<bCall.y&&bCall.y<r2Call.y,
-      'P-half must appear above the tab-aligned b/RMSE row, with R-squared below it');
-    assert.equal(bCall.y,rmseCall.y,'b and RMSE must share one row');
-    assert.equal(bCall.align,'left','b column must be left-aligned');
-    assert.equal(rmseCall.align,'left','RMSE column must be left-aligned');
-    assert.ok(rmseCall.x>bCall.x,'RMSE must start at the next tab column');
-    const tabStops=(rmseCall.x-bCall.x)/bCall.tabWidth;
+    assert.ok(halfCall.y<i0Call.y&&i0Call.y<r2Call.y,
+      'P-half must appear above I0/b and R-squared/RMSE rows');
+    assert.equal(i0Call.y,bCall.y,'I0 and b must share one row');
+    assert.equal(r2Call.y,rmseCall.y,'R-squared and RMSE must share one row');
+    assert.ok(Math.abs(bCall.x-rmseCall.x)<1e-6,'b and RMSE must start at the same left-aligned column');
+    assert.ok(Math.abs(i0Call.x-r2Call.x)<1e-6,'I0 and R-squared must share the left column');
+    for(const call of [i0Call,bCall,r2Call,rmseCall])
+      assert.equal(call.align,'left','All parameter fields must be left-aligned');
+    assert.ok(bCall.x>i0Call.x,'b must start after the I0 field');
+    const tabStops=(bCall.x-i0Call.x)/i0Call.tabWidth;
     assert.ok(Math.abs(tabStops-Math.round(tabStops))<1e-6,
-      'RMSE must start on a measured tab stop');
+      'Both right-hand fields must start on the same measured tab stop');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
