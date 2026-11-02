@@ -397,7 +397,8 @@ try {
       mode:'scan',title:'Saturation validation',gridRow:1,gridCol:1,curves:[],
       twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
-        scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false}}};
+        scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false,
+        scanFitFitI0:true,scanFitFitB:true,scanFitFitPhalf:true}}};
     const saturationCurve={...mixed.rawCurves[2],name:'Synthetic saturation',
       B:fields,y:syntheticRows[0],matrix:saturationMatrix};
     const saturationProject={...mixed,rawCurves:[saturationCurve],
@@ -409,14 +410,20 @@ try {
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
     assert.equal(await scanPanel.locator('[data-twod="scanFitLinewidth"]').isChecked(),true);
+    for(const key of ['scanFitFitI0','scanFitFitB','scanFitFitPhalf'])
+      assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').isChecked(),true,key+' should default to fitting');
+    for(const key of ['scanFitI0','scanFitB','scanFitPhalfMW'])
+      assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').evaluate(element=>element.readOnly),true,key+' should display a read-only fitted value');
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
-    assert.match(fitText,/Amplitude · Amplitude saturation/);
+    assert.match(fitText,/Amplitude · Bruker P-half saturation/);
     assert.match(fitText,/Linewidth · Power-dependent linewidth/);
+    assert.match(fitText,/I₀/);
+    assert.match(fitText,/P½/);
     assert.ok(await scanPanel.locator('.scan-fit-results input[readonly]').count()>=10,'Fitting results must be displayed in read-only fields');
     assert.equal(await scanPanel.locator('.scan-fit-equation math').count(),2,'Both formulas must use native mathematical markup');
     const formulaParentheses=await scanPanel.locator('.scan-fit-equation math mo').evaluateAll(nodes=>
       nodes.filter(el=>el.textContent==='('||el.textContent===')').map(el=>el.getAttribute('stretchy')));
-    assert.equal(formulaParentheses.length,4,'Both formulas have explicit parentheses');
+    assert.equal(formulaParentheses.length,6,'Bruker amplitude denominator and both function arguments use explicit parentheses');
     assert.ok(formulaParentheses.every(value=>value==='false'),'MathML parentheses must not stretch to the fraction height');
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
@@ -472,6 +479,10 @@ try {
     const cfg=saved.config.subplots[0].twoD.settings;
     assert.equal(cfg.scanFeatureMode,'both');
     assert.equal(cfg.scanFitAmplitude,true);assert.equal(cfg.scanFitLinewidth,true);
+    assert.equal(cfg.scanFitFitI0,true);assert.equal(cfg.scanFitFitB,true);assert.equal(cfg.scanFitFitPhalf,true);
+    assert.ok(Math.abs(cfg.scanFitI0-4)<0.02,'Fitted I0 should be saved with the subplot settings');
+    assert.ok(Math.abs(cfg.scanFitB-2)<0.02,'Fitted exponent should be saved with the subplot settings');
+    assert.ok(Math.abs(cfg.scanFitPhalfMW-12)<0.05,'Fitted P-half should be saved with the subplot settings');
     assert.equal(saved.config.subplots[0].curveStyles['-101'].style,'filled-circle');
     assert.equal(saved.config.subplots[0].curveStyles['-103'].style,'dotted-line');
     assert.deepEqual(saved.config.subplots[0].scanDerivedOrder.slice(0,5),
@@ -516,7 +527,7 @@ try {
     assert.equal(firstRow.split(',')[11],'no','Excluded source trace 0 is not used in linewidth fit');
     await load(saved,'synthetic-saturation-reload.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
-    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Amplitude saturation/);
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Bruker P-half saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Reloading the saved project must restore the derived-curve drawing order');
