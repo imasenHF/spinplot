@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.11.3 — 2026-11-02
+
+- Put the square-root power coordinate and unit directly in the selector option (`√P (√mW)`); remove the separate external radical label.
+- Anchor the lower-right fit-result annotation to the available right edge of its subplot cell, reduce unused horizontal space, and increase formula vertical clearance and spacing before parameter rows. Keep the same layout in Canvas, SVG and PDF.
+- Add per-subplot `Show Y title` control under Subplots → Axes → Y axis. Heatmap and Variable scan show Y-axis titles by default; explicit local visibility overrides the global setting. Older projects without this field retain mode-based defaults. Project/config formats remain 11/10.
+
 ## 0.11.2 — 2026-11-02
 
 - Move the optional Variable scan fit-residual panel into the same-row 2D top-projection frame. Match its horizontal span and frame height to the adjacent projection; when no top projection exists, reserve a dedicated upper slot. Keep the main fit plot in its own frame instead of splitting it internally. Preserve the blank slot while residual display is off.
