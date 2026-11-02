@@ -19,6 +19,7 @@ import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js
 import * as TwoD from "../twod/ui.js";
 import { fitMainRows, resolveMainInsets } from "./footprint.js";
 import { resolveLegendPosition } from "./legend-position.js";
+import { scanFitFormulaType, measureScanFitFormula, drawScanFitFormula } from "./math-formula.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -354,14 +355,38 @@ export function renderFigure(
     const { x0, y0, pw, ph } = geom;
     const size = Math.max(8, Math.min(24, Number(sp.fitResultFontSize) || 12));
     const lineHeight = size * 1.35;
-    const visible = lines.slice(0, Math.max(0, Math.floor((ph - 16) / lineHeight)));
-    if (visible.length && visible.length < lines.length) visible[visible.length-1] = `… (${lines.length-visible.length+1} more)`;
-    if (!visible.length) return;
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
     ctx.font = `${size}px ${chosenFont}`;
-    const width = Math.min(pw - 12, Math.max(70, ...visible.map(line => ctx.measureText(line).width + 16)));
-    const height = visible.length * lineHeight + 10;
+    const rows = lines.map((line) => {
+      const formula = scanFitFormulaType(line);
+      if (formula) {
+        const metrics = measureScanFitFormula(ctx, formula, size, chosenFont);
+        return { text: line, formula, width: metrics.width, height: metrics.height };
+      }
+      return { text: line, width: ctx.measureText(line).width, height: lineHeight };
+    });
+    const maxHeight = ph - 18;
+    const visible = [];
+    let contentHeight = 0;
+    for (const row of rows) {
+      if (contentHeight + row.height > maxHeight) break;
+      visible.push(row);
+      contentHeight += row.height;
+    }
+    if (visible.length < rows.length) {
+      const more = `… (${rows.length-visible.length} more)`;
+      while (visible.length && contentHeight + lineHeight > maxHeight) {
+        contentHeight -= visible.pop().height;
+      }
+      if (contentHeight + lineHeight <= maxHeight) {
+        visible.push({ text: more, width: ctx.measureText(more).width, height: lineHeight });
+        contentHeight += lineHeight;
+      }
+    }
+    if (!visible.length) { ctx.restore(); return; }
+    const width = Math.min(pw - 12, Math.max(70, ...visible.map(row => row.width + 16)));
+    const height = contentHeight + 10;
     if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
     const position = sp.fitResultPosition || 'lower_right';
     const custom = position === 'custom';
@@ -382,7 +407,18 @@ export function renderFigure(
     ctx.fillStyle = theme.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    visible.forEach((line, i) => ctx.fillText(line, left + 8, top + 5 + i * lineHeight, width - 16));
+    let rowY = top + 5;
+    for (const row of visible) {
+      if (row.formula) {
+        const availableWidth = Math.max(1, width - 16);
+        const scale = row.width > availableWidth ? Math.max(0.6, availableWidth / row.width) : 1;
+        drawScanFitFormula(ctx, row.formula, left + 8, rowY, size * scale, chosenFont, theme.text);
+      } else {
+        ctx.font = `${size}px ${chosenFont}`;
+        ctx.fillText(row.text, left + 8, rowY, width - 16);
+      }
+      rowY += row.height;
+    }
     ctx.restore();
   }
   function drawMeasurements(ctx, sp, X, r, font) {

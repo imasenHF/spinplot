@@ -1,5 +1,6 @@
 import {axisEps,niceTicks,ticksWithStep,configuredGTicks} from './processing/axis.js';
 import {scanFitResultLines} from './twod/fit-summary.js';
+import { scanPowerXCoordinate, scanPowerXAxis } from './twod/scan-x-axis.js';
 import {svgFromScene} from './export/svg.js';
 import 'svg2pdf.js';
 import {pdfFromSvg} from './export/pdf.js';
@@ -341,11 +342,14 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   data=TwoD.scanCorrelationData(d,t);
   xAxis=data.xAxis||(t.swap?d.y:d.x);
   yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
+  const powerXScale=t.scanAxisMode==='power'?(t.scanPowerXScale||'power'):'power';
+  const displayPowerX=value=>scanPowerXCoordinate(value,powerXScale);
+  if(data.valid&&powerXScale==='sqrt')xAxis=scanPowerXAxis(xAxis,powerXScale);
   if(data.valid){
     const feature=data.featureMode&&data.featureMode!=='statistic';
     const makeCurve=(name,values,axis='left',fitLine=false,kind='statistic')=>{
       const curve={index:SCAN_DERIVED_IDS[kind]??SCAN_DERIVED_IDS.statistic,name,source:d.name,freq:frequency,
-        B:data.x.slice(),y:values.slice(),yd:values.slice(),
+        B:data.x.map(displayPowerX),y:values.slice(),yd:values.slice(),
         xAxis:{name:xAxis.name,unit:xAxis.unit||''},rightAxis:axis==='right',fitLine};
       return curve;
     };

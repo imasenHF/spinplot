@@ -1,3 +1,12 @@
+## 2026-11-02 Variable scan 公式标注、透明度控件与 √P 横坐标（开发分支）
+
+- 开发分支 `feat/scan-math-annotation-sqrt-power-20261102`，基于正式 `main` 的 v0.11.0。此任务尚未合并或部署；应用版本与项目/配置格式暂不变。
+- 作图区拟合注释将幅度和线宽公式绘制为矢量数学排版，分式线、根号上横线、上下标使用 Canvas 路径和文本对象。屏幕、SVG 与 PDF 共用绘图路径；参数、R²、RMSE 和点数仍为普通数值文本。
+- 背景透明度滑块采用与逐曲线颜色按钮一致的立体边框和明暗阴影，增加主题色进度轨道及百分比读数；保存字段仍为 `scanFitLabelOpacity`。
+- Variable scan 在 `Scan X axis = Microwave power` 时增加 `P (mW)` / `√P (√mW)` 显示选择。原始功率、幅度/线宽提取、拟合计算及 CSV 仍使用 mW；仅衍生曲线的绘图 X 坐标和轴标题变换。切换显示模式时局部 X min/max 在 P 与 √P 间换算，手动 X step 清空；切换 acquired scan variable 与 microwave power 时重置局部 X 范围。新增 `scanPowerXScale` 设置，旧项目缺省为 `power`，项目/配置格式不变。
+- 自动验收待 PR 创建后核对：`npm run check`、Chromium 功能回归、矢量 PDF 回归；浏览器测试覆盖公式 SVG、轴变换、范围换算、滑块样式和项目保存/重载。
+- 科学模型及参数不变；本任务只调整公式展示、控件外观和功率横坐标表达。
+
 ## 2026-11-02 Bruker 三参数幅度饱和模型与真实数据验证（PR #11 已合并并发布）
 
 - PR [#11](https://github.com/imasenHF/spinplot/pull/11) 已于 2026-11-02 合并至正式 `main`，合并提交 [34cf1421](https://github.com/imasenHF/spinplot/commit/34cf1421e29013168a3896bc373d1dfb0d0d1cc0)。应用版本为 **0.11.0**，GitHub Release [v0.11.0](https://github.com/imasenHF/spinplot/releases/tag/v0.11.0) 已创建；项目格式 11、配置格式 10 不变。

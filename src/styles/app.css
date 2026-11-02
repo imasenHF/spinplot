@@ -225,6 +225,15 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-section-heading{grid-column:1/-1;font-size:11px;font-weight:600;color:#273f4e;margin:8px 0 1px;border-bottom:1px solid #ced7da;padding-bottom:3px}
 .scan-fit-display input[type=range]{width:100%;min-width:0}
 .scan-fit-display>.switch{align-self:center}
+.scan-fit-opacity-control{display:flex;align-items:center;gap:6px;min-width:0}
+.scan-fit-opacity-control input[type=range]{appearance:none;-webkit-appearance:none;flex:1;width:100%;min-width:0;height:20px;padding:0 2px;border:1px solid #777;border-radius:3px;background:#d9d7d0;box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa;cursor:pointer}
+.scan-fit-opacity-control input[type=range]::-webkit-slider-runnable-track{height:6px;border:1px solid #8d9091;border-radius:2px;background:linear-gradient(90deg,#9db4c2 0%,#9db4c2 var(--range-progress,0%),#d2d0c8 var(--range-progress,0%),#d2d0c8 100%);box-shadow:inset 1px 1px #aaa,inset -1px -1px #fff}
+.scan-fit-opacity-control input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-5px;border:1px solid #777;border-radius:3px;background:linear-gradient(#fff,#d5d3cc);box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa,1px 1px 1px rgba(0,0,0,.2)}
+.scan-fit-opacity-control input[type=range]::-moz-range-track{height:6px;border:1px solid #8d9091;border-radius:2px;background:#d2d0c8;box-shadow:inset 1px 1px #aaa,inset -1px -1px #fff}
+.scan-fit-opacity-control input[type=range]::-moz-range-progress{height:6px;background:#9db4c2}
+.scan-fit-opacity-control input[type=range]::-moz-range-thumb{width:14px;height:14px;border:1px solid #777;border-radius:3px;background:linear-gradient(#fff,#d5d3cc);box-shadow:inset 1px 1px #fff,inset -1px -1px #aaa,1px 1px 1px rgba(0,0,0,.2)}
+.scan-fit-opacity-control input[type=range]:focus-visible{outline:2px solid #2f6f9f;outline-offset:1px}
+.scan-fit-opacity-value{min-width:31px;text-align:right;font:10px "Courier New",monospace;color:#4c5559}
 
 /* Bruker-style independently constrained saturation parameters. */
 .scan-fit-parameter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;grid-column:1/-1;min-width:0}

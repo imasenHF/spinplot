@@ -1,0 +1,130 @@
+const FORMULA_LINES = Object.freeze({
+  amplitude: 'Spp(P) = I₀√P/(1 + P/P½)^(b/2)',
+  linewidth: 'ΔB(P) = A√(1 + P/Psat) + C',
+});
+
+export function scanFitFormulaType(line) {
+  return Object.entries(FORMULA_LINES).find(([, value]) => value === line)?.[0] || null;
+}
+
+function setFont(ctx, size, family, italic = false) {
+  ctx.font = `${italic ? 'italic ' : ''}${size}px ${family}`;
+}
+
+function drawSequence(ctx, tokens, x, baseline, size, family, color, draw) {
+  let cursor = x;
+  for (const token of tokens) {
+    if (token.script) {
+      const scriptSize = size * 0.62;
+      const scriptBaseline = baseline + (token.script === 'sub' ? size * 0.22 : -size * 0.43);
+      setFont(ctx, scriptSize, family, token.italic === true);
+      const width = ctx.measureText(token.text).width;
+      if (draw) {
+        ctx.fillStyle = color;
+        ctx.fillText(token.text, cursor, scriptBaseline);
+      }
+      cursor += width;
+      continue;
+    }
+    setFont(ctx, size, family, token.italic === true);
+    const width = ctx.measureText(token.text).width;
+    if (draw) {
+      ctx.fillStyle = color;
+      ctx.fillText(token.text, cursor, baseline);
+    }
+    cursor += width;
+  }
+  return cursor - x;
+}
+
+const text = (value, italic = false) => ({ text: value, italic });
+const script = (value, position, italic = true) => ({ text: value, script: position, italic });
+
+function layout(ctx, type, size, family) {
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const lhs = type === 'amplitude'
+    ? [text('S', true), script('pp', 'sub'), text('('), text('P', true), text(') =')]
+    : [text('Δ'), text('B', true), script('pp', 'sub'), text('('), text('P', true), text(') = '), text('A', true)];
+  const lhsWidth = drawSequence(ctx, lhs, 0, 0, size, family, '#000', false);
+  let result;
+  if (type === 'amplitude') {
+    const numerator = [text('I', true), script('0', 'sub'), text('√'), text('P', true)];
+    const denominator = [
+      text('('), text('1 + '), text('P', true), text('/'), text('P', true),
+      script('1/2', 'sub'), text(')'), script('b/2', 'super'),
+    ];
+    const numeratorWidth = drawSequence(ctx, numerator, 0, 0, size, family, '#000', false);
+    const denominatorWidth = drawSequence(ctx, denominator, 0, 0, size, family, '#000', false);
+    const gap = size * 0.42;
+    const fractionWidth = Math.max(numeratorWidth, denominatorWidth) + size * 0.42;
+    result = {
+      type, lhs, numerator, denominator, lhsWidth, numeratorWidth, denominatorWidth,
+      gap, fractionWidth, width: lhsWidth + gap + fractionWidth, height: size * 2.08,
+    };
+  } else if (type === 'linewidth') {
+    const radicand = [
+      text('('), text('1 + '), text('P', true), text('/'), text('P', true),
+      script('sat', 'sub'), text(')'),
+    ];
+    const radicandWidth = drawSequence(ctx, radicand, 0, 0, size, family, '#000', false);
+    setFont(ctx, size * 1.12, family);
+    const radicalWidth = ctx.measureText('√').width;
+    const suffixWidth = drawSequence(ctx, [text(' + C')], 0, 0, size, family, '#000', false);
+    const gap = size * 0.35;
+    result = {
+      type, lhs, radicand, lhsWidth, radicandWidth, radicalWidth, suffixWidth, gap,
+      width: lhsWidth + gap + radicalWidth * 0.78 + radicandWidth + size * 0.18 + suffixWidth,
+      height: size * 1.82,
+    };
+  } else {
+    result = { type: null, width: 0, height: 0 };
+  }
+  ctx.restore();
+  return result;
+}
+
+export function measureScanFitFormula(ctx, type, size, family = 'Times New Roman') {
+  return layout(ctx, type, size, family);
+}
+
+export function drawScanFitFormula(ctx, type, x, top, size, family, color) {
+  const measured = layout(ctx, type, size, family);
+  if (!measured.type) return measured;
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(0.7, size * 0.055);
+  if (type === 'amplitude') {
+    const lhsBaseline = top + size * 1.3;
+    const fractionX = x + measured.lhsWidth + measured.gap;
+    const numeratorX = fractionX + (measured.fractionWidth - measured.numeratorWidth) / 2;
+    const denominatorX = fractionX + (measured.fractionWidth - measured.denominatorWidth) / 2;
+    drawSequence(ctx, measured.lhs, x, lhsBaseline, size, family, color, true);
+    drawSequence(ctx, measured.numerator, numeratorX, top + size * 0.82, size, family, color, true);
+    ctx.beginPath();
+    ctx.moveTo(fractionX, top + size * 1.08);
+    ctx.lineTo(fractionX + measured.fractionWidth, top + size * 1.08);
+    ctx.stroke();
+    drawSequence(ctx, measured.denominator, denominatorX, top + size * 1.84, size, family, color, true);
+  } else {
+    const baseline = top + size * 1.34;
+    const rootX = x + measured.lhsWidth + measured.gap;
+    setFont(ctx, size * 1.12, family);
+    ctx.fillText('√', rootX, baseline);
+    const radicandX = rootX + measured.radicalWidth * 0.78;
+    drawSequence(ctx, measured.lhs, x, baseline, size, family, color, true);
+    drawSequence(ctx, measured.radicand, radicandX, baseline, size, family, color, true);
+    ctx.beginPath();
+    ctx.moveTo(radicandX + 1, top + size * 0.24);
+    ctx.lineTo(radicandX + measured.radicandWidth, top + size * 0.24);
+    ctx.stroke();
+    drawSequence(ctx, [text(' + C')], radicandX + measured.radicandWidth + size * 0.18,
+      baseline, size, family, color, true);
+  }
+  ctx.restore();
+  return measured;
+}
