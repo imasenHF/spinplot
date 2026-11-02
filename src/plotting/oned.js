@@ -869,7 +869,7 @@ export function renderFigure(
       if (sp.secondaryYAxis) insetR = Math.max(insetR, 78);
       const x0 = cellX + insetL,
         pw = cellW - insetL - insetR;
-      let y0 = cellY + insetT,
+      const y0 = cellY + insetT,
         ph = cellH - insetT - insetB;
       const residualPanel = frameEntries[si].residualPanel;
       let residualGeom = null;
