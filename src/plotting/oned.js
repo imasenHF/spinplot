@@ -105,6 +105,19 @@ export function displayRange(curves) {
   return rangeY(curves, -Infinity, Infinity);
 }
 
+export function resolveYAxisTitleVisibility(sp, globalHidden = false) {
+  if (typeof sp?.showYTitle === 'boolean') return sp.showYTitle;
+  if (sp?.mode === 'scan' || sp?.mode === 'heatmap') return true;
+  if (sp?.twoD && !['stack', 'overlap', 'scan'].includes(sp.mode)) return true;
+  return !globalHidden;
+}
+
+export function fitResultLowerRight(x0, y0, pw, ph, width, height, cellRight) {
+  const plotRight = x0 + pw;
+  const rightEdge = Number.isFinite(cellRight) ? Math.max(plotRight, cellRight) : plotRight;
+  return { left: rightEdge - width - 6, top: y0 + ph - height - 6 };
+}
+
 export function renderFigure(
   canvas,
   logicalW,
@@ -289,7 +302,7 @@ export function renderFigure(
       compact = cellH < 180,
       showY = sp.showYTicks && !$("hideYTicks").checked,
       showTitle =
-        !$("hideYTitle").checked &&
+        resolveYAxisTitleVisibility(sp, $("hideYTitle").checked) &&
         String(sp.yAxisLabel || $("yLabel").value || "").trim(),
       xd = clamp(finiteNum($("xTitleDistance").value) || 20, 0, 120),
       yd = clamp(finiteNum($("yTitleDistance").value) || 35, 0, 120);
@@ -355,7 +368,9 @@ export function renderFigure(
     const { x0, y0, pw, ph } = geom;
     const size = Math.max(8, Math.min(24, Number(sp.fitResultFontSize) || 12));
     const lineHeight = size * 1.5,
-      rowGap = size * 0.16;
+      rowGap = size * 0.32,
+      formulaGap = size * 0.62,
+      gapAfter = (row) => row?.formula ? formulaGap : rowGap;
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
     ctx.font = `${size}px ${chosenFont}`;
@@ -372,7 +387,7 @@ export function renderFigure(
     const visible = [];
     let contentHeight = 0;
     for (const row of rows) {
-      const gap = visible.length ? rowGap : 0;
+      const gap = visible.length ? gapAfter(visible.at(-1)) : 0;
       if (contentHeight + gap + row.height > maxHeight) break;
       visible.push(row);
       contentHeight += gap + row.height;
@@ -381,10 +396,11 @@ export function renderFigure(
       const more = `… (${rows.length-visible.length} more)`;
       while (visible.length && contentHeight + (visible.length ? rowGap : 0) + lineHeight > maxHeight) {
         contentHeight -= visible.pop().height;
-        if (visible.length) contentHeight -= rowGap;
+        if (visible.length) contentHeight -= gapAfter(visible.at(-1));
       }
-      if (contentHeight + (visible.length ? rowGap : 0) + lineHeight <= maxHeight) {
-        if (visible.length) contentHeight += rowGap;
+      const moreGap = visible.length ? gapAfter(visible.at(-1)) : 0;
+      if (contentHeight + moreGap + lineHeight <= maxHeight) {
+        if (visible.length) contentHeight += moreGap;
         visible.push({ text: more, width: ctx.measureText(more).width, height: lineHeight });
         contentHeight += lineHeight;
       }
@@ -399,8 +415,12 @@ export function renderFigure(
     const fx = Math.max(0,Math.min(1,(Number(sp.fitResultX) || 0)/100));
     const fy = Math.max(0,Math.min(1,(Number(sp.fitResultY) || 0)/100));
     const [lx, ly] = legendXY(position, x0, y0, pw, ph, width, height);
-    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12) : lx;
-    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12) : ly;
+    const lowerRight = fitResultLowerRight(x0, y0, pw, ph, width, height,
+      sp.secondaryYAxis ? x0 + pw : geom.cellRight);
+    const left = custom ? x0 + 6 + fx*Math.max(0,pw-width-12)
+      : position === 'lower_right' ? lowerRight.left : lx;
+    const top = custom ? y0 + 6 + fy*Math.max(0,ph-height-12)
+      : position === 'lower_right' ? lowerRight.top : ly;
     const opacity = clamp(Number(sp.fitResultOpacity ?? 0), 0, 1);
     if (opacity > 0) {
       ctx.fillStyle = theme.bg === '#11181b' ? `rgba(17,24,27,${opacity})` : `rgba(255,255,255,${opacity})`;
@@ -423,7 +443,7 @@ export function renderFigure(
         ctx.font = `${size}px ${chosenFont}`;
         ctx.fillText(row.text, left + 8, rowY, width - 16);
       }
-      rowY += row.height + rowGap;
+      rowY += row.height + gapAfter(row);
     }
     ctx.restore();
   }
@@ -763,7 +783,7 @@ export function renderFigure(
             lineWidth: lineW,
             frame,
             showYTicks: sp.showYTicks && !$("hideYTicks").checked,
-            showYTitle: (sp.twoD && ["heatmap","contour","surface3d"].includes(sp.mode)) || !$("hideYTitle").checked,
+            showYTitle: resolveYAxisTitleVisibility(sp, $("hideYTitle").checked),
             xTitleDistance: Number($("xTitleDistance").value),
             yTitleDistance: Number($("yTitleDistance").value),
             grid: $("showGrid").checked,
@@ -803,7 +823,7 @@ export function renderFigure(
       }
       const showYTicks = sp.showYTicks && !$("hideYTicks").checked,
         showYTitle =
-          !$("hideYTitle").checked &&
+          resolveYAxisTitleVisibility(sp, $("hideYTitle").checked) &&
           String(sp.yAxisLabel || $("yLabel").value || "").trim();
       const yScale = sp.yScale && sp.yScale !== 'inherit' ? sp.yScale : ($('globalYScale')?.value || 'linear');
       const boundsSource = sp.yUseGlobal ? $('globalYMin').value : sp.yMin;
@@ -1189,7 +1209,7 @@ export function renderFigure(
         ctx.fillText(String(sp.renderNotice),x0+pw/2,y0+ph/2,Math.max(20,pw-12));ctx.restore();
       }
       drawMeasurements(ctx, sp, X, { x0, y0, pw, ph }, font);
-      drawFitResultSummary(ctx, sp, { x0, y0, pw, ph }, font, theme);
+      drawFitResultSummary(ctx, sp, { x0, y0, pw, ph, cellRight: cellX + cellW }, font, theme);
       state.labelRange = m.ymax - m.ymin;
       const geom = { x0, y0, pw, ph };
       if (sp.labelMode === "legend" || sp.labelMode === "both")
