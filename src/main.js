@@ -398,7 +398,7 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   }
  }
  const fitResults=scanFitResultLines(data,t.scanFitShow===true?['formula','I0','b','half','P','A','C','r2','rmse','n']:[]);
- const fitResidualSeries=scanFitResidualSeries(data,{amplitude:t.scanFitAmplitude===true,linewidth:t.scanFitLinewidth===true,displayX:displayPowerX});
+ const fitResidualSeries=scanFitResidualSeries(data,{amplitude:t.scanFitAmplitude===true,linewidth:t.scanFitLinewidth===true,displayX:displayPowerX,linewidthUnit:data?.axisUnit||''});
  const fitResidualPanelEnabled=sp.mode==='scan'&&Boolean(data?.valid&&data.featureMode&&data.featureMode!=='statistic'&&(data.amplitudeFit||data.linewidthFit));
  const renderSp={...sp,fitResultLines:fitResults,fitResidualShow:t.scanFitResidualShow===true,fitResidualPanelEnabled,fitResidualSeries,xAxisMathLabel:sqrtPowerLabel?'sqrt-power':null,fitResultPosition:t.scanFitLabelPosition||'lower_right',fitResultFontSize:t.scanFitLabelSize??12,fitResultFontFamily:t.scanFitLabelFont||'inherit',fitResultOpacity:t.scanFitLabelOpacity??0,fitResultBorder:t.scanFitLabelBorder===true,fitResultX:t.scanFitLabelX??50,fitResultY:t.scanFitLabelY??65,curveStyles:derivedStyles,twoD:null,derivedFromTwoD:true,scanCurveStyle:sp.mode==='scan'?(sp.scanCurveStyle||'line'):undefined,lineWidth:sp.lineWidth,symbolSize:sp.symbolSize,derivedFromManualCurves:manual,derivedCurveIndices:manual?[...ids]:undefined,derivedTwoDIndex:sourceIndex,derivedXAxis:xAxis,mode:'overlay',xAxisLabel:sp.xAxisLabel||(sqrtPowerLabel?'':axisLabelText(xAxis)),yAxisLabel:sp.yAxisLabel||axisLabelText(yAxis),labelMode:sp.labelMode,
     legendPosition:sp.legendPosition,
