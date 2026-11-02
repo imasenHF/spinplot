@@ -13,6 +13,16 @@ export function scanFitResultLines(data, selection = []) {
           : 'ΔB(P) = A·sqrt(1 + P/Psat) + C');
         continue;
       }
+      if (name === 'Amplitude' && key === 'b' && selection.includes('I0')) continue;
+      if (key === 'I0' && selection.includes('b')) {
+        fields.push('I₀ = ' + format(fit.parameters.I0) + '    b = ' + format(fit.parameters.b));
+        continue;
+      }
+      if (key === 'rmse' && selection.includes('r2')) continue;
+      if (key === 'r2' && selection.includes('rmse')) {
+        fields.push('R² = ' + format(fit.r2) + '    RMSE = ' + format(fit.rmse));
+        continue;
+      }
       const entry = name === 'Amplitude'
         ? key === 'I0' ? ['I₀', fit.parameters.I0, '']
           : key === 'b' ? ['b', fit.parameters.b, '']
