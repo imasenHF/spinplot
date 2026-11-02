@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Move Variable scan P½ above the I₀/b row and align the `b` and `RMSE` values with a shared tab stop.
+- Render the Variable scan Y-axis title horizontally above the main plot, using the independent Projection titles font and respecting the local Show Y title setting.
+
 - Keep the Variable scan fit-result annotation fully inside the main plot rectangle for lower-right, nine-grid and custom placements; clamp horizontal and vertical coordinates to the plot bounds.
 
 ## 0.11.4 — 2026-11-02
