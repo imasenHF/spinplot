@@ -466,6 +466,7 @@ export function controls(card, sp, d, onChange) {
   const powerXScaleSelect=select(scanSettings,'scanPowerXScale','Power X coordinate',[
     ['power','P (mW)'],['sqrt','√P (√mW)']
   ]);
+  const powerXScaleControl=powerXScaleSelect.closest('label');
   powerXScaleSelect.onchange=()=>{
     const previous=s.scanPowerXScale||'power',next=powerXScaleSelect.value;
     if(previous===next)return;
