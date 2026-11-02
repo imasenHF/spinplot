@@ -1,3 +1,15 @@
+## 2026-11-02 Variable scan 坐标选择器、拟合标注与局部 Y 轴标题（PR #14，候选 v0.11.3）
+
+- 当前分支：`fix/scan-axis-title-and-fit-layout-20261102`；基线为 PR #13 合并后的正式 `main`。应用候选版本 0.11.3，项目格式 11、配置格式 10 不变。
+- Power X coordinate 下拉选项直接显示 `P (mW)` 与 `√P (√mW)`；移除选择器外侧的 MathML 公式标签。绘图区 X 轴标题仍使用矢量根号绘制。
+- 拟合结果位置为 Lower right 时，水平锚点使用子图单元右边缘，避免受主绘图区右侧预留边距影响；存在 secondary Y axis 时仍锚定主绘图区。公式分式、根号、上下标增加垂直间隔，公式与参数行之间采用独立较大间距；截断摘要时沿用相同的公式间距计算。
+- 新增子图字段 `showYTitle`：显式布尔值覆盖全局 `Hide Y title`；Heatmap（含曲线派生 Heatmap）与 Variable scan 缺省显示 Y 轴标题，普通 1D 及 2D Stack/Overlap 按原全局设置继承。旧项目缺少字段时按图型默认规则处理；字段随子图配置保存，不变更项目/配置格式。界面位于 Subplots → Axes → Y axis。
+- `src/plotting/oned.test.js` 覆盖图型默认值、局部覆盖和拟合标注右侧锚点；`src/plotting/math-formula.test.js` 覆盖公式高度及上下标层级；Chromium 回归覆盖 √P 选项文字、无外置公式、Heatmap/Variable scan 默认标题及局部保存。
+- Power fit 残差说明文字同步为绝对残差 (r_i=y_i-\hat y_i)，与 PR #13 实现一致。
+- **验收状态：** 源码与回归用例已提交到开发分支；待 PR quality、Chromium、矢量 PDF、构建与部署链检查。真实实验数据的拟合残差分布仍需单独科学审阅。
+
+---
+
 ## 2026-11-02 拟合残差上投影布局与公式注释间距（PR #13）
 
 - PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已于 2026-11-02 合并，正式版本为 v0.11.2。合并提交 `e512280fe328e9bcbda33d94655055576404a3ba`；项目格式 11、配置格式 10 不变。
