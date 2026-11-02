@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices} from './oned.js';
+import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,fitResultLowerRight} from './oned.js';
 import {processSubplot} from '../processing/oned.js';
 const curves=Object.freeze([Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([1,2,3])}),Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([2,4,6])})]);
 test('Overlay/Stack preserve frozen source; automatic/manual offsets and both directions',()=>{
@@ -31,4 +31,24 @@ test('marker sampling remains bounded and includes both ends',()=>{
  assert.ok(sampled.length<=81);
  assert.equal(sampled[0],0);
  assert.equal(sampled.at(-1),9999);
+});
+
+test('Heatmap and Variable scan show Y-axis titles by default with local overrides',()=>{
+ assert.equal(resolveYAxisTitleVisibility({mode:'overlay',twoD:{}},true),true,
+  'A 2D Heatmap keeps its Y-axis title visible when the global title is hidden');
+ assert.equal(resolveYAxisTitleVisibility({mode:'scan',twoD:{}},true),true,
+  'Variable scan shows its Y-axis title by default');
+ assert.equal(resolveYAxisTitleVisibility({mode:'overlay'},true),false,
+  'Regular 1D plots continue to inherit the global hidden-title setting');
+ assert.equal(resolveYAxisTitleVisibility({mode:'overlay'},false),true);
+ assert.equal(resolveYAxisTitleVisibility({mode:'overlay',twoD:{},showYTitle:false},false),
+  false,'A local false value hides the title for one Heatmap');
+ assert.equal(resolveYAxisTitleVisibility({mode:'scan',showYTitle:false},true),
+  false,'A local false value hides the title for one Variable scan');
+ assert.equal(resolveYAxisTitleVisibility({mode:'scan',showYTitle:true},true),true);
+});
+
+test('fit-result lower-right anchor uses available subplot width beyond the plot inset',()=>{
+ assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120,700),{left:444,top:324});
+ assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120),{left:344,top:324});
 });
