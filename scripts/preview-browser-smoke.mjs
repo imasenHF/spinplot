@@ -428,10 +428,10 @@ try {
     await page.evaluate(()=>{
       const proto=CanvasRenderingContext2D.prototype;
       const originalClear=proto.clearRect,originalStroke=proto.strokeRect,originalFill=proto.fillText;
-      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__lastPlotStrokeRect=null;
+      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__residualTitleCalls=[];window.__lastPlotStrokeRect=null;
       proto.clearRect=function(...args){
         if(this.canvas?.id==='plotCanvas'){
-          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__lastPlotStrokeRect=null;
+          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__residualTitleCalls=[];window.__lastPlotStrokeRect=null;
         }
         return originalClear.apply(this,args);
       };
@@ -456,6 +456,10 @@ try {
               tabWidth:this.measureText('    ').width*Math.abs(transform.a),
             });
           }
+          if(/^(Amplitude|Linewidth) residual/.test(value)){
+            window.__residualTitleCalls.push({text:value,x:Number(args[0]),y:Number(args[1]),
+              align:this.textAlign,baseline:this.textBaseline,font:this.font});
+          }
           if(value==='Amplitude'&&window.__lastPlotStrokeRect){
             const frame=window.__lastPlotStrokeRect;
             window.__fitSummaryFrames.push(frame);
@@ -473,9 +477,14 @@ try {
         const xs=[...new Set(frames.map(f=>Math.round(f.x)))].sort((a,b)=>a-b);
         const left=frames.filter(f=>Math.round(f.x)===xs[0]);
         const right=frames.filter(f=>Math.round(f.x)===xs.at(-1));
-        const top=items=>items.filter(f=>f.h<f.w*0.5).sort((a,b)=>a.h-b.h)[0]||null;
+        const top=items=>{
+          const frames=items.filter(f=>f.h<f.w*0.5);
+          if(!frames.length)return null;
+          const first=frames.reduce((a,b)=>a.y<b.y?a:b);
+          return {...first,h:Math.max(...frames.map(f=>f.y+f.h))-first.y};
+        };
         const main=items=>items.sort((a,b)=>b.h-a.h)[0]||null;
-        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames,fitSummaryFrames:window.__fitSummaryFrames||[],fitSummaryTextCalls:window.__fitSummaryTextCalls||[]};
+        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames,fitSummaryFrames:window.__fitSummaryFrames||[],fitSummaryTextCalls:window.__fitSummaryTextCalls||[],residualTitleCalls:window.__residualTitleCalls||[]};
       });
     };
     await page.locator('.menu-item[data-menu="tools"]').click();
@@ -622,7 +631,26 @@ try {
     assert.ok(Math.abs(residualLayoutAfter.rightMain.y-residualLayoutBefore.rightMain.y)<0.5&&
       Math.abs(residualLayoutAfter.rightMain.h-residualLayoutBefore.rightMain.h)<0.5,
       'Showing residuals must not reduce or move the main power-fit plot');
+    const residualTitleSize=Number(await page.locator('#projectionTitleSize').inputValue());
+    assert.equal(residualLayoutAfter.residualTitleCalls.length,2,'Both residual quantities have titles');
+    for(const title of residualLayoutAfter.residualTitleCalls){
+      const frame=residualLayoutAfter.frames.filter(f=>Math.abs(f.x-residualLayoutAfter.rightTop.x)<0.5&&f.y>title.y)
+        .sort((a,b)=>a.y-b.y)[0];
+      assert.ok(frame&&title.y<frame.y,'Residual title sits above its own frame');
+      assert.ok(Math.abs(title.x-(frame.x+frame.w/2))<0.5,'Residual titles are centered like top-projection titles');
+      assert.equal(title.align,'center');
+      assert.equal(title.baseline,'middle');
+      assert.ok(title.font.startsWith(residualTitleSize+'px '),'Residual titles use Projection titles typography, independently of tick size');
+    }
     await page.screenshot({path:'browser-preview/synthetic-saturation-residual-projection-layout.png',fullPage:true});
+    await scanPanel.locator('[data-twod="scanFitLinewidth"]').uncheck();
+    const amplitudeOnlyResidual=await captureResidualLayout();
+    assert.equal(amplitudeOnlyResidual.residualTitleCalls.length,1,'Amplitude-only residuals have one external title');
+    const amplitudeTitle=amplitudeOnlyResidual.residualTitleCalls[0];
+    assert.match(amplitudeTitle.text,/^Amplitude residual/);
+    assert.ok(amplitudeTitle.y<amplitudeOnlyResidual.rightTop.y,'Single residual title stays outside the upper frame');
+    await page.screenshot({path:'browser-preview/synthetic-amplitude-residual-title.png',fullPage:true});
+    await scanPanel.locator('[data-twod="scanFitLinewidth"]').check();
     await opacitySlider.evaluate(el=>{
       el.value='0.35';
       el.dispatchEvent(new Event('input',{bubbles:true}));
