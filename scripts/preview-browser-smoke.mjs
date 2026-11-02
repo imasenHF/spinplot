@@ -437,7 +437,7 @@ try {
       proto.strokeRect=function(x,y,w,h){
         if(this.canvas?.id==='plotCanvas'){
           const frame={x,y,w,h},ratio=w/h;
-          if(w>150&&h>80&&ratio>1.1&&ratio<3.5)window.__fitSummaryFrames.push(frame);
+          if(w>150&&h>80&&h<400&&ratio>0.65&&ratio<3.5)window.__fitSummaryFrames.push(frame);
           else window.__fitResidualFrames.push(frame);
         }
         return originalStroke.call(this,x,y,w,h);
