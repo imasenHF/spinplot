@@ -1,10 +1,10 @@
-## 2026-11-02 Variable scan 拟合结果注释紧凑排版（PR #15，候选 v0.11.4）
+## 2026-11-02 Variable scan 拟合结果注释紧凑排版（PR #15，v0.11.4 已发布）
 
 - 幅度参数 I₀ 与指数 b 合并为同一行；R² 与 RMSE 合并为同一行；P½ 和 No. of points 保持独立行。仅当一组字段同时被选中时合并显示，单字段选择仍按单行显示。
 - 注释框宽度按公式和参数行的实际测量宽度动态确定，文字左右各留 8 px，保留绘图区宽度上限；移除公式注释固定 250 px 最小宽度。拟合公式、参数值与边框共用该宽度计算，Canvas、SVG、PDF 保持一致。
 - 单元测试覆盖成对字段及单字段回退、内容宽度计算；Chromium 回归检查注释框宽度不超过绘图区宽度的 40%，并继续检查右下角定位。
 - 项目格式 11、配置格式 10 不变。
-- **验收状态：** 实现与回归用例已提交开发分支，待 PR quality、Chromium、矢量 PDF、Pages、生产 HTTP 与 Release 工作流验收。
+- **验收结果：** PR [#15](https://github.com/imasenHF/spinplot/pull/15) 已合并，提交 `190dcef98898ca0e75ebdf68f5b0edd75bba2d40`；GitHub Release [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4) 已发布。PR quality [41434866491](https://github.com/imasenHF/spinplot/actions/runs/41434866491)、Legend [41434866649](https://github.com/imasenHF/spinplot/actions/runs/41434866649)、Vector PDF [41434866620](https://github.com/imasenHF/spinplot/actions/runs/41434866620)、Pages [41435140514](https://github.com/imasenHF/spinplot/actions/runs/41435140514)、生产 HTTP [41435505010](https://github.com/imasenHF/spinplot/actions/runs/41435505010) 与 Release [41435529016](https://github.com/imasenHF/spinplot/actions/runs/41435529016) 全部成功。
 
 ---
 
