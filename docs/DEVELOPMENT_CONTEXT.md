@@ -4,7 +4,7 @@
 - 九宫格、Lower right、Outside fallback 与 Custom 等位置在绘制前统一限制到主绘图区矩形内：左右至少 6 px、上下至少 4 px；宽度仍受绘图区可用宽度约束。Canvas、SVG、PDF 共用该定位函数。
 - 单元测试覆盖子图边界超出绘图区、子图边界位于绘图区内部及四向越界位置；Chromium 回归逐项检查注释框的 x/y/w/h 均位于 Variable scan 主绘图区边界内。
 - 应用版本维持 0.11.4；项目格式 11、配置格式 10 不变。
-- **验收状态：** 修正与回归用例已提交开发分支，待 PR quality、Chromium、矢量 PDF、Pages 与生产 HTTP 验收。
+- **验收结果：** PR [#16](https://github.com/imasenHF/spinplot/pull/16) 已合并，提交 `b5499a04ca450ee234942481282b5b1b57c140bf`。quality [41436853488](https://github.com/imasenHF/spinplot/actions/runs/41436853488)、Legend 浏览器回归 [41436853283](https://github.com/imasenHF/spinplot/actions/runs/41436853283)、Pages 构建/交互回归/矢量 PDF 回归与部署 [41437058859](https://github.com/imasenHF/spinplot/actions/runs/41437058859)、生产 HTTP [41437386963](https://github.com/imasenHF/spinplot/actions/runs/41437386963) 全部成功。应用版本维持 0.11.4，未移动已发布的 v0.11.4 标签。
 
 ---
 
