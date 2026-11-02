@@ -394,20 +394,56 @@ try {
       real:syntheticRows,imag:syntheticRows.map(row=>row.map(()=>0)),metadata:{}};
     const baseSubplot=mixed.config.subplots[1];
     const saturationSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
-      mode:'scan',title:'Saturation validation',gridRow:1,gridCol:1,curves:[],
+      mode:'scan',title:'Saturation validation',gridRow:1,gridCol:2,curves:[],
+      emptyProjectionSpace:'top',
       twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
         scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false,
         scanFitFitI0:true,scanFitFitB:true,scanFitFitPhalf:true}}};
+    const projectionSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
+      mode:'heatmap',title:'Synthetic field map',gridRow:1,gridCol:1,curves:[],
+      twoD:{index:0,settings:{...(baseSubplot.twoD?.settings||{}),mode:'heatmap',swap:false,
+        showProjections:true,showXProjection:true,showYProjection:false,showColorbar:false,
+        xMode:'mean',yMode:'rms'}}};
     const saturationCurve={...mixed.rawCurves[2],name:'Synthetic saturation',
       B:fields,y:syntheticRows[0],matrix:saturationMatrix};
     const saturationProject={...mixed,rawCurves:[saturationCurve],
-      config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:1,spans:'1'},
-        subplots:[saturationSubplot]}};
+      config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:2,spans:'1,1'},
+        subplots:[saturationSubplot,projectionSubplot]}};
     await load(saturationProject,'synthetic-saturation.spinplot.json');
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const scanPanel=page.locator('.subplot').first();
     const residualToggle=scanPanel.locator('[data-twod="scanFitResidualShow"]');
+    await page.evaluate(()=>{
+      const proto=CanvasRenderingContext2D.prototype;
+      const originalClear=proto.clearRect,originalStroke=proto.strokeRect;
+      window.__fitResidualFrames=[];
+      proto.clearRect=function(...args){
+        if(this.canvas?.id==='plotCanvas')window.__fitResidualFrames=[];
+        return originalClear.apply(this,args);
+      };
+      proto.strokeRect=function(x,y,w,h){
+        if(this.canvas?.id==='plotCanvas')window.__fitResidualFrames.push({x,y,w,h});
+        return originalStroke.call(this,x,y,w,h);
+      };
+    });
+    const captureResidualLayout=async()=>{
+      await page.waitForTimeout(180);
+      return page.evaluate(()=>{
+        const frames=(window.__fitResidualFrames||[]).filter(f=>f.w>100&&f.h>20);
+        const xs=[...new Set(frames.map(f=>Math.round(f.x)))].sort((a,b)=>a-b);
+        const left=frames.filter(f=>Math.round(f.x)===xs[0]);
+        const right=frames.filter(f=>Math.round(f.x)===xs.at(-1));
+        const top=items=>items.filter(f=>f.h<f.w*0.5).sort((a,b)=>a.h-b.h)[0]||null;
+        const main=items=>items.sort((a,b)=>b.h-a.h)[0]||null;
+        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right)};
+      });
+    };
+    const residualLayoutBefore=await captureResidualLayout();
+    assert.ok(residualLayoutBefore.leftTop&&residualLayoutBefore.leftMain&&residualLayoutBefore.rightMain,
+      'Mixed 2D/Variable scan layout must expose both projection and main plot frames');
+    assert.ok(Math.abs(residualLayoutBefore.leftMain.y-residualLayoutBefore.rightMain.y)<0.5,
+      'Variable scan main plot remains aligned with the 2D map while residual display is off');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
@@ -501,6 +537,16 @@ try {
     await powerScale.selectOption('sqrt');
     await scanPanel.locator('.scan-fit-display > .switch input').first().check();
     await residualToggle.check();
+    const residualLayoutAfter=await captureResidualLayout();
+    assert.ok(residualLayoutAfter.rightTop,'Enabled residuals must draw in the upper accessory slot');
+    assert.ok(Math.abs(residualLayoutAfter.rightTop.y-residualLayoutBefore.leftTop.y)<0.5,
+      'Residual subplot must occupy the same vertical position as the adjacent 2D top projection');
+    assert.ok(Math.abs(residualLayoutAfter.rightTop.h-residualLayoutBefore.leftTop.h)<0.5,
+      'Residual subplot must match the top-projection frame height');
+    assert.ok(Math.abs(residualLayoutAfter.rightMain.y-residualLayoutBefore.rightMain.y)<0.5&&
+      Math.abs(residualLayoutAfter.rightMain.h-residualLayoutBefore.rightMain.h)<0.5,
+      'Showing residuals must not reduce or move the main power-fit plot');
+    await page.screenshot({path:'browser-preview/synthetic-saturation-residual-projection-layout.png',fullPage:true});
     await opacitySlider.evaluate(el=>{
       el.value='0.35';
       el.dispatchEvent(new Event('input',{bubbles:true}));
@@ -627,7 +673,7 @@ try {
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Saved drag Z-order must remain stable after changes and a second reload');
     assert.equal(errors.length,0,'Saturation feature plot must not trigger page errors');
-    console.log('BROWSER PASS: dual Y axes, saturation fits, residual subplot, feature CSV and project restore');
+    console.log('BROWSER PASS: dual Y axes, saturation fits, top-projection residual layout, feature CSV and project restore');
     const projectedSubplot={...saturationSubplot,mode:'overlay',
       twoD:{index:0,settings:{...saturationSubplot.twoD.settings,
         mode:'heatmap',xMode:'mean',yMode:'both',showProjections:true,

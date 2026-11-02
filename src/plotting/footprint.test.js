@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   emptyProjectionSpaceFlags,
   fitMainRows,
+  fitResidualPanelSlot,
   normalizeEmptyProjectionSpace,
   resolveMainInsets,
 } from "./footprint.js";
@@ -132,4 +133,34 @@ test("column allocation retains aligned main widths by default", () => {
   );
   assert.ok(Math.abs(mainWidths[0] - mainWidths[1]) < 1e-9);
   assert.ok(fitted.widths[1] > fitted.widths[0]);
+});
+
+test("fit residuals occupy the exact top-projection frame when one is present", () => {
+  const slot = fitResidualPanelSlot({
+    naturalTop: 34,
+    sharedTop: 170,
+    topProjection: { hasTopProjection: true, topH: 90, gapY: 8, gSpace: 12 },
+    fallbackHeight: 84,
+  });
+  assert.deepEqual(slot, { top: 60, height: 90, source: "projection" });
+});
+
+test("fit residuals reserve a dedicated top slot when no top projection exists", () => {
+  const slot = fitResidualPanelSlot({
+    naturalTop: 34,
+    sharedTop: 126,
+    fallbackHeight: 84,
+    gap: 8,
+  });
+  assert.deepEqual(slot, { top: 34, height: 84, source: "reserved" });
+});
+
+test("fit residual slot respects the available upper margin", () => {
+  const slot = fitResidualPanelSlot({
+    naturalTop: 34,
+    sharedTop: 58,
+    fallbackHeight: 84,
+    gap: 8,
+  });
+  assert.deepEqual(slot, { top: 34, height: 16, source: "reserved" });
 });

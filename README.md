@@ -21,7 +21,7 @@
 
 ## 正式版本与独立预览
 
-正式入口 `/spinplot/` 当前发布版本为 **0.11.1**，已发布 [GitHub Release v0.11.1](https://github.com/imasenHF/spinplot/releases/tag/v0.11.1)。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
+正式入口 `/spinplot/` 当前发布版本为 **0.11.1**；本次拟发布版本为 **0.11.2**，以合并后的 Pages 与生产 HTTP 检查为准。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
 - **Linear**：线性连续坐标；**Scientific**：仍是线性坐标，只把刻度标签改成科学计数法；**Log10 / SymLog**：全正值采用 Log10，含零或负信号使用保留零点与正负号的对称对数。三者不修改原始数组。
 - 选择一种模式时，应用按对应子图的实际数据自动拟合坐标范围，将数值写入子图 Y/Z、投影 min/max。**Auto Z** 按当前可见 X/Y 区域计算 Z min/max 并填写数值，双击色标同样处理；双击热图主体复原 X/Y 时不覆盖 Z。
@@ -30,7 +30,7 @@
 
 阶段 B 采用 `emptyProjectionSpace`，为每个子图提供 `none / top / right / both` 四种占位方式。无投影子图可按需占用同行的上投影预留区、同列的右投影预留区；可同时占用两处。投影显示开关保持独立，色标和坐标标题等必要边距不会被占用。该设置默认 `none`，适用于 1D、2D 与 Variable scan。此前三模式坐标与二维预览的回归见 [Actions #40745286984](https://github.com/imasenHF/spinplot/actions/runs/40745286984)。独立预览 Pages 发布通过 [40745691624](https://github.com/imasenHF/imasenhf.github.io/actions/runs/40745691624)，公开浏览器复测以新工作流结果为准。真实实验文件的科学数值验收仍与合成数据回归分开进行。
 
-Variable scan 的 Power fit 可在主拟合曲线上方显示可选残差面板。幅度与线宽残差分别使用独立纵坐标范围和零参考线，并与主图共用 P / √P 横坐标；关闭显示时保留空白面板位置。
+Variable scan 的 Power fit 可选显示幅度与线宽残差。残差面板优先占用同行二维图的上投影位置，使用相同的横向范围和高度；没有上投影时单独预留顶部区域。残差作为独立的辅助绘图区绘制，不再切分主拟合图内部区域。关闭显示时仍保留空白位置。拟合公式注释增加排版宽度、公式字号和上下行距，屏幕、SVG 与 PDF 使用同一绘图布局。
 
 ## 使用与科研限制
 
@@ -79,7 +79,7 @@ node src/data/curve-matrix.test.js
 
 ## 版本、保存与兼容
 
-- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.1**，发布标签为 `v0.11.1`；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
+- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.1**，PR #13 的候选版本为 **0.11.2**；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
 - **项目格式**：`type: "SpinPlotProject"`，当前 `version: 11`；包含数据数组、二维矩阵与配置。载入逻辑支持经校验的旧项目版本 9/10/11，无法读取时应提示错误。
 - **配置格式**：当前 `version: 10`；单独保存布局、选项和参数，不包含原始谱图数组。项目文件内部也含有此配置。
 - **迁移要求**：文件格式的版本号独立于应用版本；字段变化需检查历史项目读取、兼容性和失败提示，版本标签应在构建与发布检查后创建。

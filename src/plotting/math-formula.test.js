@@ -32,7 +32,8 @@ test('plot formula lines are recognized by model', () => {
 test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
   const ctx = context();
   const metrics = measureScanFitFormula(ctx, 'amplitude', 12, 'Times New Roman');
-  assert.ok(metrics.width > 0 && metrics.height > 20);
+  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2.4,
+    'The formula row must include the lower P½ subscript and clearance before the next parameter row');
   const drawn = drawScanFitFormula(ctx, 'amplitude', 10, 20, 12, 'Times New Roman', '#111');
   assert.equal(drawn.type, 'amplitude');
   assert.equal(ctx.calls.filter(call => call.type === 'stroke').length, 1);
@@ -47,7 +48,8 @@ test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
 test('linewidth formula is laid out with a radical overbar', () => {
   const ctx = context();
   const metrics = measureScanFitFormula(ctx, 'linewidth', 12, 'Georgia');
-  assert.ok(metrics.width > 0 && metrics.height > 15);
+  assert.ok(metrics.width > 0 && metrics.height >= 12 * 2,
+    'The radical formula row must leave clearance before the next parameter row');
   drawScanFitFormula(ctx, 'linewidth', 0, 0, 12, 'Georgia', '#222');
   const text = ctx.calls.filter(call => call.type === 'text').map(call => call.text);
   assert.ok(text.includes('Δ'));
