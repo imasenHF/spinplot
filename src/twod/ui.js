@@ -464,17 +464,8 @@ export function controls(card, sp, d, onChange) {
     ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
   const powerXScaleSelect=select(scanSettings,'scanPowerXScale','Power X coordinate',[
-    ['power','P (mW)'],['sqrt','Square-root power']
+    ['power','P (mW)'],['sqrt','√P (√mW)']
   ]);
-  const powerXScaleControl=powerXScaleSelect.closest('label');
-  powerXScaleControl.classList.add('scan-power-x-scale-control');
-  const powerXScaleMath=document.createElement('span');
-  powerXScaleMath.className='scan-power-x-math';
-  powerXScaleMath.setAttribute('aria-label','Square root of P, in square-root milliwatts');
-  powerXScaleMath.innerHTML='<math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msqrt><mi>P</mi></msqrt><mo>(</mo><msqrt><mi>mW</mi></msqrt><mo>)</mo></mrow></math>';
-  powerXScaleControl.append(powerXScaleMath);
-  const refreshPowerXScaleMath=()=>{powerXScaleMath.hidden=s.scanPowerXScale!=='sqrt';};
-  refreshPowerXScaleMath();
   powerXScaleSelect.onchange=()=>{
     const previous=s.scanPowerXScale||'power',next=powerXScaleSelect.value;
     if(previous===next)return;
@@ -500,7 +491,6 @@ export function controls(card, sp, d, onChange) {
       if(field)field.value=value;
     }
     s.scanPowerXScale=next;
-    refreshPowerXScaleMath();
     onChange();
     refreshFitResults();
   };
@@ -641,7 +631,7 @@ export function controls(card, sp, d, onChange) {
   showResidualCheck.dataset.twod='scanFitResidualShow';
   showResidualCheck.checked=s.scanFitResidualShow===true;
   showResidualCheck.setAttribute('aria-label','Show fit residual subplot');
-  showResidual.title='Relative residuals are normalized by the fitted value and share the displayed power coordinate.';
+  showResidual.title='Absolute residuals are observed minus fitted values and share the displayed power coordinate.';
   showResidualCheck.onchange=()=>{s.scanFitResidualShow=showResidualCheck.checked;onChange();};
   showResidual.append(showResidualCheck,document.createTextNode('Show fit residuals'));
   displayPanel.append(showResidual);
