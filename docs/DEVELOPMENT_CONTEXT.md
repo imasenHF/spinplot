@@ -6,7 +6,7 @@
 - `src/plotting/footprint.js` 新增 `fitResidualPanelSlot` 计算投影复用/独立预留两种布局；`src/plotting/oned.js` 在行布局阶段计算顶部空间并绘制残差。Canvas、SVG、PDF 使用同一绘图路径。
 - 拟合结果注释增加公式排版宽度（最小 250 px，受绘图区限制）、公式字号（参数字号的 1.08 倍）、分式/根号公式高度和参数行距，减少 P½ 下标与下一行参数的重叠。
 - 单元测试覆盖投影复用、独立顶部区域和可用空间不足；Chromium 合成数据回归检查残差框与相邻 Top projection 的位置/高度一致、主拟合图坐标框保持不变，并保存复核截图。
-- 尚待 PR quality、Pages 部署、生产 HTTP 和自动 Release 验收。残差科学数值模型不变，真实实验数据的残差分布仍需独立审阅。
+- PR quality [41415690887](https://github.com/imasenHF/spinplot/actions/runs/41415690887)、Vector PDF [41415691010](https://github.com/imasenHF/spinplot/actions/runs/41415691010)、Legend [41415690958](https://github.com/imasenHF/spinplot/actions/runs/41415690958)、正式 Pages [41415871934](https://github.com/imasenHF/spinplot/actions/runs/41415871934)、生产 HTTP [41416115420](https://github.com/imasenHF/spinplot/actions/runs/41416115420) 和 Release [41416138158](https://github.com/imasenHF/spinplot/actions/runs/41416138158) 均成功。检查期间恢复了原有绝对残差定义，并修正 √P 标签变量作用域及浏览器回归断言；真实实验数据的残差分布仍需独立审阅。
 
 ---
 
