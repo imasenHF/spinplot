@@ -427,19 +427,30 @@ try {
     await scanYTitle.evaluate(el=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));});
     await page.evaluate(()=>{
       const proto=CanvasRenderingContext2D.prototype;
-      const originalClear=proto.clearRect,originalStroke=proto.strokeRect;
-      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];
+      const originalClear=proto.clearRect,originalStroke=proto.strokeRect,originalFill=proto.fillText;
+      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
       proto.clearRect=function(...args){
-        if(this.canvas?.id==='plotCanvas'){window.__fitResidualFrames=[];window.__fitSummaryFrames=[];}
+        if(this.canvas?.id==='plotCanvas'){
+          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+        }
         return originalClear.apply(this,args);
       };
       proto.strokeRect=function(x,y,w,h){
         if(this.canvas?.id==='plotCanvas'){
-          const frame={x,y,w,h},ratio=w/h;
-          if(w>150&&h>80&&h<400&&ratio>0.65&&ratio<3.5)window.__fitSummaryFrames.push(frame);
-          else window.__fitResidualFrames.push(frame);
+          const frame={x,y,w,h};
+          window.__lastPlotStrokeRect=frame;
+          window.__fitResidualFrames.push(frame);
         }
         return originalStroke.call(this,x,y,w,h);
+      };
+      proto.fillText=function(text,...args){
+        if(this.canvas?.id==='plotCanvas'&&String(text)==='Amplitude'&&window.__lastPlotStrokeRect){
+          const frame=window.__lastPlotStrokeRect;
+          window.__fitSummaryFrames.push(frame);
+          const index=window.__fitResidualFrames.lastIndexOf(frame);
+          if(index>=0)window.__fitResidualFrames.splice(index,1);
+        }
+        return originalFill.call(this,text,...args);
       };
     });
     const captureResidualLayout=async()=>{
