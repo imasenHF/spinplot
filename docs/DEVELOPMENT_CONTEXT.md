@@ -1,7 +1,7 @@
 ## 2026-11-03 Variable scan 残差标题
 
 - 残差纵坐标为实测值减拟合值，单位与对应幅度或线宽一致；零线表示实测与拟合相等。残差名称、单位及 RMSE 居中显示在对应图框上方，字号沿用 Projection titles，与刻度字号独立；双残差各有独立图框和外置标题，框间留出标题空间。总上方区域和主图位置保持不变，Canvas、SVG、PDF 共用布局。
-- 应用版本维持 0.11.4；残差计算、拟合模型、项目格式 11 和配置格式 10 不变。浏览器回归检查外置居中标题、双残差间距、总上方区域和主图位置，以及 SVG/PDF 导出。验收状态以本次 PR / Actions 为准。
+- 应用版本维持 0.11.4；残差计算、拟合模型、项目格式 11 和配置格式 10 不变。浏览器回归检查外置居中标题、双残差间距、总上方区域和主图位置，以及 SVG/PDF 导出。PR [#19](https://github.com/imasenHF/spinplot/pull/19) 已合并，提交 `571aa3bcc4cf22798bc381a09d7355e65e81cf3e`；quality [41505770638](https://github.com/imasenHF/spinplot/actions/runs/41505770638)、Legend [41505770562](https://github.com/imasenHF/spinplot/actions/runs/41505770562)、Pages（含 Chromium 与矢量 PDF）[41506203329](https://github.com/imasenHF/spinplot/actions/runs/41506203329)、生产 HTTP [41506551690](https://github.com/imasenHF/spinplot/actions/runs/41506551690) 均成功。单/双残差截图和 SVG 已复核，标题在各自图框上方居中，字号使用 Projection titles。
 
 ---
 
