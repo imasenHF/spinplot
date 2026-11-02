@@ -62,21 +62,24 @@ export function fitResidualPanelSlot({
   topProjection,
   fallbackHeight,
   gap = 8,
+  titleGap = 0,
 }) {
   const natural = Math.max(0, Number(naturalTop) || 0);
   const shared = Math.max(natural, Number(sharedTop) || natural);
+  const reservedTitleGap = Math.max(0, Number(titleGap) || 0);
   if (topProjection?.hasTopProjection === true) {
     const height = Math.max(0, Number(topProjection.topH) || 0);
     const top = shared
       - Math.max(0, Number(topProjection.gapY) || 0)
       - Math.max(0, Number(topProjection.gSpace) || 0)
-      - height;
+      - height
+      - reservedTitleGap;
     if (height > 0 && top >= natural && top + height <= shared)
       return { top, height, source: "projection" };
   }
   const height = Math.min(
     Math.max(0, Number(fallbackHeight) || 0),
-    Math.max(0, shared - natural - Math.max(0, Number(gap) || 0)),
+    Math.max(0, shared - natural - Math.max(0, Number(gap) || 0) - reservedTitleGap),
   );
   return { top: natural, height, source: "reserved" };
 }
