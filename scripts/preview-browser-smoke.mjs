@@ -399,7 +399,8 @@ try {
       twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
         scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false,
-        scanFitFitI0:true,scanFitFitB:true,scanFitFitPhalf:true}}};
+        scanFitFitI0:true,scanFitFitB:true,scanFitFitPhalf:true,
+        scanFitShow:true,scanFitLabelPosition:'lower_right',scanFitLabelBorder:true}}};
     const projectionSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
       mode:'heatmap',title:'Synthetic field map',gridRow:1,gridCol:1,curves:[],
       twoD:{index:0,settings:{...(baseSubplot.twoD?.settings||{}),mode:'heatmap',swap:false,
@@ -418,17 +419,38 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const scanPanel=page.locator('.subplot').first();
     const residualToggle=scanPanel.locator('[data-twod="scanFitResidualShow"]');
+    const scanYTitle=scanPanel.locator('[data-field="showYTitle"]');
+    assert.equal(await scanYTitle.isChecked(),true,'Variable scan shows the Y-axis title by default');
+    await scanYTitle.evaluate(el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
+    const scanYTitleHidden=await save('browser-preview/scan-y-title-hidden.json');
+    assert.equal(scanYTitleHidden.config.subplots[0].showYTitle,false,'The local Y-title setting is saved per subplot');
+    await scanYTitle.evaluate(el=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));});
     await page.evaluate(()=>{
       const proto=CanvasRenderingContext2D.prototype;
-      const originalClear=proto.clearRect,originalStroke=proto.strokeRect;
-      window.__fitResidualFrames=[];
+      const originalClear=proto.clearRect,originalStroke=proto.strokeRect,originalFill=proto.fillText;
+      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
       proto.clearRect=function(...args){
-        if(this.canvas?.id==='plotCanvas')window.__fitResidualFrames=[];
+        if(this.canvas?.id==='plotCanvas'){
+          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+        }
         return originalClear.apply(this,args);
       };
       proto.strokeRect=function(x,y,w,h){
-        if(this.canvas?.id==='plotCanvas')window.__fitResidualFrames.push({x,y,w,h});
+        if(this.canvas?.id==='plotCanvas'){
+          const frame={x,y,w,h};
+          window.__lastPlotStrokeRect=frame;
+          window.__fitResidualFrames.push(frame);
+        }
         return originalStroke.call(this,x,y,w,h);
+      };
+      proto.fillText=function(text,...args){
+        if(this.canvas?.id==='plotCanvas'&&String(text)==='Amplitude'&&window.__lastPlotStrokeRect){
+          const frame=window.__lastPlotStrokeRect;
+          window.__fitSummaryFrames.push(frame);
+          const index=window.__fitResidualFrames.lastIndexOf(frame);
+          if(index>=0)window.__fitResidualFrames.splice(index,1);
+        }
+        return originalFill.call(this,text,...args);
       };
     });
     const captureResidualLayout=async()=>{
@@ -440,7 +462,7 @@ try {
         const right=frames.filter(f=>Math.round(f.x)===xs.at(-1));
         const top=items=>items.filter(f=>f.h<f.w*0.5).sort((a,b)=>a.h-b.h)[0]||null;
         const main=items=>items.sort((a,b)=>b.h-a.h)[0]||null;
-        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames};
+        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames,fitSummaryFrames:window.__fitSummaryFrames||[]};
       });
     };
     await page.locator('.menu-item[data-menu="tools"]').click();
@@ -450,6 +472,11 @@ try {
       'Mixed 2D/Variable scan layout must expose both projection and main plot frames: '+JSON.stringify(residualLayoutBefore));
     assert.ok(Math.abs(residualLayoutBefore.leftMain.y-residualLayoutBefore.rightMain.y)<0.5,
       'Variable scan main plot remains aligned with the 2D map while residual display is off');
+    const fitSummaryFrame=residualLayoutBefore.fitSummaryFrames.at(-1);
+    const plotCanvasWidth=await page.locator('#plotCanvas').evaluate(el=>el.clientWidth);
+    assert.ok(fitSummaryFrame,'Lower-right fit summary must render a measurable frame');
+    assert.ok(fitSummaryFrame.x+fitSummaryFrame.w>=plotCanvasWidth*0.85,
+      'Lower-right fit summary uses the available right side of its subplot cell');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
@@ -489,8 +516,10 @@ try {
       },value);
     }
     await powerScale.selectOption('sqrt');
-    assert.equal(await scanPanel.locator('.scan-power-x-math math msqrt').count(), 2,
-      'Square-root power mode must show native MathML radicals beside the selector');
+    assert.equal(await powerScale.locator('option[value="sqrt"]').textContent().then(value=>value.trim()),'√P (√mW)',
+      'Square-root units are part of the selector option, not an external label');
+    assert.equal(await scanPanel.locator('.scan-power-x-math').count(),0,
+      'No separate radical label is rendered outside the selector');
     assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'2');
     assert.equal(await scanPanel.locator('[data-field="xMax"]').inputValue(),'10');
     assert.equal(await scanPanel.locator('[data-field="xStep"]').inputValue(),'',
@@ -621,8 +650,19 @@ try {
     assert.match(svg,/1\/2/);
     assert.ok(!svg.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'),
       'The plot annotation must render the equation typographically rather than as a plain formula string');
-    assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
-      'SVG legend and drawing must use the dragged derived-curve order');
+    const horizontalSvgLabels=[...svg.matchAll(/<text\b([^>]*)>([\s\S]*?)<\/text>/g)]
+      .filter(([,attributes])=>{
+        const matrix=attributes.match(/\btransform="matrix\(([^)]+)\)"/)?.[1]
+          ?.trim().split(/\s+/).map(Number);
+        return matrix?.length===6&&Math.abs(matrix[1])<1e-9&&Math.abs(matrix[2])<1e-9;
+      })
+      .map(([, ,text])=>text.replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+        .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'"));
+    const amplitudeFitSvgIndex=horizontalSvgLabels.indexOf('Amplitude fit');
+    const peakAmplitudeSvgIndex=horizontalSvgLabels.indexOf('Peak-to-peak amplitude');
+    assert.ok(amplitudeFitSvgIndex>=0&&peakAmplitudeSvgIndex>=0&&amplitudeFitSvgIndex<peakAmplitudeSvgIndex,
+      'Horizontal SVG legend labels must retain the dragged derived-curve order: indexes='+
+      amplitudeFitSvgIndex+'/'+peakAmplitudeSvgIndex+'; labels='+horizontalSvgLabels.join(' | '));
     assert.match(svg,/Amplitude residual/,'SVG identifies the amplitude residual lane');
     assert.match(svg,/Linewidth residual/,'SVG identifies the linewidth residual lane');
     assert.match(svg,/RMSE [^<]*G/,'Linewidth residual RMSE retains the magnetic-field unit');
@@ -695,6 +735,12 @@ try {
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const projectionCard=page.locator('.subplot').first();
     assert.equal(await projectionCard.locator('[data-twod="yMode"]').inputValue(),'both');
+    const heatmapYTitle=projectionCard.locator('[data-field="showYTitle"]');
+    assert.equal(await heatmapYTitle.isChecked(),true,'Heatmap shows the Y-axis title by default');
+    await heatmapYTitle.evaluate(el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
+    const heatmapYTitleHidden=await save('browser-preview/heatmap-y-title-hidden.json');
+    assert.equal(heatmapYTitleHidden.config.subplots[0].showYTitle,false,'Heatmap Y-title visibility is local to its subplot');
+    await heatmapYTitle.evaluate(el=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));});
     assert.equal(await projectionCard.locator('.matrix-no-style .curve-style-list').isHidden(),true,
       'Heatmap has no per-source curve style column');
     assert.equal(await projectionCard.locator('.scan-curve-style').isHidden(),true,

@@ -70,7 +70,15 @@ try {
 
   const scan = page.locator('.subplot').last();
   const legendSection = scan.locator('details[data-section="legend"]');
-  assert.ok(await legendSection.isVisible(), 'Variable scan must expose its label settings');
+  const scanDebug = await scan.evaluate(el => ({
+    className: el.className,
+    sections: [...el.querySelectorAll('details')].map(d => ({
+      section: d.dataset.section, hidden: d.hidden, open: d.open,
+      display: getComputedStyle(d).display
+    }))
+  }));
+  assert.ok(await legendSection.isVisible(),
+    'Variable scan must expose its label settings: ' + JSON.stringify(scanDebug));
   assert.equal(await legendSection.evaluate(el => el.open), true,
     'Variable scan label settings should be expanded by default');
   assert.equal(await scan.locator('[data-field="labelMode"]').inputValue(), 'legend');

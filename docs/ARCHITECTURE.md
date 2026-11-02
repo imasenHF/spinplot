@@ -21,6 +21,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 ```
 
 - 正式 `main` 当前版本为 **0.11.2**，PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已合并并发布 [v0.11.2](https://github.com/imasenHF/spinplot/releases/tag/v0.11.2)。正式 Pages、生产 HTTP 和发布工作流均成功；项目格式 11、配置格式 10 保持不变。
+- PR #14 分支候选版本为 **0.11.3**，新增子图级 `showYTitle` 覆盖、Heatmap/Variable scan Y 轴标题默认显示、拟合注释右下锚点及公式垂直排版调整；等待 PR CI 与发布验收。项目格式 11、配置格式 10 不变。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
@@ -53,7 +54,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 | SpinPlot 配置 | `version: 10` | `appVersion`、控件参数、布局、子图设置、显示状态；不携带源谱数组 |
 | 应用版本 | `package.json.version` | 语义版本，用于页面和保存文件的 `appVersion`，不决定文件格式 |
 
-子图配置可选字段 `emptyProjectionSpace`（`none / top / right / both`）用于占用同一行/列中未使用的投影附属空间。项目格式 11、配置格式 10 不变；旧字段 `plotFootprint` 不再参与布局，载入时移除。
+子图配置可选字段 `showYTitle`（`true / false / null`）控制当前子图的 Y 轴标题；`null` 或缺省值按图型默认规则处理：Heatmap 与 Variable scan 默认显示，其他模式继承全局 `Hide Y title`。显式布尔值只覆盖当前子图。`emptyProjectionSpace`（`none / top / right / both`）用于占用同一行/列中未使用的投影附属空间。项目格式 11、配置格式 10 不变；旧字段 `plotFootprint` 不再参与布局，载入时移除。
 
 新增或重命名字段时先确定旧文件读取行为与迁移结果；不能自动恢复的属性必须提示丢失/不支持。配置恢复不应覆盖已导入的原始数据；项目文件加载需校验数组、二维矩阵、版本和引用下标。
 
