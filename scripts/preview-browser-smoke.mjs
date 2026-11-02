@@ -428,10 +428,10 @@ try {
     await page.evaluate(()=>{
       const proto=CanvasRenderingContext2D.prototype;
       const originalClear=proto.clearRect,originalStroke=proto.strokeRect,originalFill=proto.fillText;
-      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+      window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__lastPlotStrokeRect=null;
       proto.clearRect=function(...args){
         if(this.canvas?.id==='plotCanvas'){
-          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+          window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__fitSummaryTextCalls=[];window.__lastPlotStrokeRect=null;
         }
         return originalClear.apply(this,args);
       };
@@ -444,11 +444,24 @@ try {
         return originalStroke.call(this,x,y,w,h);
       };
       proto.fillText=function(text,...args){
-        if(this.canvas?.id==='plotCanvas'&&String(text)==='Amplitude'&&window.__lastPlotStrokeRect){
-          const frame=window.__lastPlotStrokeRect;
-          window.__fitSummaryFrames.push(frame);
-          const index=window.__fitResidualFrames.lastIndexOf(frame);
-          if(index>=0)window.__fitResidualFrames.splice(index,1);
+        if(this.canvas?.id==='plotCanvas'){
+          const value=String(text);
+          if(/^(I₀ =|P½ =|b =|RMSE =|R² =|No\. of points =)/.test(value)){
+            const transform=this.getTransform();
+            window.__fitSummaryTextCalls.push({
+              text:value,
+              x:transform.a*Number(args[0])+transform.c*Number(args[1])+transform.e,
+              y:transform.b*Number(args[0])+transform.d*Number(args[1])+transform.f,
+              align:this.textAlign,
+              tabWidth:this.measureText('    ').width*Math.abs(transform.a),
+            });
+          }
+          if(value==='Amplitude'&&window.__lastPlotStrokeRect){
+            const frame=window.__lastPlotStrokeRect;
+            window.__fitSummaryFrames.push(frame);
+            const index=window.__fitResidualFrames.lastIndexOf(frame);
+            if(index>=0)window.__fitResidualFrames.splice(index,1);
+          }
         }
         return originalFill.call(this,text,...args);
       };
@@ -462,7 +475,7 @@ try {
         const right=frames.filter(f=>Math.round(f.x)===xs.at(-1));
         const top=items=>items.filter(f=>f.h<f.w*0.5).sort((a,b)=>a.h-b.h)[0]||null;
         const main=items=>items.sort((a,b)=>b.h-a.h)[0]||null;
-        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames,fitSummaryFrames:window.__fitSummaryFrames||[]};
+        return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames,fitSummaryFrames:window.__fitSummaryFrames||[],fitSummaryTextCalls:window.__fitSummaryTextCalls||[]};
       });
     };
     await page.locator('.menu-item[data-menu="tools"]').click();
@@ -485,6 +498,21 @@ try {
     assert.ok(fitSummaryFrame.y>=residualLayoutBefore.rightMain.y-0.5
       &&fitSummaryFrame.y+fitSummaryFrame.h<=residualLayoutBefore.rightMain.y+residualLayoutBefore.rightMain.h+0.5,
       'Fit summary frame must stay within the Variable scan plot vertical bounds');
+    const fitTextCalls=residualLayoutBefore.fitSummaryTextCalls;
+    const fitText=prefix=>fitTextCalls.find(item=>item.text.startsWith(prefix));
+    const i0Call=fitText('I₀ ='),halfCall=fitText('P½ ='),bCall=fitText('b =');
+    const rmseCall=fitText('RMSE ='),r2Call=fitText('R² =');
+    assert.ok(i0Call&&halfCall&&bCall&&rmseCall&&r2Call,
+      'Amplitude fit summary must expose I0, P-half, b, RMSE and R-squared text positions: '+JSON.stringify(fitTextCalls));
+    assert.ok(i0Call.y<halfCall.y&&halfCall.y<bCall.y&&bCall.y<r2Call.y,
+      'P-half must appear above the tab-aligned b/RMSE row, with R-squared below it');
+    assert.equal(bCall.y,rmseCall.y,'b and RMSE must share one row');
+    assert.equal(bCall.align,'left','b column must be left-aligned');
+    assert.equal(rmseCall.align,'left','RMSE column must be left-aligned');
+    assert.ok(rmseCall.x>bCall.x,'RMSE must start at the next tab column');
+    const tabStops=(rmseCall.x-bCall.x)/bCall.tabWidth;
+    assert.ok(Math.abs(tabStops-Math.round(tabStops))<1e-6,
+      'RMSE must start on a measured tab stop');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);
