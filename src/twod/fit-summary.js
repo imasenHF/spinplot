@@ -14,7 +14,7 @@ export function scanFitResultLines(data, selection = []) {
         continue;
       }
       if (name === 'Amplitude' && key === 'b' && selection.includes('I0')) continue;
-      if (key === 'I0' && selection.includes('b')) {
+      if (name === 'Amplitude' && key === 'I0' && selection.includes('b')) {
         fields.push('I₀ = ' + format(fit.parameters.I0) + '    b = ' + format(fit.parameters.b));
         continue;
       }
