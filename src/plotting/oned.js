@@ -17,9 +17,9 @@ import { axisKind, gFromB, BFromG } from "../processing/axis.js";
 import { tickFormatter } from "../twod/ticks.js";
 import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js";
 import * as TwoD from "../twod/ui.js";
-import { fitMainRows, resolveMainInsets } from "./footprint.js";
+import { fitMainRows, fitResidualPanelSlot, resolveMainInsets } from "./footprint.js";
 import { resolveLegendPosition } from "./legend-position.js";
-import { scanFitFormulaType, measureScanFitFormula, drawScanFitFormula } from "./math-formula.js";
+import { scanFitFormulaType, measureScanFitFormula, drawScanFitFormula, drawScanPowerAxisLabel } from "./math-formula.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -354,15 +354,17 @@ export function renderFigure(
     if (!Array.isArray(lines) || !lines.length) return;
     const { x0, y0, pw, ph } = geom;
     const size = Math.max(8, Math.min(24, Number(sp.fitResultFontSize) || 12));
-    const lineHeight = size * 1.35;
+    const lineHeight = size * 1.5,
+      rowGap = size * 0.16;
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
     ctx.font = `${size}px ${chosenFont}`;
     const rows = lines.map((line) => {
       const formula = scanFitFormulaType(line);
       if (formula) {
-        const metrics = measureScanFitFormula(ctx, formula, size, chosenFont);
-        return { text: line, formula, width: metrics.width, height: metrics.height };
+        const formulaSize = size * 1.08;
+        const metrics = measureScanFitFormula(ctx, formula, formulaSize, chosenFont);
+        return { text: line, formula, formulaSize, width: metrics.width, height: metrics.height };
       }
       return { text: line, width: ctx.measureText(line).width, height: lineHeight };
     });
@@ -370,22 +372,26 @@ export function renderFigure(
     const visible = [];
     let contentHeight = 0;
     for (const row of rows) {
-      if (contentHeight + row.height > maxHeight) break;
+      const gap = visible.length ? rowGap : 0;
+      if (contentHeight + gap + row.height > maxHeight) break;
       visible.push(row);
-      contentHeight += row.height;
+      contentHeight += gap + row.height;
     }
     if (visible.length < rows.length) {
       const more = `… (${rows.length-visible.length} more)`;
-      while (visible.length && contentHeight + lineHeight > maxHeight) {
+      while (visible.length && contentHeight + (visible.length ? rowGap : 0) + lineHeight > maxHeight) {
         contentHeight -= visible.pop().height;
+        if (visible.length) contentHeight -= rowGap;
       }
-      if (contentHeight + lineHeight <= maxHeight) {
+      if (contentHeight + (visible.length ? rowGap : 0) + lineHeight <= maxHeight) {
+        if (visible.length) contentHeight += rowGap;
         visible.push({ text: more, width: ctx.measureText(more).width, height: lineHeight });
         contentHeight += lineHeight;
       }
     }
     if (!visible.length) { ctx.restore(); return; }
-    const width = Math.min(pw - 12, Math.max(70, ...visible.map(row => row.width + 16)));
+    const hasFormula = visible.some(row => row.formula);
+    const width = Math.min(pw - 12, Math.max(hasFormula ? 250 : 70, ...visible.map(row => row.width + 16)));
     const height = contentHeight + 10;
     if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
     const position = sp.fitResultPosition || 'lower_right';
@@ -411,13 +417,13 @@ export function renderFigure(
     for (const row of visible) {
       if (row.formula) {
         const availableWidth = Math.max(1, width - 16);
-        const scale = row.width > availableWidth ? Math.max(0.6, availableWidth / row.width) : 1;
-        drawScanFitFormula(ctx, row.formula, left + 8, rowY, size * scale, chosenFont, theme.text);
+        const scale = row.width > availableWidth ? Math.max(0.65, availableWidth / row.width) : 1;
+        drawScanFitFormula(ctx, row.formula, left + 8, rowY, row.formulaSize * scale, chosenFont, theme.text);
       } else {
         ctx.font = `${size}px ${chosenFont}`;
         ctx.fillText(row.text, left + 8, rowY, width - 16);
       }
-      rowY += row.height;
+      rowY += row.height + rowGap;
     }
     ctx.restore();
   }
@@ -458,7 +464,7 @@ export function renderFigure(
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       const unit = item.unit ? ' (' + item.unit + ')' : '';
-      const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) : '';
+      const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) + (item.unit || '') : '';
       ctx.fillText(item.label + unit + rmse, x0 + 4, laneY + 1, Math.max(10, pw - 8));
       ctx.font = `${Math.max(8, tickSize - 2)}px ${font}`;
       ctx.textAlign = 'right';
@@ -568,46 +574,96 @@ export function renderFigure(
       unitH = totalHeight / rows;
     if (!(unitW > 80 && unitH > 80))
       throw new Error("Canvas too small for current subplot layout");
-    const buildFrameEntries = (rowHeights) => model.map((m, index) => {
-      const cell = cells[index],
-        box = {
-          cellW: unitW * cell.colSpan + gx * (cell.colSpan - 1),
-          cellH: cell.rowSpan === 1
-            ? rowHeights[cell.row - 1]
-            : unitH * cell.rowSpan + gy * (cell.rowSpan - 1),
-        },
-        options = {
-          axisSize: axisTitleSize,
-          projectionTitleSize,
-          xTitleDistance: Number($("xTitleDistance").value),
-          yTitleDistance: Number($("yTitleDistance").value),
-          g: subplotGConfig(m.sp),
-          frequency: displayFrequency(m.sp, m.curves),
-        },
-        plotSettings = m.sp.twoD ? m.sp.twoD.settings : null;
-      return {
-        index,
-        row: cell.row,
-        col: cell.col,
-        rowSpan: cell.rowSpan,
-        colSpan: cell.colSpan,
-        twoD: !!m.sp.twoD,
-        box,
-        plotSettings,
-        emptyProjectionSpace: m.sp.emptyProjectionSpace,
-        insets: plotSettings
-          ? TwoD.plotInsets(m.matrix, plotSettings, box, m.sp.title, options)
-          : oneDInsets(
-              ctx,
-              m,
-              box.cellH,
-              box.cellW,
-              font,
-              axisTitleSize,
-              subTitleSize,
-            ),
-      };
-    });
+    const buildFrameEntries = (rowHeights) => {
+      const entries = model.map((m, index) => {
+        const cell = cells[index],
+          box = {
+            cellW: unitW * cell.colSpan + gx * (cell.colSpan - 1),
+            cellH: cell.rowSpan === 1
+              ? rowHeights[cell.row - 1]
+              : unitH * cell.rowSpan + gy * (cell.rowSpan - 1),
+          },
+          options = {
+            axisSize: axisTitleSize,
+            projectionTitleSize,
+            xTitleDistance: Number($("xTitleDistance").value),
+            yTitleDistance: Number($("yTitleDistance").value),
+            g: subplotGConfig(m.sp),
+            frequency: displayFrequency(m.sp, m.curves),
+          },
+          plotSettings = m.sp.twoD ? m.sp.twoD.settings : null,
+          insets = plotSettings
+            ? TwoD.plotInsets(m.matrix, plotSettings, box, m.sp.title, options)
+            : oneDInsets(
+                ctx,
+                m,
+                box.cellH,
+                box.cellW,
+                font,
+                axisTitleSize,
+                subTitleSize,
+              ),
+          residualPanel = !plotSettings && m.sp.fitResidualPanelEnabled === true
+            ? {
+                naturalTop: insets.top,
+                height: Array.isArray(m.sp.fitResidualSeries) && m.sp.fitResidualSeries.length > 1 ? 108 : 84,
+                gap: 8,
+              }
+            : null;
+        return {
+          index,
+          row: cell.row,
+          col: cell.col,
+          rowSpan: cell.rowSpan,
+          colSpan: cell.colSpan,
+          twoD: !!m.sp.twoD,
+          box,
+          plotSettings,
+          emptyProjectionSpace: m.sp.emptyProjectionSpace,
+          insets,
+          residualPanel,
+        };
+      });
+      const topProjectionByRow = new Map();
+      for (const entry of entries) {
+        if (entry.insets.hasTopProjection !== true) continue;
+        const current = topProjectionByRow.get(entry.row);
+        if (!current || entry.insets.top > current.insets.top)
+          topProjectionByRow.set(entry.row, entry);
+      }
+      const residualTopByRow = new Map();
+      for (const entry of entries) {
+        if (!entry.residualPanel) continue;
+        const projection = topProjectionByRow.get(entry.row);
+        // The residual panel owns the top accessory slot while enabled.
+        // Preserve a right-space preference, but never let top occupancy cover it.
+        entry.emptyProjectionSpace =
+          entry.emptyProjectionSpace === "right" || entry.emptyProjectionSpace === "both"
+            ? "right"
+            : "none";
+        const requiredTop = projection
+          ? entry.residualPanel.naturalTop
+            + projection.insets.topH
+            + projection.insets.gapY
+            + projection.insets.gSpace
+            + entry.residualPanel.gap
+          : entry.residualPanel.naturalTop
+            + entry.residualPanel.height
+            + entry.residualPanel.gap;
+        residualTopByRow.set(
+          entry.row,
+          Math.max(residualTopByRow.get(entry.row) || 0, requiredTop),
+        );
+      }
+      // Apply the same row top margin to every subplot, including layouts that
+      // cannot use the single-row packing path (for example, spanning cells).
+      for (const entry of entries) {
+        const requiredTop = residualTopByRow.get(entry.row);
+        if (Number.isFinite(requiredTop))
+          entry.insets.top = Math.max(entry.insets.top, requiredTop);
+      }
+      return entries;
+    };
     let rowHeights = Array(rows).fill(unitH),
       frameEntries = buildFrameEntries(rowHeights),
       rowPack = null;
@@ -813,19 +869,26 @@ export function renderFigure(
       if (sp.secondaryYAxis) insetR = Math.max(insetR, 78);
       const x0 = cellX + insetL,
         pw = cellW - insetL - insetR;
-      let y0 = cellY + insetT,
+      const y0 = cellY + insetT,
         ph = cellH - insetT - insetB;
-      const residualCount = Array.isArray(sp.fitResidualSeries) ? sp.fitResidualSeries.length : 0;
-      const residualHeight = sp.fitResidualPanelEnabled
-        ? Math.min(residualCount > 1 ? 108 : 84, Math.max(residualCount > 1 ? 68 : 48, ph * (residualCount > 1 ? 0.32 : 0.26)))
-        : 0;
-      const residualGap = residualHeight ? 8 : 0;
-      const residualGeom = residualHeight && ph - residualHeight - residualGap >= 48
-        ? { x0, y0, pw, ph: residualHeight }
-        : null;
-      if (residualGeom) {
-        y0 += residualHeight + residualGap;
-        ph -= residualHeight + residualGap;
+      const residualPanel = frameEntries[si].residualPanel;
+      let residualGeom = null;
+      if (residualPanel) {
+        const projectionEntry = frameEntries
+          .filter(entry => entry.row === cell.row && entry.insets.hasTopProjection === true)
+          .sort((a, b) => b.insets.top - a.insets.top)[0];
+        const projectionTop = projectionEntry
+          ? mixedInsets.get(projectionEntry.index).top
+          : insetT;
+        const slot = fitResidualPanelSlot({
+          naturalTop: residualPanel.naturalTop,
+          sharedTop: projectionTop,
+          topProjection: projectionEntry?.insets ?? null,
+          fallbackHeight: residualPanel.height,
+          gap: residualPanel.gap,
+        });
+        if (slot.height >= 40)
+          residualGeom = { x0, y0: cellY + slot.top, pw, ph: slot.height };
       }
       if (!(pw > 40 && ph > 28))
         throw new Error(`Subplot ${si + 1}: plot area too small`);
@@ -977,15 +1040,22 @@ export function renderFigure(
       ctx.font = `${axisTitleSize}px ${font}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText(
-        sp.xAxisLabel ||
-          (curves[0]?.xAxis && axisKind(curves[0].xAxis) !== "field"
-            ? curves[0].xAxis.name +
-              (curves[0].xAxis.unit ? " (" + curves[0].xAxis.unit + ")" : "")
-            : $("xLabel").value || "Magnetic Field (G)"),
-        x0 + pw / 2,
-        y0 + ph + xTitleDistance,
-      );
+      if (sp.xAxisMathLabel === "sqrt-power") {
+        drawScanPowerAxisLabel(
+          ctx, x0 + pw / 2, y0 + ph + xTitleDistance,
+          axisTitleSize, font, theme.text,
+        );
+      } else {
+        ctx.fillText(
+          sp.xAxisLabel ||
+            (curves[0]?.xAxis && axisKind(curves[0].xAxis) !== "field"
+              ? curves[0].xAxis.name +
+                (curves[0].xAxis.unit ? " (" + curves[0].xAxis.unit + ")" : "")
+              : $("xLabel").value || "Magnetic Field (G)"),
+          x0 + pw / 2,
+          y0 + ph + xTitleDistance,
+        );
+      }
       if (sp.secondaryYAxis && rightBounds) {
         const rightTicks=ticksWithStep(rightMin,rightMax,NaN,5);
         const rightLabels=tickFormatter(rightTicks,subplotTickFormat(sp,"y"));

@@ -20,7 +20,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 .github/workflows/            构建、Pages、预览和发布检查
 ```
 
-- 正式 `main` 当前版本为 **0.11.1**，发布标签 [`v0.11.1`](https://github.com/imasenHF/spinplot/releases/tag/v0.11.1) 已创建；项目格式 11、配置格式 10 保持不变。
+- 正式 `main` 当前版本为 **0.11.1**；PR #13 候选版本为 **0.11.2**，待正式 Pages 与生产 HTTP 检查后发布。项目格式 11、配置格式 10 保持不变。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
@@ -41,7 +41,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 
 一维基线（全谱均值、区间、参考坐标）先于幅度处理，噪声区域或自动估算用于一维信号缩放。显示堆叠偏移不得参与科学定量。二维图当前直接选择实部/虚部/模值，未实施一维基线处理在矩阵上的自动扩展。
 
-二维投影支持 mean、max、min、peak-to-peak、RMS、sum；统计区间与显示坐标范围分别保存。均值/和是离散采样点统计，不是按坐标步长加权的数值积分；RMS 不保留正负号。Variable scan 逐个扫描坐标使用同一归约函数计算统计值，但独立保存 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax`，不读取源图的 `yMode` 或 `projectionXMin/Max`。创建时仅以源图右侧投影设置作为初始值；扫描视图不渲染二维顶部/右侧投影。屏幕预览可以按像素重采样，二维投影仍使用完整矩阵；矢量输出的规模与浏览器资源有关。
+二维投影支持 mean、max、min、peak-to-peak、RMS、sum；统计区间与显示坐标范围分别保存。Variable scan 残差图可复用同行二维 Top projection 的布局框，但残差数据仍来自独立功率拟合，不调用二维投影统计，也不改变原始矩阵。均值/和是离散采样点统计，不是按坐标步长加权的数值积分；RMS 不保留正负号。Variable scan 逐个扫描坐标使用同一归约函数计算统计值，但独立保存 `scanStatistic`、`scanStatisticMin`、`scanStatisticMax`，不读取源图的 `yMode` 或 `projectionXMin/Max`。创建时仅以源图右侧投影设置作为初始值；扫描视图不渲染二维顶部/右侧投影。屏幕预览可以按像素重采样，二维投影仍使用完整矩阵；矢量输出的规模与浏览器资源有关。
 
 图形布局要求同等网格跨度的主坐标框大小一致，投影、色标、`g` 轴和外侧图例占用的附加空间不得随子图类型导致主框尺寸漂移。图表及导出设置可以包含全局/子图覆盖；应明确继承范围。
 

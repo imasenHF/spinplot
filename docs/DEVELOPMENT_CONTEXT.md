@@ -1,3 +1,15 @@
+## 2026-11-02 拟合残差上投影布局与公式注释间距（PR #13）
+
+- 当前开发分支：`fix/fit-residual-projection-slot-formula-spacing-20261102`，基于正式 v0.11.1；候选应用版本 v0.11.2。项目格式 11、配置格式 10 不变。
+- 拟合残差面板优先使用同一行二维子图的 Top projection 框。面板的 X 位置、宽度、高度和垂直坐标与该投影框一致；残差显示关闭时继续保留该区域，主拟合图的位置不随开关改变。若同行不存在 Top projection，则为残差单独预留顶部区域。
+- 为避免旧的 `emptyProjectionSpace=top/both` 将主拟合图移动到残差面板区域，残差面板启用时临时保留右侧占位选项、关闭顶部占位；不修改已保存的原始配置字段。
+- `src/plotting/footprint.js` 新增 `fitResidualPanelSlot` 计算投影复用/独立预留两种布局；`src/plotting/oned.js` 在行布局阶段计算顶部空间并绘制残差。Canvas、SVG、PDF 使用同一绘图路径。
+- 拟合结果注释增加公式排版宽度（最小 250 px，受绘图区限制）、公式字号（参数字号的 1.08 倍）、分式/根号公式高度和参数行距，减少 P½ 下标与下一行参数的重叠。
+- 单元测试覆盖投影复用、独立顶部区域和可用空间不足；Chromium 合成数据回归检查残差框与相邻 Top projection 的位置/高度一致、主拟合图坐标框保持不变，并保存复核截图。
+- 尚待 PR quality、Pages 部署、生产 HTTP 和自动 Release 验收。残差科学数值模型不变，真实实验数据的残差分布仍需独立审阅。
+
+---
+
 ## 2026-11-02 Variable scan 公式、透明度、√P 坐标与拟合残差面板（PR #12）
 
 - PR [#12](https://github.com/imasenHF/spinplot/pull/12) 合并前的最新提交 [cf038596](https://github.com/imasenHF/spinplot/commit/cf038596b3bc62a9c482dcd33193a01778fcdc68) 的 [质量检查](https://github.com/imasenHF/spinplot/actions/runs/41397812867)、[Legend 浏览器回归](https://github.com/imasenHF/spinplot/actions/runs/41397812866) 和 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41397812852) 全部通过。综合浏览器回归明确覆盖残差默认关闭、开启后幅度/线宽两条残差 lane、SVG 输出、PDF 输出、关闭后空白面板及项目保存/恢复。正式 Pages 部署 [41397984916](https://github.com/imasenHF/spinplot/actions/runs/41397984916)、生产 HTTP 检查 [41398160428](https://github.com/imasenHF/spinplot/actions/runs/41398160428) 与发布工作流 [41398180006](https://github.com/imasenHF/spinplot/actions/runs/41398180006) 均成功；线上版本由 HTTP 检查确认。浏览器残差回归使用合成扫描数据，未将其描述为真实实验数据验证。

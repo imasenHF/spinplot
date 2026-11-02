@@ -17,7 +17,7 @@ test('Bruker amplitude summary reports I0, exponent and P-half model parameter',
   const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['formula', 'I0', 'b', 'half']);
   assert.deepEqual(lines, [
     'Amplitude',
-    'Spp(P) = I₀√P/(1 + P/P½)^(b/2)',
+    'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)',
     'I₀ = 3.25',
     'b = 1.4',
     'P½ = 12.5 mW',
@@ -29,8 +29,8 @@ test('invalid fits have no plotted result', () => {
 test('amplitude and linewidth summaries use their own parameter sets', () => {
   const lines = scanFitResultLines({ valid: true, amplitudeFit, linewidthFit },
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
-  assert.ok(lines.includes('Spp(P) = I₀√P/(1 + P/P½)^(b/2)'));
-  assert.ok(lines.includes('ΔB(P) = A√(1 + P/Psat) + C'));
+  assert.ok(lines.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'));
+  assert.ok(lines.includes('ΔB(P) = A·sqrt(1 + P/Psat) + C'));
   assert.ok(lines.includes('I₀ = 3.25'));
   assert.ok(lines.includes('b = 1.4'));
   assert.ok(lines.includes('P½ = 12.5 mW'));
@@ -40,7 +40,7 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
 });
 
 
-test('fit residuals use fitted observations and the displayed power coordinate', () => {
+test('fit residuals preserve fitted residual values and displayed power coordinates', () => {
   const data = { valid: true, amplitudeFit: { ...amplitudeFit, points: [
     { index: 1, power: 4, residual: 0.2 },
     { index: 3, power: 9, residual: -0.1 },
@@ -50,11 +50,15 @@ test('fit residuals use fitted observations and the displayed power coordinate',
     amplitude: true, linewidth: false, displayX: Math.sqrt,
   });
   assert.equal(series.label, 'Amplitude residual');
+  assert.equal(series.unit, '');
   assert.equal(series.curveIndex, -103);
-  assert.deepEqual(series.points, [
-    { x: 2, y: 0.2, index: 1 },
-    { x: 3, y: -0.1, index: 3 },
-  ]);
+  assert.equal(series.points.length, 2);
+  assert.deepEqual(series.points.map(point => point.index), [1, 3]);
+  assert.ok(Math.abs(series.points[0].x - 2) < 1e-12);
+  assert.ok(Math.abs(series.points[0].y - 0.2) < 1e-12);
+  assert.ok(Math.abs(series.points[1].x - 3) < 1e-12);
+  assert.ok(Math.abs(series.points[1].y + 0.1) < 1e-12);
+  assert.equal(series.rmse, 0.12);
 });
 test('amplitude and linewidth residuals remain separate and retain their units', () => {
   const data = {

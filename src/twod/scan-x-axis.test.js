@@ -11,7 +11,7 @@ test('square-root power coordinates affect display values only', () => {
 
 test('square-root power axis keeps a physical unit label', () => {
   assert.deepEqual(scanPowerXAxis({ name: 'Microwave power', unit: 'mW' }, 'sqrt'), {
-    name: 'Square-root microwave power', unit: '√mW',
+    name: 'Square-root microwave power', unit: 'mW^(1/2)',
   });
   const axis = { name: 'Microwave power', unit: 'mW' };
   assert.equal(scanPowerXAxis(axis, 'power'), axis);

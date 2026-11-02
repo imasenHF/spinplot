@@ -241,3 +241,7 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-parameter-row .control-label{min-width:0}
 .scan-fit-parameter-row input[type=number]{width:100%;min-width:0}
 @media(max-width:520px){.scan-fit-parameter-grid{grid-template-columns:1fr}}
+
+.scan-power-x-scale-control .scan-power-x-math{display:block;grid-column:1/-1;justify-self:start;margin-top:2px;line-height:1}
+.scan-power-x-scale-control .scan-power-x-math[hidden]{display:none}
+.scan-power-x-scale-control .scan-power-x-math math{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:14px}

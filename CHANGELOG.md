@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.11.2 — 2026-11-02
+
+- Move the optional Variable scan fit-residual panel into the same-row 2D top-projection frame. Match its horizontal span and frame height to the adjacent projection; when no top projection exists, reserve a dedicated upper slot. Keep the main fit plot in its own frame instead of splitting it internally. Preserve the blank slot while residual display is off.
+- Improve fit-result annotation spacing: widen formula-bearing summaries, render equations slightly larger, increase fraction/subscript clearance and row spacing, and keep Canvas, SVG and PDF geometry consistent.
+
 ## 0.11.1 — 2026-11-02
 
 - Render Variable scan fit equations in the plot annotation with vector mathematical typography (fraction bars, subscripts, superscripts and radical overbars), shared by Canvas, SVG and PDF output. Restyle the background-opacity range control with the application's raised button treatment and a percentage readout.
