@@ -477,6 +477,8 @@ try {
     assert.ok(fitSummaryFrame,'Lower-right fit summary must render a measurable frame');
     assert.ok(fitSummaryFrame.x+fitSummaryFrame.w>=plotCanvasWidth*0.85,
       'Lower-right fit summary uses the available right side of its subplot cell');
+    assert.ok(fitSummaryFrame.w<plotCanvasWidth*0.4,
+      'Fit summary width follows its formula and grouped parameter rows instead of reserving a wide fixed minimum');
     assert.equal(await residualToggle.isChecked(),false,'Fit residual display is optional and disabled by default');
     assert.equal(await scanPanel.locator('[data-twod="scanMeasurement"]').inputValue(),'both');
     assert.equal(await scanPanel.locator('[data-twod="scanFitAmplitude"]').isChecked(),true);

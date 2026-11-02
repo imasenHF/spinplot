@@ -118,6 +118,11 @@ export function fitResultLowerRight(x0, y0, pw, ph, width, height, cellRight) {
   return { left: rightEdge - width - 6, top: y0 + ph - height - 6 };
 }
 
+export function fitResultSummaryWidth(rows, plotWidth) {
+  const contentWidth = Math.max(70, ...rows.map((row) => row.width + 16));
+  return Math.min(plotWidth - 12, contentWidth);
+}
+
 export function renderFigure(
   canvas,
   logicalW,
@@ -409,7 +414,7 @@ export function renderFigure(
     }
     if (!visible.length) { ctx.restore(); return; }
     const hasFormula = visible.some(row => row.formula);
-    const width = Math.min(pw - 12, Math.max(hasFormula ? 250 : 70, ...visible.map(row => row.width + 16)));
+    const width = fitResultSummaryWidth(visible, pw);
     const height = contentHeight + 10;
     if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
     const position = sp.fitResultPosition || 'lower_right';
