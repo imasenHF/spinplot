@@ -36,8 +36,9 @@ export function scanFitResultLines(data, selection = []) {
           fields.push('R² = ' + format(fit.r2) + '    RMSE = ' + format(fit.rmse));
           continue;
         }
-        if (key === 'r2' || key === 'rmse' && selection.includes('r2')) continue;
-        if (key === 'rmse') fields.push('RMSE = ' + format(fit.rmse));
+        if (key === 'rmse' && selection.includes('r2')) continue;
+        if (key === 'r2') fields.push('R² = ' + format(fit.r2));
+        else if (key === 'rmse') fields.push('RMSE = ' + format(fit.rmse));
         else if (key === 'n') fields.push('No. of points = ' + format(fit.n));
         else if (entry) fields.push(entry[0] + ' = ' + format(entry[1]) + entry[2]);
       }
