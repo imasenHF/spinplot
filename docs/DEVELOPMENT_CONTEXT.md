@@ -4,7 +4,7 @@
 - 作图区拟合注释将幅度和线宽公式绘制为矢量数学排版，分式线、根号上横线、上下标使用 Canvas 路径和文本对象。屏幕、SVG 与 PDF 共用绘图路径；参数、R²、RMSE 和点数仍为普通数值文本。
 - 背景透明度滑块采用与逐曲线颜色按钮一致的立体边框和明暗阴影，增加主题色进度轨道及百分比读数；保存字段仍为 `scanFitLabelOpacity`。
 - Variable scan 在 `Scan X axis = Microwave power` 或原生校准 mW 坐标时增加 `P (mW)` / `√P (√mW)` 显示选择。原始功率、幅度/线宽提取、拟合计算及 CSV 仍使用 mW；仅衍生曲线的绘图 X 坐标和轴标题变换。切换显示模式时解除全局/联动 X 轴，将有效 X min/max 转为局部范围并在 P 与 √P 间换算，手动 X step 清空；切换 acquired scan variable 与 microwave power 时重置局部 X 范围。新增 `scanPowerXScale` 设置，旧项目缺省为 `power`，项目/配置格式不变。
-- PR [#12](https://github.com/imasenHF/spinplot/pull/12) 已创建并标记 Ready for review，尚未合并或部署。最终提交 [528b3a03](https://github.com/imasenHF/spinplot/commit/528b3a03711cf52dee1f08ea086f3704bdfebc79) 的 [质量检查](https://github.com/imasenHF/spinplot/actions/runs/41394905934)、[Legend 浏览器回归](https://github.com/imasenHF/spinplot/actions/runs/41394906212) 和 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41394905886) 均通过。质量检查包括 lint、格式、单元测试、生产构建和 Chromium 交互回归；浏览器回归覆盖公式 SVG、轴变换、范围换算、滑块样式、CSV 物理功率值及项目保存/重载。应用版本仍为 0.11.0，项目/配置格式保持 11/10，未触发正式部署。
+- PR [#12](https://github.com/imasenHF/spinplot/pull/12) 已创建并标记 Ready for review，尚未合并或部署。功能代码最终提交 [c6212473](https://github.com/imasenHF/spinplot/commit/c6212473f8289194ba9b4ac63961a37ab6f51f43) 的 [质量检查](https://github.com/imasenHF/spinplot/actions/runs/41395227955)、[Legend 浏览器回归](https://github.com/imasenHF/spinplot/actions/runs/41395227825) 和 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41395227937) 均通过。质量检查包括 lint、格式、单元测试、生产构建和 Chromium 交互回归；浏览器回归覆盖公式 SVG、功率/√功率坐标、范围换算、滑块样式、CSV 物理功率值及项目保存/重载。原生校准 mW 轴也可使用 √P 显示。应用版本仍为 0.11.0，项目/配置格式保持 11/10，未触发正式部署。
 - 科学模型及参数不变；本任务只调整公式展示、控件外观和功率横坐标表达。
 
 ## 2026-11-02 Bruker 三参数幅度饱和模型与真实数据验证（PR #11 已合并并发布）
