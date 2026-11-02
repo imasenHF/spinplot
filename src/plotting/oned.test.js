@@ -55,7 +55,7 @@ test('fit-result summary width follows the widest rendered row without a fixed f
 });
 
 test('fit-result tab-separated cells use consistent left-aligned tab stops',()=>{
- const layout=fitResultTabbedTextLayout('b = 1.4\\tRMSE = 0.12',text=>text.length*10,40);
+ const layout=fitResultTabbedTextLayout('b = 1.4\tRMSE = 0.12',text=>text.length*10,40);
  assert.deepEqual(layout,{
   cells:[
    {text:'b = 1.4',offset:0,width:70},
