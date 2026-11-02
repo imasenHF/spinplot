@@ -145,6 +145,26 @@ test("fit residuals occupy the exact top-projection frame when one is present", 
   assert.deepEqual(slot, { top: 60, height: 90, source: "projection" });
 });
 
+test("fit residual title gap stays below the residual panel and above the main plot", () => {
+  const projected = fitResidualPanelSlot({
+    naturalTop: 34,
+    sharedTop: 34 + 90 + 8 + 12 + 8 + 18,
+    topProjection: { hasTopProjection: true, topH: 90, gapY: 8, gSpace: 12 },
+    fallbackHeight: 84,
+    gap: 8,
+    titleGap: 18,
+  });
+  assert.deepEqual(projected, { top: 42, height: 90, source: "projection" });
+  const reserved = fitResidualPanelSlot({
+    naturalTop: 34,
+    sharedTop: 34 + 84 + 8 + 18,
+    fallbackHeight: 84,
+    gap: 8,
+    titleGap: 18,
+  });
+  assert.deepEqual(reserved, { top: 34, height: 84, source: "reserved" });
+});
+
 test("fit residuals reserve a dedicated top slot when no top projection exists", () => {
   const slot = fitResidualPanelSlot({
     naturalTop: 34,
