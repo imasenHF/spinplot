@@ -61,7 +61,7 @@ function layout(ctx, type, size, family) {
     const fractionWidth = Math.max(numeratorWidth, denominatorWidth) + size * 0.6;
     result = {
       type, lhs, numerator, denominator, lhsWidth, numeratorWidth, denominatorWidth,
-      gap, fractionWidth, width: lhsWidth + gap + fractionWidth, height: size * 2.42;
+      gap, fractionWidth, width: lhsWidth + gap + fractionWidth, height: size * 2.42,
     };
   } else if (type === 'linewidth') {
     const radicand = [
@@ -76,7 +76,7 @@ function layout(ctx, type, size, family) {
     result = {
       type, lhs, radicand, lhsWidth, radicandWidth, radicalWidth, suffixWidth, gap,
       width: lhsWidth + gap + radicalWidth * 0.78 + radicandWidth + size * 0.25 + suffixWidth,
-      height: size * 2.02;
+      height: size * 2.02,
     };
   } else {
     result = { type: null, width: 0, height: 0 };
