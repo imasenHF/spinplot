@@ -9,8 +9,8 @@ export function scanFitResultLines(data, selection = []) {
     for (const key of selection) {
       if (key === 'formula') {
         fields.push(name === 'Amplitude'
-          ? 'Spp(P) = I₀√P/(1 + P/P½)^(b/2)'
-          : 'ΔB(P) = A√(1 + P/Psat) + C');
+          ? 'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'
+          : 'ΔB(P) = A·sqrt(1 + P/Psat) + C');
         continue;
       }
       const entry = name === 'Amplitude'
@@ -33,27 +33,31 @@ export function scanFitResultLines(data, selection = []) {
 }
 
 
-// Extract residuals from the fitted observations; excluded and invalid points are absent.
+// Extract signed relative residuals from fitted observations; excluded and invalid points are absent.
+// Normalize by |fitted| so the percentage keeps its sign for positive physical features.
 export function scanFitResidualSeries(data, {
   amplitude = true,
   linewidth = true,
   displayX = value => value,
-  amplitudeUnit = '',
-  linewidthUnit = '',
-} = {}) {
+  } = {}) {
   if (!data?.valid) return [];
   const series = [];
-  for (const [key, label, fit, enabled, curveIndex, unit] of [
-    ['amplitude', 'Amplitude residual', data.amplitudeFit, amplitude, -103, amplitudeUnit],
-    ['linewidth', 'Linewidth residual', data.linewidthFit, linewidth, -104, linewidthUnit],
+  for (const [key, label, fit, enabled, curveIndex] of [
+    ['amplitude', 'Amplitude relative residual', data.amplitudeFit, amplitude, -103],
+    ['linewidth', 'Linewidth relative residual', data.linewidthFit, linewidth, -104],
   ]) {
     if (!enabled || !fit?.valid || !Array.isArray(fit.points)) continue;
-    const points = fit.points.map(point => ({
-      x: displayX(point.power),
-      y: point.residual,
-      index: point.index,
-    })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
-    if (points.length) series.push({ key, label, unit, curveIndex, rmse: fit.rmse, points });
+    const points = fit.points.map(point => {
+      const fitted = Number(point.fitted);
+      const observed = Number(point.signal);
+      const relativeResidual = Number.isFinite(observed) && Number.isFinite(fitted) && Math.abs(fitted) > 0
+        ? 100 * (observed - fitted) / Math.abs(fitted)
+        : NaN;
+      return { x: displayX(point.power), y: relativeResidual, index: point.index };
+    }).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (!points.length) continue;
+    const rmse = Math.sqrt(points.reduce((sum, point) => sum + point.y * point.y, 0) / points.length);
+    series.push({ key, label, unit: '%', curveIndex, rmse, points });
   }
   return series;
 }

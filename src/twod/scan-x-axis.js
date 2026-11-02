@@ -6,7 +6,7 @@ export function scanPowerXCoordinate(power, scale = 'power') {
 
 export function scanPowerXAxis(axis, scale = 'power') {
   if (scale !== 'sqrt') return axis;
-  return { name: 'Square-root microwave power', unit: '√mW' };
+  return { name: 'Square-root microwave power', unit: 'mW^(1/2)' };
 }
 
 export function convertScanPowerBounds(bounds = {}, from = 'power', to = 'sqrt') {

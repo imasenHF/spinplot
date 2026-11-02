@@ -17,7 +17,7 @@ test('Bruker amplitude summary reports I0, exponent and P-half model parameter',
   const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['formula', 'I0', 'b', 'half']);
   assert.deepEqual(lines, [
     'Amplitude',
-    'Spp(P) = I₀√P/(1 + P/P½)^(b/2)',
+    'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)',
     'I₀ = 3.25',
     'b = 1.4',
     'P½ = 12.5 mW',
@@ -29,8 +29,8 @@ test('invalid fits have no plotted result', () => {
 test('amplitude and linewidth summaries use their own parameter sets', () => {
   const lines = scanFitResultLines({ valid: true, amplitudeFit, linewidthFit },
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
-  assert.ok(lines.includes('Spp(P) = I₀√P/(1 + P/P½)^(b/2)'));
-  assert.ok(lines.includes('ΔB(P) = A√(1 + P/Psat) + C'));
+  assert.ok(lines.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'));
+  assert.ok(lines.includes('ΔB(P) = A·sqrt(1 + P/Psat) + C'));
   assert.ok(lines.includes('I₀ = 3.25'));
   assert.ok(lines.includes('b = 1.4'));
   assert.ok(lines.includes('P½ = 12.5 mW'));
@@ -42,35 +42,41 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
 
 test('fit residuals use fitted observations and the displayed power coordinate', () => {
   const data = { valid: true, amplitudeFit: { ...amplitudeFit, points: [
-    { index: 1, power: 4, residual: 0.2 },
-    { index: 3, power: 9, residual: -0.1 },
-    { index: 4, power: 16, residual: NaN },
+    { index: 1, power: 4, signal: 10.2, fitted: 10, residual: 0.2 },
+    { index: 3, power: 9, signal: 8.8, fitted: 8, residual: 0.8 },
+    { index: 4, power: 16, signal: 5, fitted: 0, residual: 5 },
+    { index: 5, power: 25, signal: NaN, fitted: 5, residual: NaN },
   ] } };
   const [series] = scanFitResidualSeries(data, {
     amplitude: true, linewidth: false, displayX: Math.sqrt,
   });
-  assert.equal(series.label, 'Amplitude residual');
+  assert.equal(series.label, 'Amplitude relative residual');
+  assert.equal(series.unit, '%');
   assert.equal(series.curveIndex, -103);
   assert.deepEqual(series.points, [
-    { x: 2, y: 0.2, index: 1 },
-    { x: 3, y: -0.1, index: 3 },
+    { x: 2, y: 2, index: 1 },
+    { x: 3, y: 10, index: 3 },
   ]);
+  assert.ok(Math.abs(series.rmse - Math.sqrt(52)) < 1e-12,
+    'Residual RMSE is calculated from the relative residual percentages');
 });
 test('amplitude and linewidth residuals remain separate and retain their units', () => {
   const data = {
     valid: true,
-    amplitudeFit: { ...amplitudeFit, points: [{ index: 0, power: 4, residual: 0.1 }] },
-    linewidthFit: { ...linewidthFit, points: [{ index: 0, power: 4, residual: -0.02 }] },
+    amplitudeFit: { ...amplitudeFit, points: [{ index: 0, power: 4, signal: 10.1, fitted: 10 }] },
+    linewidthFit: { ...linewidthFit, points: [{ index: 0, power: 4, signal: 2.98, fitted: 3 }] },
   };
-  const series = scanFitResidualSeries(data, { amplitudeUnit: '', linewidthUnit: 'G' });
+  const series = scanFitResidualSeries(data);
   assert.deepEqual(series.map(item => [item.key, item.curveIndex, item.unit]), [
-    ['amplitude', -103, ''], ['linewidth', -104, 'G'],
+    ['amplitude', -103, '%'], ['linewidth', -104, '%'],
   ]);
-  assert.deepEqual(series.map(item => item.points[0].y), [0.1, -0.02]);
+  assert.ok(Math.abs(series[0].points[0].y - 1) < 1e-12);
+  assert.ok(Math.abs(series[1].points[0].y + (2 / 3)) < 1e-12);
+  assert.ok(Math.abs(series[1].rmse - (2 / 3)) < 1e-12);
 });
 test('disabled or invalid fits do not contribute residual points', () => {
   const data = { valid: true, amplitudeFit: { valid: false }, linewidthFit: {
-    valid: true, rmse: 0.1, points: [{ index: 0, power: NaN, residual: 0.2 }],
+    valid: true, rmse: 0.1, points: [{ index: 0, power: NaN, signal: 1, fitted: 1 }],
   } };
   assert.deepEqual(scanFitResidualSeries(data), []);
   assert.deepEqual(scanFitResidualSeries({ ...data, valid: false }), []);
