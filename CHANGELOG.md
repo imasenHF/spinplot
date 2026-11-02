@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Display residual quantity, unit and RMSE as centered titles above each Variable scan residual frame, using Projection titles typography. Reserve a title gap between amplitude and linewidth residual lanes while retaining the total upper slot and main-plot geometry. Preserve observed-minus-fitted residual values.
+
 - Arrange amplitude fit-result details as `P½`, `I₀` / `b`, `R²` / `RMSE`, then point count. Use actual tabs and one shared measured column stop so `b` and `RMSE` start at the same x coordinate, including when rows are scaled to fit a narrow plot. Preserve the linewidth summary, model and file formats.
 
 - Keep the Variable scan fit-result annotation fully inside the main plot rectangle for lower-right, nine-grid and custom placements; clamp horizontal and vertical coordinates to the plot bounds.

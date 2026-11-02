@@ -517,14 +517,14 @@ export function renderFigure(
     }
     ctx.restore();
   }
-  function drawFitResidualPanel(ctx, series, geom, X, xTicks, font, tickSize, theme, colorForSeries) {
+  function drawFitResidualPanel(ctx, series, geom, X, xTicks, font, tickSize, titleSize, theme, colorForSeries) {
     const { x0, y0, pw, ph } = geom;
     const visible = Array.isArray(series) ? series.filter(item => Array.isArray(item.points) && item.points.length) : [];
     ctx.save();
     ctx.strokeStyle = theme.axis;
     ctx.lineWidth = 0.8;
-    ctx.strokeRect(x0, y0, pw, ph);
     if (!visible.length) {
+      ctx.strokeRect(x0, y0, pw, ph);
       ctx.fillStyle = theme.text;
       ctx.font = `10px ${font}`;
       ctx.textAlign = 'center';
@@ -533,14 +533,14 @@ export function renderFigure(
       ctx.restore();
       return;
     }
-    const laneGap = visible.length > 1 ? 3 : 0;
+    const titleOffset = Math.max(18, titleSize / 2 + 6);
+    const laneGap = visible.length > 1 ? titleOffset + titleSize / 2 + 7 : 0;
     const laneHeight = (ph - laneGap * (visible.length - 1)) / visible.length;
     const format = value => Number(value.toPrecision(3)).toString();
     visible.forEach((item, index) => {
       const laneY = y0 + index * (laneHeight + laneGap);
-      const titleSize = Math.max(8, Math.min(10, tickSize - 1));
-      const top = laneY + titleSize + 5;
-      const bottom = laneY + laneHeight - 5;
+      const top = laneY;
+      const bottom = laneY + laneHeight;
       if (!(bottom > top + 4)) return;
       const points = item.points.map(point => ({ x: X(point.x), value: point.y }))
         .filter(point => Number.isFinite(point.x) && Number.isFinite(point.value) && point.x >= x0 && point.x <= x0 + pw);
@@ -551,11 +551,12 @@ export function renderFigure(
       const color = colorForSeries(item) || theme.text;
       ctx.fillStyle = theme.text;
       ctx.font = `${titleSize}px ${font}`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       const unit = item.unit ? ' (' + item.unit + ')' : '';
       const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) + (item.unit || '') : '';
-      ctx.fillText(item.label + unit + rmse, x0 + 4, laneY + 1, Math.max(10, pw - 8));
+      ctx.fillText(item.label + unit + rmse, x0 + pw / 2, top - titleOffset, Math.max(10, pw - 8));
+      ctx.strokeRect(x0, top, pw, bottom - top);
       ctx.font = `${Math.max(8, tickSize - 2)}px ${font}`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
@@ -576,9 +577,6 @@ export function renderFigure(
       for (const point of points)
         drawMarker(ctx, point.x, Y(point.value), 2.4, 'circle', color, theme.bg, true);
       ctx.restore();
-      drawAxisLine(ctx, x0, top, x0, bottom, theme.axis, 0.7);
-      if (index < visible.length - 1)
-        drawAxisLine(ctx, x0, laneY + laneHeight, x0 + pw, laneY + laneHeight, theme.majorGrid, 0.7);
     });
     ctx.restore();
   }
@@ -1040,7 +1038,7 @@ export function renderFigure(
         xminor = minorTicks(m.xmin, m.xmax, xt),
         yminor = yScale === "log" ? [] : minorTicks(m.ymin, m.ymax, yt);
       if (residualGeom && sp.fitResidualShow === true) {
-        drawFitResidualPanel(ctx, sp.fitResidualSeries, residualGeom, X, xt, font, tickSize, theme, item => {
+        drawFitResidualPanel(ctx, sp.fitResidualSeries, residualGeom, X, xt, font, tickSize, projectionTitleSize, theme, item => {
           const index = curves.findIndex(curve => curve.index === item.curveIndex);
           return index >= 0 ? curveColor(index, curves.length, sp) : theme.text;
         });

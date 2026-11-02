@@ -1,9 +1,11 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-11-02（Asia/Shanghai）
+更新日期：2026-11-03（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。架构维护现状、分阶段优化顺序和验收要求见 [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
+
+- 残差纵坐标为实测值减拟合值，单位与对应幅度或线宽一致；零线表示实测与拟合相等。残差名称、单位及 RMSE 居中显示在对应图框上方，字号沿用 Projection titles，与刻度字号独立；双残差各有独立图框和外置标题，框间留出标题空间。总上方区域和主图位置保持不变，Canvas、SVG、PDF 共用布局。
 
 - **顶部工具栏（PR #7/#9 已合并 main）：** 常驻七个独立按钮：Open Data、Open Project、Save Project、Undo、Redo、Clear Data、Export。高频文件/项目/图像操作分别使用文件夹、项目包、软盘、图片导出图标。取消顶部 Plot 和 Config 的保存/读取按钮；取消 Reset Config / Clear Config 入口（含 File 菜单和 Export 页）。Config 的保存与读取仍在 Export 页（Config / Project 面板已通过 PR #8 恢复可见）和 File 菜单；Tools 菜单的 Recalculate 及自动绘图功能保留。按钮维持经典桌面软件的立体边框；顶部普通按钮与绘图区操作栏采用同一规格（28 × 27 px，SVG 图标 14 × 14 px、1.7 px 笔画），Export 按钮高度 27 px、最小宽度 86 px，并保留文字。
 
