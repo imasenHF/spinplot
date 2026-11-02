@@ -6,7 +6,13 @@ export function scanFitResultLines(data, selection = []) {
   for (const [name, fit] of [['Amplitude', data.amplitudeFit], ['Linewidth', data.linewidthFit]]) {
     if (!fit?.valid) continue;
     const fields = [];
-    for (const key of selection) {
+    const orderedSelection = name === 'Amplitude'
+      ? [...selection].sort((a, b) => {
+          const order = ['formula', 'half', 'I0', 'b', 'r2', 'rmse', 'n'];
+          return order.indexOf(a) - order.indexOf(b);
+        })
+      : selection;
+    for (const key of orderedSelection) {
       if (key === 'formula') {
         fields.push(name === 'Amplitude'
           ? 'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'
@@ -15,12 +21,12 @@ export function scanFitResultLines(data, selection = []) {
       }
       if (name === 'Amplitude' && key === 'b' && selection.includes('I0')) continue;
       if (name === 'Amplitude' && key === 'I0' && selection.includes('b')) {
-        fields.push('I₀ = ' + format(fit.parameters.I0) + '    b = ' + format(fit.parameters.b));
+        fields.push('I₀ = ' + format(fit.parameters.I0) + '\\t' + 'b = ' + format(fit.parameters.b));
         continue;
       }
       if (key === 'rmse' && selection.includes('r2')) continue;
       if (key === 'r2' && selection.includes('rmse')) {
-        fields.push('R² = ' + format(fit.r2) + '    RMSE = ' + format(fit.rmse));
+        fields.push('R² = ' + format(fit.r2) + '\\t' + 'RMSE = ' + format(fit.rmse));
         continue;
       }
       const entry = name === 'Amplitude'
