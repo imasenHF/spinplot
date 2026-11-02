@@ -679,7 +679,9 @@ export function renderFigure(
                 naturalTop: insets.top,
                 height: Array.isArray(m.sp.fitResidualSeries) && m.sp.fitResidualSeries.length > 1 ? 108 : 84,
                 gap: 8,
-                titleGap: m.sp.mode === "scan" && resolveYAxisTitleVisibility(m.sp, $("hideYTitle").checked)
+                titleGap: m.sp.mode === "scan"
+                  && resolveYAxisTitleVisibility(m.sp, $("hideYTitle").checked)
+                  && String(m.sp.yAxisLabel || $("yLabel").value || "").trim()
                   ? projectionTitleSize + 8
                   : 0,
               }
