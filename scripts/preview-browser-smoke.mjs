@@ -615,7 +615,7 @@ try {
     const svg=fs.readFileSync('browser-preview/synthetic-saturation.svg','utf8');
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
-    assert.match(svg,/Square-root microwave power/);
+    assert.match(svg,/mW/,'Square-root power axis uses vector-rendered physical units');
     assert.doesNotMatch(svg,/√/,'Vector export must not fall back to a Unicode checkmark-shaped radical glyph');
     assert.match(svg,/pp/);
     assert.match(svg,/1\/2/);
@@ -623,9 +623,9 @@ try {
       'The plot annotation must render the equation typographically rather than as a plain formula string');
     assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
       'SVG legend and drawing must use the dragged derived-curve order');
-    assert.match(svg,/Amplitude relative residual/,'SVG identifies the amplitude relative-residual lane');
-    assert.match(svg,/Linewidth relative residual/,'SVG identifies the linewidth relative-residual lane');
-    assert.match(svg,/RMSE [^<]*%/,'Relative residual RMSE is expressed as a percentage');
+    assert.match(svg,/Amplitude residual/,'SVG identifies the amplitude residual lane');
+    assert.match(svg,/Linewidth residual/,'SVG identifies the linewidth residual lane');
+    assert.match(svg,/RMSE [^<]*G/,'Linewidth residual RMSE retains the magnetic-field unit');
     await page.locator('#imageFormat').selectOption('pdf');
     const [residualPdfDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await residualPdfDownload.saveAs('browser-preview/synthetic-saturation-residuals.pdf');
