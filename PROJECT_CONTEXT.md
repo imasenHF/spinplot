@@ -13,6 +13,7 @@
 
 - Current order 的逐曲线样式列宽 56 px，包含无箭头、凸起式曲线颜色化符号按钮和独立颜色选择器；Variable scan 符号控件使用 `text-align-last: center` 与零内边距保证居中。普通曲线与直接二维 Variable scan 衍生曲线均可单独设置样式和颜色；颜色覆盖保存在子图 `curveStyles[index].color`，未显式设置的曲线沿用当前调色板，并参与图例、屏幕绘图及矢量导出。全局或子图局部调色板变化后，Current order 及 Variable scan 衍生曲线的符号颜色和颜色按钮即时刷新；手动颜色覆盖保持有效。
 - Variable scan Power fit 使用单个 `Show results on plot` 开关（默认关闭），同时显示模型公式、幅度参数 I₀/b/P½、线宽参数 Psat/A/C、R²、RMSE 和 No. of points。幅度模型采用 Bruker 三参数形式 `Spp(P)=I₀√P/(1+P/P½)^(b/2)`，I₀、b、P½ 均可独立选择拟合或固定；P½ 是分母中的特征功率参数，实际曲线峰值功率（b>1）为 `Pmax=P½/(b−1)`，不等同于任意 b 下的半峰值功率。幅度模型不含偏置项 C；线宽模型独立采用 `ΔBpp(P)=A√(1+P/Psat)+C`，C 仅用于线宽拟合。设置保存在 `twoD.settings`，旧项目缺省值由迁移逻辑补齐。图内拟合结果默认右下角、背景透明且无边框，可调位置、字体、字号、背景不透明度和边框；曲线 legend 默认留在绘图区内。
+- 子图 Y 轴标题可在 Subplots → Axes → Y axis 通过 `Show Y title` 独立控制；Heatmap（含曲线派生 Heatmap）和 Variable scan 默认显示。显式局部 true/false 覆盖全局 `Hide Y title`；旧项目缺少该字段时按图型默认值处理，普通 1D 子图继续继承全局设置。该字段保存在子图配置中，不改变项目格式 11、配置格式 10。
 - Variable scan 功率拟合面板采用简短标签：Power fit、Amplitude、Linewidth、Offset C、Fit range；测量功率范围保留为单行数据读数，排除点说明段落已删除，Fit range 的空值规则通过控件提示说明。
 - Variable scan 可选显示拟合残差子图，优先占用同行二维图的上投影位置，面板宽度与高度和上投影对齐；同行没有二维上投影时单独预留顶部区域。残差显示开关关闭时仍保留空白区域。幅度与线宽残差分别使用独立的对称纵坐标范围、散点、零参考线及 RMSE 标注，共用 P / √P 横坐标。只绘制当前有效拟合点，排除点不参与；开关保存在 `twoD.settings.scanFitResidualShow`，默认关闭，项目/配置格式保持 11/10。拟合公式注释增加公式字号、最小宽度和上下行距，降低上下标与参数行重叠风险；Canvas、SVG、PDF 共用布局。
 
@@ -25,7 +26,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 应用：https://plastocyanin.org/spinplot/
 - 构建：Vite、JavaScript（含部分独立模块）、TypeScript 检查；`package.json` 中包含 React 依赖，但主体界面尚未改造成 React 应用。
 - 发布：`main` 触发 GitHub Actions，产物为 `dist/`，部署路径为 `/spinplot/`；不单独声明 `CNAME`。
-- 正式 `main` 当前版本为 **0.11.2**，PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已合并，GitHub Release [v0.11.2](https://github.com/imasenHF/spinplot/releases/tag/v0.11.2) 已发布。正式 Pages 部署 [41415871934](https://github.com/imasenHF/spinplot/actions/runs/41415871934)、生产 HTTP 检查 [41416115420](https://github.com/imasenHF/spinplot/actions/runs/41416115420) 和 Release 工作流 [41416138158](https://github.com/imasenHF/spinplot/actions/runs/41416138158) 均成功；项目格式 11、配置格式 10 不变。
+- 正式 `main` 当前已发布版本为 **0.11.2**，PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已合并。PR #14 候选版本为 **0.11.3**，待质量检查、合并、Pages/生产 HTTP 与 Release 工作流验收后正式发布。正式 Pages 部署 [41415871934](https://github.com/imasenHF/spinplot/actions/runs/41415871934)、生产 HTTP 检查 [41416115420](https://github.com/imasenHF/spinplot/actions/runs/41416115420) 和 Release 工作流 [41416138158](https://github.com/imasenHF/spinplot/actions/runs/41416138158) 均成功；项目格式 11、配置格式 10 不变。
 - 项目文件格式：**11**；配置文件格式：**10**；两者均与应用版本号相互独立。
 
 ## 2. 已实现功能范围
