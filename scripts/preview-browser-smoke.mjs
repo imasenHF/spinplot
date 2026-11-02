@@ -411,6 +411,10 @@ try {
       config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:2,spans:'1,1'},
         subplots:[saturationSubplot,projectionSubplot]}};
     await load(saturationProject,'synthetic-saturation.spinplot.json');
+    await page.evaluate(()=>{
+      const frame=document.querySelector('#frameMode');
+      if(frame){frame.value='box';frame.dispatchEvent(new Event('change',{bubbles:true}));}
+    });
     await page.locator('button.tab-btn[data-tab="subplots"]').click();
     const scanPanel=page.locator('.subplot').first();
     const residualToggle=scanPanel.locator('[data-twod="scanFitResidualShow"]');
