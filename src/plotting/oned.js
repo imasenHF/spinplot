@@ -19,7 +19,7 @@ import { positiveAxisDomain, axisCoordinate, scaledTicks } from "./axis-scale.js
 import * as TwoD from "../twod/ui.js";
 import { fitMainRows, fitResidualPanelSlot, resolveMainInsets } from "./footprint.js";
 import { resolveLegendPosition } from "./legend-position.js";
-import { scanFitFormulaType, measureScanFitFormula, drawScanFitFormula } from "./math-formula.js";
+import { scanFitFormulaType, measureScanFitFormula, drawScanFitFormula, drawScanPowerAxisLabel } from "./math-formula.js";
 
 export function createDisplayCurves(curves, sp) {
   let offsets = new Array(curves.length).fill(0);
@@ -464,7 +464,7 @@ export function renderFigure(
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       const unit = item.unit ? ' (' + item.unit + ')' : '';
-      const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) : '';
+      const rmse = Number.isFinite(item.rmse) ? ' · RMSE ' + format(item.rmse) + (item.unit || '') : '';
       ctx.fillText(item.label + unit + rmse, x0 + 4, laneY + 1, Math.max(10, pw - 8));
       ctx.font = `${Math.max(8, tickSize - 2)}px ${font}`;
       ctx.textAlign = 'right';
@@ -1040,15 +1040,22 @@ export function renderFigure(
       ctx.font = `${axisTitleSize}px ${font}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText(
-        sp.xAxisLabel ||
-          (curves[0]?.xAxis && axisKind(curves[0].xAxis) !== "field"
-            ? curves[0].xAxis.name +
-              (curves[0].xAxis.unit ? " (" + curves[0].xAxis.unit + ")" : "")
-            : $("xLabel").value || "Magnetic Field (G)"),
-        x0 + pw / 2,
-        y0 + ph + xTitleDistance,
-      );
+      if (sp.xAxisMathLabel === "sqrt-power") {
+        drawScanPowerAxisLabel(
+          ctx, x0 + pw / 2, y0 + ph + xTitleDistance,
+          axisTitleSize, font, theme.text,
+        );
+      } else {
+        ctx.fillText(
+          sp.xAxisLabel ||
+            (curves[0]?.xAxis && axisKind(curves[0].xAxis) !== "field"
+              ? curves[0].xAxis.name +
+                (curves[0].xAxis.unit ? " (" + curves[0].xAxis.unit + ")" : "")
+              : $("xLabel").value || "Magnetic Field (G)"),
+          x0 + pw / 2,
+          y0 + ph + xTitleDistance,
+        );
+      }
       if (sp.secondaryYAxis && rightBounds) {
         const rightTicks=ticksWithStep(rightMin,rightMax,NaN,5);
         const rightLabels=tickFormatter(rightTicks,subplotTickFormat(sp,"y"));

@@ -464,10 +464,17 @@ export function controls(card, sp, d, onChange) {
     ['native','Acquired scan variable'],['power','Microwave power (mW)']
   ]);
   const powerXScaleSelect=select(scanSettings,'scanPowerXScale','Power X coordinate',[
-    ['power','P (mW)'],['sqrt','√P (√mW)']
+    ['power','P (mW)'],['sqrt','Square-root power']
   ]);
   const powerXScaleControl=powerXScaleSelect.closest('label');
   powerXScaleControl.classList.add('scan-power-x-scale-control');
+  const powerXScaleMath=document.createElement('span');
+  powerXScaleMath.className='scan-power-x-math';
+  powerXScaleMath.setAttribute('aria-label','Square root of P, in square-root milliwatts');
+  powerXScaleMath.innerHTML='<math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msqrt><mi>P</mi></msqrt><mo>(</mo><msqrt><mi>mW</mi></msqrt><mo>)</mo></mrow></math>';
+  powerXScaleControl.append(powerXScaleMath);
+  const refreshPowerXScaleMath=()=>{powerXScaleMath.hidden=s.scanPowerXScale!=='sqrt';};
+  refreshPowerXScaleMath();
   powerXScaleSelect.onchange=()=>{
     const previous=s.scanPowerXScale||'power',next=powerXScaleSelect.value;
     if(previous===next)return;
@@ -493,6 +500,7 @@ export function controls(card, sp, d, onChange) {
       if(field)field.value=value;
     }
     s.scanPowerXScale=next;
+    refreshPowerXScaleMath();
     onChange();
     refreshFitResults();
   };
@@ -633,7 +641,7 @@ export function controls(card, sp, d, onChange) {
   showResidualCheck.dataset.twod='scanFitResidualShow';
   showResidualCheck.checked=s.scanFitResidualShow===true;
   showResidualCheck.setAttribute('aria-label','Show fit residual subplot');
-  showResidual.title='Residuals use included valid fit points and share the P / √P horizontal coordinate.';
+  showResidual.title='Relative residuals are normalized by the fitted value and share the displayed power coordinate.';
   showResidualCheck.onchange=()=>{s.scanFitResidualShow=showResidualCheck.checked;onChange();};
   showResidual.append(showResidualCheck,document.createTextNode('Show fit residuals'));
   displayPanel.append(showResidual);
@@ -740,7 +748,7 @@ export function controls(card, sp, d, onChange) {
     const canFitPower=powerMode||calibratedNativePower;
     powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(scanCoordinateAxis);
     powerXScaleControl.hidden=!canFitPower;
-    const powerUnit=s.scanPowerXScale==='sqrt'?'√mW':'mW';
+    const powerUnit=s.scanPowerXScale==='sqrt'?'mW^(1/2)':'mW';
     for(const key of ['xMin','xMax','xStep']){
       const field=card.querySelector('[data-field='+key+']');
       if(field)field.title=canFitPower?'Displayed X-axis coordinate in '+powerUnit+'.':'';
@@ -867,7 +875,7 @@ export function controls(card, sp, d, onChange) {
   solverHelp.type='button';
   solverHelp.className='help-tip';
   solverHelp.textContent='?';
-  solverHelp.dataset.help='Amplitude uses the Bruker model Spp(P) = I₀√P / (1 + P/P½)^(b/2). I₀, b and P½ can each be fitted or held fixed independently. The fitted b search range is 0.1–8; blank characteristic-power limits use included measured powers. The linewidth model is fitted separately and can include an offset C.';
+  solverHelp.dataset.help='Amplitude uses the Bruker model Spp(P) = I₀ times the square root of P divided by (1 + P/P½)^(b/2). I₀, b and P½ can each be fitted or held fixed independently. The fitted b search range is 0.1–8; blank characteristic-power limits use included measured powers. The linewidth model is fitted separately and can include an offset C.';
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;

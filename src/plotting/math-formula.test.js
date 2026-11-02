@@ -42,6 +42,7 @@ test('Bruker amplitude formula is laid out with a vector fraction bar', () => {
   assert.ok(text.includes('S'));
   assert.ok(text.includes('pp'));
   assert.ok(text.includes('I'));
+  assert.ok(text.includes('0'));
   assert.ok(text.includes('1/2'));
   assert.ok(text.includes('b/2'));
   assert.ok(!text.some(value => value.includes('√')),

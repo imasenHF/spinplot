@@ -98,20 +98,24 @@ function layout(ctx, type, size, family) {
   const lhsWidth = drawSequence(ctx, lhs, 0, 0, size, family, '#000', false);
   let result;
   if (type === 'amplitude') {
+    const numeratorPrefix = [text('I', true), script('0', 'sub')];
     const numerator = [text('P', true)];
+    const numeratorPrefixWidth = drawSequence(ctx, numeratorPrefix, 0, 0, size, family, '#000', false);
     const numeratorTextWidth = drawSequence(ctx, numerator, 0, 0, size, family, '#000', false);
     const numeratorRadicalWidth = radicalAdvance(size) * 0.78;
+    const numeratorGap = size * 0.12;
     const denominator = [
       text('('), text('1 + '), text('P', true), text('/'), text('P', true),
       script('1/2', 'sub'), text(')'), script('b/2', 'super'),
     ];
-    const numeratorWidth = numeratorRadicalWidth + numeratorTextWidth;
+    const numeratorWidth = numeratorPrefixWidth + numeratorGap + numeratorRadicalWidth + numeratorTextWidth;
     const denominatorWidth = drawSequence(ctx, denominator, 0, 0, size, family, '#000', false);
     const gap = size * 0.6;
     const fractionWidth = Math.max(numeratorWidth, denominatorWidth) + size * 0.6;
     result = {
-      type, lhs, numerator, denominator, lhsWidth, numeratorWidth, numeratorTextWidth,
-      numeratorRadicalWidth, denominatorWidth, gap, fractionWidth,
+      type, lhs, numeratorPrefix, numerator, denominator, lhsWidth, numeratorWidth,
+      numeratorPrefixWidth, numeratorGap, numeratorTextWidth, numeratorRadicalWidth,
+      denominatorWidth, gap, fractionWidth,
       width: lhsWidth + gap + fractionWidth, height: size * 2.42,
     };
   } else if (type === 'linewidth') {
@@ -120,7 +124,7 @@ function layout(ctx, type, size, family) {
       script('sat', 'sub'), text(')'),
     ];
     const radicandWidth = drawSequence(ctx, radicand, 0, 0, size, family, '#000', false);
-    const radicalWidth = radicalAdvance(size * 1.12) * 0.78;
+    const radicalWidth = radicalAdvance(size * 1.12);
     const suffixWidth = drawSequence(ctx, [text(' + C')], 0, 0, size, family, '#000', false);
     const gap = size * 0.5;
     result = {
@@ -155,7 +159,9 @@ export function drawScanFitFormula(ctx, type, x, top, size, family, color) {
     const denominatorX = fractionX + (measured.fractionWidth - measured.denominatorWidth) / 2;
     drawSequence(ctx, measured.lhs, x, lhsBaseline, size, family, color, true);
     const numeratorBaseline = top + size * 0.92;
-    const numeratorRoot = drawRadical(ctx, numeratorX, numeratorBaseline, measured.numeratorTextWidth, size);
+    drawSequence(ctx, measured.numeratorPrefix, numeratorX, numeratorBaseline, size, family, color, true);
+    const numeratorRootX = numeratorX + measured.numeratorPrefixWidth + measured.numeratorGap;
+    const numeratorRoot = drawRadical(ctx, numeratorRootX, numeratorBaseline, measured.numeratorTextWidth, size);
     drawSequence(ctx, measured.numerator, numeratorRoot.radicandX, numeratorBaseline, size, family, color, true);
     ctx.beginPath();
     ctx.moveTo(fractionX, top + size * 1.08);
@@ -165,7 +171,7 @@ export function drawScanFitFormula(ctx, type, x, top, size, family, color) {
   } else {
     const baseline = top + size * 1.34;
     const rootX = x + measured.lhsWidth + measured.gap;
-    const radicandX = rootX + measured.radicalWidth;
+    const radicandX = rootX + measured.radicalWidth * 0.78;
     drawSequence(ctx, measured.lhs, x, baseline, size, family, color, true);
     drawRadical(ctx, rootX, baseline, measured.radicandWidth, size * 1.12);
     drawSequence(ctx, measured.radicand, radicandX, baseline, size, family, color, true);

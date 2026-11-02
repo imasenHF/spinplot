@@ -489,6 +489,8 @@ try {
       },value);
     }
     await powerScale.selectOption('sqrt');
+    assert.equal(await scanPanel.locator('.scan-power-x-math math msqrt').count(), 2,
+      'Square-root power mode must show native MathML radicals beside the selector');
     assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'2');
     assert.equal(await scanPanel.locator('[data-field="xMax"]').inputValue(),'10');
     assert.equal(await scanPanel.locator('[data-field="xStep"]').inputValue(),'',
@@ -606,7 +608,7 @@ try {
     assert.equal(bodyRows.length,13);
     assert.ok(bodyRows.every(line=>line.split(',')[6]!==''&&line.split(',')[8]!=='')); 
     const exportedPowers=bodyRows.map(line=>Number(line.split(',')[2])).filter(Number.isFinite);
-    assert.ok(Math.max(...exportedPowers)>10,'Feature CSV retains physical microwave power in mW rather than √mW display coordinates');
+    assert.ok(Math.max(...exportedPowers)>10,'Feature CSV retains physical microwave power in mW rather than mW^(1/2) display coordinates');
     await page.locator('#imageFormat').selectOption('svg');
     const [svgDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await svgDownload.saveAs('browser-preview/synthetic-saturation.svg');
@@ -614,15 +616,16 @@ try {
     assert.match(svg,/Peak-to-peak amplitude/);
     assert.match(svg,/Peak-to-peak linewidth/);
     assert.match(svg,/Square-root microwave power/);
-    assert.match(svg,/√mW/);
+    assert.doesNotMatch(svg,/√/,'Vector export must not fall back to a Unicode checkmark-shaped radical glyph');
     assert.match(svg,/pp/);
     assert.match(svg,/1\/2/);
-    assert.ok(!svg.includes('Spp(P) = I₀√P/(1 + P/P½)^(b/2)'),
+    assert.ok(!svg.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'),
       'The plot annotation must render the equation typographically rather than as a plain formula string');
     assert.ok(svg.indexOf('Amplitude fit')<svg.indexOf('Peak-to-peak amplitude'),
       'SVG legend and drawing must use the dragged derived-curve order');
-    assert.match(svg,/Amplitude residual/,'SVG includes the amplitude residual lane');
-    assert.match(svg,/Linewidth residual/,'SVG includes the linewidth residual lane');
+    assert.match(svg,/Amplitude relative residual/,'SVG identifies the amplitude relative-residual lane');
+    assert.match(svg,/Linewidth relative residual/,'SVG identifies the linewidth relative-residual lane');
+    assert.match(svg,/RMSE [^<]*%/,'Relative residual RMSE is expressed as a percentage');
     await page.locator('#imageFormat').selectOption('pdf');
     const [residualPdfDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportImageBtnSide').click()]);
     await residualPdfDownload.saveAs('browser-preview/synthetic-saturation-residuals.pdf');
