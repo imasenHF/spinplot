@@ -400,8 +400,7 @@ try {
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
         scanFitAmplitude:true,scanFitLinewidth:true,scanFitOffset:false,
         scanFitFitI0:true,scanFitFitB:true,scanFitFitPhalf:true,
-        scanFitShow:true,scanFitDisplay:['formula','I0','b','half','P','A','C','r2','rmse','n'],
-        scanFitLabelPosition:'lower_right',scanFitLabelBorder:true}}};
+        scanFitShow:true,scanFitLabelPosition:'lower_right',scanFitLabelBorder:true}}};
     const projectionSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
       mode:'heatmap',title:'Synthetic field map',gridRow:1,gridCol:1,curves:[],
       twoD:{index:0,settings:{...(baseSubplot.twoD?.settings||{}),mode:'heatmap',swap:false,
