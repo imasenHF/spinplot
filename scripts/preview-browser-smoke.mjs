@@ -429,9 +429,11 @@ try {
       const proto=CanvasRenderingContext2D.prototype;
       const originalClear=proto.clearRect,originalStroke=proto.strokeRect,originalFill=proto.fillText;
       window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+      window.__scanYTitleCalls=[];window.__fitTabCalls=[];
       proto.clearRect=function(...args){
         if(this.canvas?.id==='plotCanvas'){
           window.__fitResidualFrames=[];window.__fitSummaryFrames=[];window.__lastPlotStrokeRect=null;
+          window.__scanYTitleCalls=[];window.__fitTabCalls=[];
         }
         return originalClear.apply(this,args);
       };
@@ -444,11 +446,18 @@ try {
         return originalStroke.call(this,x,y,w,h);
       };
       proto.fillText=function(text,...args){
-        if(this.canvas?.id==='plotCanvas'&&String(text)==='Amplitude'&&window.__lastPlotStrokeRect){
-          const frame=window.__lastPlotStrokeRect;
-          window.__fitSummaryFrames.push(frame);
-          const index=window.__fitResidualFrames.lastIndexOf(frame);
-          if(index>=0)window.__fitResidualFrames.splice(index,1);
+        if(this.canvas?.id==='plotCanvas'){
+          const value=String(text),matrix=this.getTransform();
+          if(value==='Peak-to-peak amplitude'||value==='Peak-to-peak linewidth')
+            window.__scanYTitleCalls.push({text:value,x:args[0],y:args[1],font:this.font,a:matrix.a,b:matrix.b,c:matrix.c,d:matrix.d});
+          if(value.startsWith('b = ')||value.startsWith('RMSE = ')||value.startsWith('P½ = ')||value.startsWith('I₀ = '))
+            window.__fitTabCalls.push({text:value,x:args[0],y:args[1]});
+          if(value==='Amplitude'&&window.__lastPlotStrokeRect){
+            const frame=window.__lastPlotStrokeRect;
+            window.__fitSummaryFrames.push(frame);
+            const index=window.__fitResidualFrames.lastIndexOf(frame);
+            if(index>=0)window.__fitResidualFrames.splice(index,1);
+          }
         }
         return originalFill.call(this,text,...args);
       };
@@ -473,6 +482,24 @@ try {
     assert.ok(Math.abs(residualLayoutBefore.leftMain.y-residualLayoutBefore.rightMain.y)<0.5,
       'Variable scan main plot remains aligned with the 2D map while residual display is off');
     const fitSummaryFrame=residualLayoutBefore.fitSummaryFrames.at(-1);
+    const scanTitleCalls=await page.evaluate(()=>window.__scanYTitleCalls||[]);
+    const fitTabCalls=await page.evaluate(()=>window.__fitTabCalls||[]);
+    const amplitudeTitle=scanTitleCalls.find(item=>item.text==='Peak-to-peak amplitude');
+    assert.ok(amplitudeTitle,'Variable scan Y-axis title must be rendered');
+    assert.ok(Math.abs(amplitudeTitle.b)<1e-6&&Math.abs(amplitudeTitle.c)<1e-6,
+      'Variable scan Y-axis title must be horizontal like a projection title');
+    assert.ok(amplitudeTitle.font.startsWith('11px '),
+      'Variable scan Y-axis title must use the independent projection-title size');
+    assert.ok(amplitudeTitle.y<residualLayoutBefore.rightMain.y,
+      'Variable scan Y-axis title must sit above the main scan plot');
+    const fitB=fitTabCalls.find(item=>item.text.startsWith('b = '));
+    const fitRmse=fitTabCalls.find(item=>item.text.startsWith('RMSE = '));
+    const fitHalf=fitTabCalls.find(item=>item.text.startsWith('P½ = '));
+    const fitI0=fitTabCalls.find(item=>item.text.startsWith('I₀ = '));
+    assert.ok(fitB&&fitRmse&&fitHalf&&fitI0,'Fit result must include P-half, I0, b and RMSE');
+    assert.ok(Math.abs(fitB.x-fitRmse.x)<0.5,
+      'b and RMSE must share the same tab-stop x coordinate');
+    assert.ok(fitHalf.y<fitI0.y,'P-half must be displayed above I0/b');
     const plotCanvasWidth=await page.locator('#plotCanvas').evaluate(el=>el.clientWidth);
     assert.ok(fitSummaryFrame,'Lower-right fit summary must render a measurable frame');
     assert.ok(fitSummaryFrame.x+fitSummaryFrame.w>=plotCanvasWidth*0.85,
