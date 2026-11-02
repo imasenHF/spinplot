@@ -403,6 +403,17 @@ export function renderFigure(
         const metrics = measureScanFitFormula(ctx, formula, formulaSize, chosenFont);
         return { text: line, formula, formulaSize, width: metrics.width, height: metrics.height };
       }
+      const tabIndex = line.indexOf('\\t');
+      if (tabIndex >= 0) {
+        const leftText = line.slice(0, tabIndex);
+        const rightText = line.slice(tabIndex + 1);
+        return {
+          text: line, tabbed: true, leftText, rightText,
+          leftWidth: ctx.measureText(leftText).width,
+          rightWidth: ctx.measureText(rightText).width,
+          width: 0, height: lineHeight,
+        };
+      }
       return { text: line, width: ctx.measureText(line).width, height: lineHeight };
     });
     const maxHeight = ph - 18;
@@ -431,6 +442,11 @@ export function renderFigure(
     }
     if (!visible.length) { ctx.restore(); return; }
     const hasFormula = visible.some(row => row.formula);
+    const tabbedLeftWidth = Math.max(0, ...visible.filter(row => row.tabbed).map(row => row.leftWidth));
+    const tabGap = size * 1.25;
+    for (const row of visible) {
+      if (row.tabbed) row.width = tabbedLeftWidth + tabGap + row.rightWidth;
+    }
     const width = fitResultSummaryWidth(visible, pw);
     const height = contentHeight + 10;
     if (width <= 0 || height > ph - 8) { ctx.restore(); return; }
@@ -469,7 +485,14 @@ export function renderFigure(
         drawScanFitFormula(ctx, row.formula, left + 8, rowY, row.formulaSize * scale, chosenFont, theme.text);
       } else {
         ctx.font = `${size}px ${chosenFont}`;
-        ctx.fillText(row.text, left + 8, rowY, width - 16);
+        if (row.tabbed) {
+          const firstX = left + 8;
+          const secondX = firstX + tabbedLeftWidth + tabGap;
+          ctx.fillText(row.leftText, firstX, rowY, Math.max(1, tabbedLeftWidth));
+          ctx.fillText(row.rightText, secondX, rowY, Math.max(1, left + width - 8 - secondX));
+        } else {
+          ctx.fillText(row.text, left + 8, rowY, width - 16);
+        }
       }
       rowY += row.height + gapAfter(row);
     }
@@ -656,6 +679,9 @@ export function renderFigure(
                 naturalTop: insets.top,
                 height: Array.isArray(m.sp.fitResidualSeries) && m.sp.fitResidualSeries.length > 1 ? 108 : 84,
                 gap: 8,
+                titleGap: m.sp.mode === "scan" && resolveYAxisTitleVisibility(m.sp, $("hideYTitle").checked)
+                  ? projectionTitleSize + 8
+                  : 0,
               }
             : null;
         return {
@@ -695,9 +721,11 @@ export function renderFigure(
             + projection.insets.gapY
             + projection.insets.gSpace
             + entry.residualPanel.gap
+            + entry.residualPanel.titleGap
           : entry.residualPanel.naturalTop
             + entry.residualPanel.height
-            + entry.residualPanel.gap;
+            + entry.residualPanel.gap
+            + entry.residualPanel.titleGap;
         residualTopByRow.set(
           entry.row,
           Math.max(residualTopByRow.get(entry.row) || 0, requiredTop),
@@ -852,7 +880,11 @@ export function renderFigure(
       const showYTicks = sp.showYTicks && !$("hideYTicks").checked,
         showYTitle =
           resolveYAxisTitleVisibility(sp, $("hideYTitle").checked) &&
-          String(sp.yAxisLabel || $("yLabel").value || "").trim();
+          String(sp.yAxisLabel || $("yLabel").value || "").trim(),
+        scanYTitle = sp.mode === "scan" && !!showYTitle,
+        scanTitleSpace = scanYTitle && sp.fitResidualPanelEnabled !== true
+          ? projectionTitleSize * 2 + 4
+          : 0;
       const yScale = sp.yScale && sp.yScale !== 'inherit' ? sp.yScale : ($('globalYScale')?.value || 'linear');
       const boundsSource = sp.yUseGlobal ? $('globalYMin').value : sp.yMin;
       const upperSource = sp.yUseGlobal ? $('globalYMax').value : sp.yMax;
@@ -889,7 +921,8 @@ export function renderFigure(
             ? compactY
               ? subTitleSize + 5
               : subTitleSize + 10
-            : 0),
+            : 0) +
+          scanTitleSpace,
         insetB = Math.max(
           compactY ? 30 : 34,
           xTitleDistance + axisTitleSize / 2 + 8,
@@ -934,6 +967,7 @@ export function renderFigure(
           topProjection: projectionEntry?.insets ?? null,
           fallbackHeight: residualPanel.height,
           gap: residualPanel.gap,
+          titleGap: residualPanel.titleGap,
         });
         if (slot.height >= 40)
           residualGeom = { x0, y0: cellY + slot.top, pw, ph: slot.height };
@@ -1122,13 +1156,26 @@ export function renderFigure(
         ctx.fillText(sp.secondaryYAxis.name+unit,0,0);ctx.restore();
       }
       if (showYTitle) {
-        const yTitleOffset = yTitleDistance;
+        const label = sp.yAxisLabel || $("yLabel").value || "Intensity";
         ctx.save();
-        ctx.translate(x0 - yTitleOffset, y0 + ph / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(sp.yAxisLabel || $("yLabel").value || "Intensity", 0, 0);
+        if (sp.mode === "scan") {
+          let titleSize = projectionTitleSize;
+          ctx.font = `${titleSize}px ${font}`;
+          const measured = ctx.measureText(label).width;
+          if (measured > pw - 8)
+            titleSize = Math.max(7, titleSize * (pw - 8) / measured);
+          ctx.font = `${titleSize}px ${font}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, x0 + pw / 2, y0 - projectionTitleSize - 2, Math.max(1, pw - 8));
+        } else {
+          const yTitleOffset = yTitleDistance;
+          ctx.translate(x0 - yTitleOffset, y0 + ph / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, 0, 0);
+        }
         ctx.restore();
       }
       if (gcfg.show && Number.isFinite(nu) && m.xmin > 0) {
