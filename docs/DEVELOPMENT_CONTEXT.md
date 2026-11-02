@@ -1,6 +1,6 @@
 ## 2026-11-02 拟合残差上投影布局与公式注释间距（PR #13）
 
-- 当前开发分支：`fix/fit-residual-projection-slot-formula-spacing-20261102`，基于正式 v0.11.1；候选应用版本 v0.11.2。项目格式 11、配置格式 10 不变。
+- PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已于 2026-11-02 合并，正式版本为 v0.11.2。合并提交 `e512280fe328e9bcbda33d94655055576404a3ba`；项目格式 11、配置格式 10 不变。
 - 拟合残差面板优先使用同一行二维子图的 Top projection 框。面板的 X 位置、宽度、高度和垂直坐标与该投影框一致；残差显示关闭时继续保留该区域，主拟合图的位置不随开关改变。若同行不存在 Top projection，则为残差单独预留顶部区域。
 - 为避免旧的 `emptyProjectionSpace=top/both` 将主拟合图移动到残差面板区域，残差面板启用时临时保留右侧占位选项、关闭顶部占位；不修改已保存的原始配置字段。
 - `src/plotting/footprint.js` 新增 `fitResidualPanelSlot` 计算投影复用/独立预留两种布局；`src/plotting/oned.js` 在行布局阶段计算顶部空间并绘制残差。Canvas、SVG、PDF 使用同一绘图路径。
