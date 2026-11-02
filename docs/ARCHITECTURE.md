@@ -53,7 +53,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 | SpinPlot 配置 | `version: 10` | `appVersion`、控件参数、布局、子图设置、显示状态；不携带源谱数组 |
 | 应用版本 | `package.json.version` | 语义版本，用于页面和保存文件的 `appVersion`，不决定文件格式 |
 
-子图配置可选字段 `emptyProjectionSpace`（`none / top / right / both`）用于占用同一行/列中未使用的投影附属空间。项目格式 11、配置格式 10 不变；旧字段 `plotFootprint` 不再参与布局，载入时移除。
+子图配置可选字段 `showYTitle`（`true / false / null`）控制当前子图的 Y 轴标题；`null` 或缺省值按图型默认规则处理：Heatmap 与 Variable scan 默认显示，其他模式继承全局 `Hide Y title`。显式布尔值只覆盖当前子图。`emptyProjectionSpace`（`none / top / right / both`）用于占用同一行/列中未使用的投影附属空间。项目格式 11、配置格式 10 不变；旧字段 `plotFootprint` 不再参与布局，载入时移除。
 
 新增或重命名字段时先确定旧文件读取行为与迁移结果；不能自动恢复的属性必须提示丢失/不支持。配置恢复不应覆盖已导入的原始数据；项目文件加载需校验数组、二维矩阵、版本和引用下标。
 
