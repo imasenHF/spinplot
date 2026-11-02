@@ -488,7 +488,8 @@ try {
     assert.ok(amplitudeTitle,'Variable scan Y-axis title must be rendered');
     assert.ok(Math.abs(amplitudeTitle.b)<1e-6&&Math.abs(amplitudeTitle.c)<1e-6,
       'Variable scan Y-axis title must be horizontal like a projection title');
-    assert.ok(amplitudeTitle.font.startsWith('11px '),
+    const projectionTitleSize=Number(await page.locator('#projectionTitleSize').inputValue())||11;
+    assert.ok(amplitudeTitle.font.startsWith(projectionTitleSize+'px '),
       'Variable scan Y-axis title must use the independent projection-title size');
     assert.ok(amplitudeTitle.y<residualLayoutBefore.rightMain.y,
       'Variable scan Y-axis title must sit above the main scan plot');
