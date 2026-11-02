@@ -1,6 +1,6 @@
 # SpinPlot — ARCHITECTURE
 
-更新日期：2026-10-30（Asia/Shanghai）
+更新日期：2026-11-02（Asia/Shanghai）
 维护范围：代码架构、数据表示、模块职责、科学处理约束、兼容性与验证方式。已完成状态与待办概览见 [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)；界面规则见 [STYLE_GUIDE.md](STYLE_GUIDE.md)；后续架构整理顺序与验收边界见 [ARCHITECTURE_IMPROVEMENT_PLAN.md](ARCHITECTURE_IMPROVEMENT_PLAN.md)。
 
 ## 1. 当前部署与代码结构
@@ -20,8 +20,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 .github/workflows/            构建、Pages、预览和发布检查
 ```
 
-- 正式 `main` 当前版本为 **0.11.2**，PR [#13](https://github.com/imasenHF/spinplot/pull/13) 已合并并发布 [v0.11.2](https://github.com/imasenHF/spinplot/releases/tag/v0.11.2)。正式 Pages、生产 HTTP 和发布工作流均成功；项目格式 11、配置格式 10 保持不变。
-- PR #14 分支候选版本为 **0.11.3**，新增子图级 `showYTitle` 覆盖、Heatmap/Variable scan Y 轴标题默认显示、拟合注释右下锚点及公式垂直排版调整；等待 PR CI 与发布验收。项目格式 11、配置格式 10 不变。
+- 正式 `main` 当前版本为 **0.11.3**；PR [#14](https://github.com/imasenHF/spinplot/pull/14) 已合并并发布 [v0.11.3](https://github.com/imasenHF/spinplot/releases/tag/v0.11.3)。新增子图级 `showYTitle` 覆盖、Heatmap/Variable scan Y 轴标题默认显示、拟合注释右下锚点及公式垂直排版调整。PR quality [41432124147](https://github.com/imasenHF/spinplot/actions/runs/41432124147)、Legend [41432124399](https://github.com/imasenHF/spinplot/actions/runs/41432124399)、Vector PDF [41432124693](https://github.com/imasenHF/spinplot/actions/runs/41432124693)、Pages [41432354441](https://github.com/imasenHF/spinplot/actions/runs/41432354441)、生产 HTTP [41432607360](https://github.com/imasenHF/spinplot/actions/runs/41432607360) 与 Release [41432679794](https://github.com/imasenHF/spinplot/actions/runs/41432679794) 均成功；项目格式 11、配置格式 10 不变。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
