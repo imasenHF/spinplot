@@ -63,8 +63,8 @@ test("vector scene applies Canvas scale transforms to text and paths", () => {
       ctx.stroke();
     });
   assert.deepEqual(scene[0].m, [2, 0, 0, 3, 10, 5]);
-  assert.equal(scene[0].x, 18);
-  assert.equal(scene[0].y, 23);
+  assert.equal(scene[0].x, 4);
+  assert.equal(scene[0].y, 6);
   assert.match(scene[1].d, /M 10 5 L 20 20/);
 });
 
