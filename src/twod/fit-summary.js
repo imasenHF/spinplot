@@ -33,31 +33,27 @@ export function scanFitResultLines(data, selection = []) {
 }
 
 
-// Extract signed relative residuals from fitted observations; excluded and invalid points are absent.
-// Normalize by |fitted| so the percentage keeps its sign for positive physical features.
+// Extract residuals from the fitted observations; excluded and invalid points are absent.
 export function scanFitResidualSeries(data, {
   amplitude = true,
   linewidth = true,
   displayX = value => value,
-  } = {}) {
+  amplitudeUnit = '',
+  linewidthUnit = '',
+} = {}) {
   if (!data?.valid) return [];
   const series = [];
-  for (const [key, label, fit, enabled, curveIndex] of [
-    ['amplitude', 'Amplitude relative residual', data.amplitudeFit, amplitude, -103],
-    ['linewidth', 'Linewidth relative residual', data.linewidthFit, linewidth, -104],
+  for (const [key, label, fit, enabled, curveIndex, unit] of [
+    ['amplitude', 'Amplitude residual', data.amplitudeFit, amplitude, -103, amplitudeUnit],
+    ['linewidth', 'Linewidth residual', data.linewidthFit, linewidth, -104, linewidthUnit],
   ]) {
     if (!enabled || !fit?.valid || !Array.isArray(fit.points)) continue;
-    const points = fit.points.map(point => {
-      const fitted = Number(point.fitted);
-      const observed = Number(point.signal);
-      const relativeResidual = Number.isFinite(observed) && Number.isFinite(fitted) && Math.abs(fitted) > 0
-        ? 100 * (observed - fitted) / Math.abs(fitted)
-        : NaN;
-      return { x: displayX(point.power), y: relativeResidual, index: point.index };
-    }).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
-    if (!points.length) continue;
-    const rmse = Math.sqrt(points.reduce((sum, point) => sum + point.y * point.y, 0) / points.length);
-    series.push({ key, label, unit: '%', curveIndex, rmse, points });
+    const points = fit.points.map(point => ({
+      x: displayX(point.power),
+      y: point.residual,
+      index: point.index,
+    })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (points.length) series.push({ key, label, unit, curveIndex, rmse: fit.rmse, points });
   }
   return series;
 }
