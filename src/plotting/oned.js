@@ -403,7 +403,7 @@ export function renderFigure(
         const metrics = measureScanFitFormula(ctx, formula, formulaSize, chosenFont);
         return { text: line, formula, formulaSize, width: metrics.width, height: metrics.height };
       }
-      const tabIndex = line.indexOf('\\t');
+      const tabIndex = line.indexOf('\t');
       if (tabIndex >= 0) {
         const leftText = line.slice(0, tabIndex);
         const rightText = line.slice(tabIndex + 1);
