@@ -18,8 +18,7 @@ test('Bruker amplitude summary reports I0, exponent and P-half model parameter',
   assert.deepEqual(lines, [
     'Amplitude',
     'Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)',
-    'I₀ = 3.25',
-    'b = 1.4',
+    'I₀ = 3.25    b = 1.4',
     'P½ = 12.5 mW',
   ]);
 });
@@ -31,14 +30,29 @@ test('amplitude and linewidth summaries use their own parameter sets', () => {
     ['formula', 'I0', 'b', 'half', 'P', 'A', 'C', 'r2', 'rmse', 'n']);
   assert.ok(lines.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'));
   assert.ok(lines.includes('ΔB(P) = A·sqrt(1 + P/Psat) + C'));
-  assert.ok(lines.includes('I₀ = 3.25'));
-  assert.ok(lines.includes('b = 1.4'));
+  assert.ok(lines.includes('I₀ = 3.25    b = 1.4'));
+  assert.ok(!lines.includes('I₀ = 3.25'));
+  assert.ok(!lines.includes('b = 1.4'));
+  assert.ok(lines.includes('R² = 0.99456    RMSE = 0.12'));
+  assert.ok(lines.includes('R² = 0.992    RMSE = 0.2'));
   assert.ok(lines.includes('P½ = 12.5 mW'));
   assert.ok(lines.includes('Psat = 0.25 mW'));
   assert.ok(lines.includes('C = 1'));
   assert.equal(lines.filter(line => line === 'No. of points = 8').length, 2);
 });
 
+
+test('amplitude and fit-quality values share rows only when both fields are selected', () => {
+  const lines = scanFitResultLines({ valid: true, amplitudeFit }, ['I0', 'b', 'r2', 'rmse']);
+  assert.deepEqual(lines, [
+    'Amplitude',
+    'I₀ = 3.25    b = 1.4',
+    'R² = 0.99456    RMSE = 0.12',
+  ]);
+  assert.deepEqual(scanFitResultLines({ valid: true, amplitudeFit }, ['I0']), [
+    'Amplitude', 'I₀ = 3.25',
+  ]);
+});
 
 test('fit residuals preserve fitted residual values and displayed power coordinates', () => {
   const data = { valid: true, amplitudeFit: { ...amplitudeFit, points: [
