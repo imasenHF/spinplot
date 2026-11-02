@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,clampFitResultPosition,fitResultLowerRight,fitResultSummaryWidth,fitResultTabbedTextLayout} from './oned.js';
+import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,clampFitResultPosition,fitResultLowerRight,fitResultSummaryWidth,fitResultTabbedTextLayout,fitResultTabStop} from './oned.js';
 import {processSubplot} from '../processing/oned.js';
 const curves=Object.freeze([Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([1,2,3])}),Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([2,4,6])})]);
 test('Overlay/Stack preserve frozen source; automatic/manual offsets and both directions',()=>{
@@ -74,4 +74,14 @@ test('fit-result lower-right anchor never exceeds the plot right edge',()=>{
 test('fit-result positions are clamped inside the plot for every placement mode',()=>{
  assert.deepEqual(clampFitResultPosition(100,50,500,400,250,120,608,-70),{left:344,top:54});
  assert.deepEqual(clampFitResultPosition(100,50,500,400,250,120,-50,500),{left:106,top:326});
+});
+
+test('parameter rows share one measured tab stop for unequal left-field widths',()=>{
+ const lines=['I₀ = 3.25\tb = 1.4','R² = 0.99456\tRMSE = 0.12'];
+ const measure=text=>text.length*10;
+ const stop=fitResultTabStop(lines,measure,40);
+ const rows=lines.map(line=>fitResultTabbedTextLayout(line,measure,stop));
+ assert.equal(stop,160);
+ assert.equal(rows[0].cells[1].offset,rows[1].cells[1].offset);
+ for(const row of rows) assert.ok(row.cells[1].offset>row.cells[0].width);
 });

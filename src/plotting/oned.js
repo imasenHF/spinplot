@@ -140,6 +140,14 @@ export function fitResultSummaryWidth(rows, plotWidth) {
   return Math.min(plotWidth - 12, contentWidth);
 }
 
+// All tabbed parameter rows share the stop after the widest left-hand field.
+export function fitResultTabStop(lines, measureText, tabWidth) {
+  const step = Number.isFinite(tabWidth) && tabWidth > 0 ? tabWidth : 1;
+  const firstWidth = Math.max(0, ...lines.filter(line => line.includes("\t"))
+    .map(line => Number(measureText(line.split("\t")[0])) || 0));
+  return (Math.floor(firstWidth / step) + 1) * step;
+}
+
 export function fitResultTabbedTextLayout(text, measureText, tabWidth) {
   const measure = typeof measureText === "function" ? measureText : () => 0;
   const step = Number.isFinite(tabWidth) && tabWidth > 0 ? tabWidth : 1;
@@ -410,7 +418,7 @@ export function renderFigure(
     ctx.save();
     const chosenFont = ['Arial','Times New Roman','Georgia','Consolas','Courier New'].includes(sp.fitResultFontFamily) ? `"${sp.fitResultFontFamily}"` : font;
     ctx.font = `${size}px ${chosenFont}`;
-    const tabWidth = ctx.measureText("    ").width;
+    const tabWidth = fitResultTabStop(lines, value => ctx.measureText(value).width, ctx.measureText("    ").width);
     const rows = lines.map((line) => {
       const formula = scanFitFormulaType(line);
       if (formula) {
@@ -484,6 +492,8 @@ export function renderFigure(
     ctx.fillStyle = theme.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+    const tabbedWidth = Math.max(1, ...visible.filter(row => row.cells).map(row => row.width));
+    const tabbedScale = Math.min(1, Math.max(1, width - 16) / tabbedWidth);
     let rowY = top + 5;
     for (const row of visible) {
       if (row.formula) {
@@ -493,8 +503,7 @@ export function renderFigure(
       } else {
         ctx.font = `${size}px ${chosenFont}`;
         if (row.cells) {
-          const availableWidth = Math.max(1, width - 16);
-          const scale = row.width > availableWidth ? availableWidth / row.width : 1;
+          const scale = tabbedScale;
           ctx.save();
           ctx.translate(left + 8, rowY);
           ctx.scale(scale, 1);

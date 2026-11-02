@@ -9,18 +9,15 @@ export function scanFitResultLines(data, selection = []) {
     const fields = [];
     if (name === 'Amplitude') {
       if (selected.has('formula')) fields.push('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)');
-      if (selected.has('I0')) fields.push('I₀ = ' + format(fit.parameters.I0));
       if (selected.has('half')) fields.push('P½ = ' + format(fit.parameters.Phalf) + ' mW');
-      const showB = selected.has('b');
-      const showRmse = selected.has('rmse');
-      if (showB && showRmse) {
-        fields.push('b = ' + format(fit.parameters.b) + '\tRMSE = ' + format(fit.rmse));
-      } else {
-        if (showB) fields.push('b = ' + format(fit.parameters.b));
-        if (selected.has('r2')) fields.push('R² = ' + format(fit.r2));
-        if (showRmse) fields.push('RMSE = ' + format(fit.rmse));
+      for (const [leftKey, leftText, rightKey, rightText] of [
+        ['I0', 'I₀ = ' + format(fit.parameters.I0), 'b', 'b = ' + format(fit.parameters.b)],
+        ['r2', 'R² = ' + format(fit.r2), 'rmse', 'RMSE = ' + format(fit.rmse)],
+      ]) {
+        if (selected.has(leftKey) && selected.has(rightKey)) fields.push(leftText + '\t' + rightText);
+        else if (selected.has(leftKey)) fields.push(leftText);
+        else if (selected.has(rightKey)) fields.push(rightText);
       }
-      if (showB && showRmse && selected.has('r2')) fields.push('R² = ' + format(fit.r2));
       if (selected.has('n')) fields.push('No. of points = ' + format(fit.n));
     } else {
       for (const key of selection) {

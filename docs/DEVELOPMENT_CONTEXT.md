@@ -1,12 +1,9 @@
-## 2026-11-02 Variable scan 幅度拟合结果行序与制表位对齐（PR #17，基于 v0.11.4）
+## 2026-11-02 Variable scan 幅度拟合结果配对与共同制表位
 
-- 幅度拟合结果依次显示公式、I₀、P½、b/RMSE、R² 和 No. of points；I₀、P½、R²、点数各占独立行，b 与 RMSE 同行。
-- b/RMSE 行使用实际制表符分隔。Canvas 绘图端按当前字体测量四空格宽度，将第二列放置在下一个制表位；两列均以左边缘对齐。Canvas、SVG、PDF 共用此排版逻辑。
-- 线宽拟合结果的参数顺序和 R²/RMSE 同行方式保持不变；不修改拟合模型、参数值、拟合范围、项目格式 11 或配置格式 10。
-- 单元测试检查行顺序、制表符和制表位坐标；Chromium 回归检查 P½/b/RMSE/R² 的纵向次序、b/RMSE 同行、左对齐及制表位间距。
-- 应用版本维持 0.11.4，不移动已发布的 v0.11.4 标签。
-- 为保持 SVG/PDF 导出与 Canvas 一致，矢量场景上下文补充 Canvas `scale(x, y)` 仿射变换支持；该变换由制表位文本绘制路径使用。新增矢量场景变换单元测试。
-- **验收结果：** PR [#17](https://github.com/imasenHF/spinplot/pull/17) 已合并，提交 `82ffe646336166e6caa57dd918f892a207a351ad`。quality [41447737900](https://github.com/imasenHF/spinplot/actions/runs/41447737900)、Legend 浏览器回归 [41447737916](https://github.com/imasenHF/spinplot/actions/runs/41447737916)、矢量 PDF 浏览器回归 [41447738085](https://github.com/imasenHF/spinplot/actions/runs/41447738085)、正式 Pages [41448228563](https://github.com/imasenHF/spinplot/actions/runs/41448228563) 与生产 HTTP [41448425909](https://github.com/imasenHF/spinplot/actions/runs/41448425909) 均成功。应用版本维持 0.11.4，未移动已发布标签。
+- 幅度拟合结果依次显示公式、P½、I₀/b、R²/RMSE 和 No. of points。P½ 与点数各占独立一行；I₀ 与 b 同行，R² 与 RMSE 同行。两行采用实际制表符，共用根据左列最大文本宽度计算的制表位，b 与 RMSE 起始位置左对齐；窄图中两行使用相同水平缩放比例。
+- Canvas、SVG、PDF 共用布局；线宽拟合排版、模型、参数、项目格式 11、配置格式 10 不变。
+- 应用版本维持 0.11.4，已发布标签不移动。单元与浏览器回归检查行配对、两列起始位置、绘图区边界及矢量导出；本次 CI 和部署状态以对应 PR / Actions 为准。
+
 
 ---
 
