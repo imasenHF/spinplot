@@ -6,7 +6,7 @@
 - 单元测试检查行顺序、制表符和制表位坐标；Chromium 回归检查 P½/b/RMSE/R² 的纵向次序、b/RMSE 同行、左对齐及制表位间距。
 - 应用版本维持 0.11.4，不移动已发布的 v0.11.4 标签。
 - 为保持 SVG/PDF 导出与 Canvas 一致，矢量场景上下文补充 Canvas `scale(x, y)` 仿射变换支持；该变换由制表位文本绘制路径使用。新增矢量场景变换单元测试。
-- **验收结果：** PR [#17](https://github.com/imasenHF/spinplot/pull/17) 已合并，提交 `82ffe646336166e6caa57dd918f892a207a351ad`。quality [41447737900](https://github.com/imasenHF/spinplot/actions/runs/41447737900)、Legend 浏览器回归 [41447737916](https://github.com/imasenHF/spinplot/actions/runs/41447737916)、矢量 PDF 浏览器回归 [41447738085](https://github.com/imasenHF/spinplot/actions/runs/41447738085) 均成功；Pages 与生产 HTTP 状态以合并后的部署检查为准。
+- **验收结果：** PR [#17](https://github.com/imasenHF/spinplot/pull/17) 已合并，提交 `82ffe646336166e6caa57dd918f892a207a351ad`。quality [41447737900](https://github.com/imasenHF/spinplot/actions/runs/41447737900)、Legend 浏览器回归 [41447737916](https://github.com/imasenHF/spinplot/actions/runs/41447737916)、矢量 PDF 浏览器回归 [41447738085](https://github.com/imasenHF/spinplot/actions/runs/41447738085)、正式 Pages [41448228563](https://github.com/imasenHF/spinplot/actions/runs/41448228563) 与生产 HTTP [41448425909](https://github.com/imasenHF/spinplot/actions/runs/41448425909) 均成功。应用版本维持 0.11.4，未移动已发布标签。
 
 ---
 
