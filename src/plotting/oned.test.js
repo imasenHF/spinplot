@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,fitResultLowerRight,fitResultSummaryWidth} from './oned.js';
+import {createDisplayCurves,rangeY,autoRangeX,resolveCurveStyle,markerSampleIndices,resolveYAxisTitleVisibility,clampFitResultPosition,fitResultLowerRight,fitResultSummaryWidth} from './oned.js';
 import {processSubplot} from '../processing/oned.js';
 const curves=Object.freeze([Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([1,2,3])}),Object.freeze({B:Object.freeze([3300,3310,3320]),y:Object.freeze([2,4,6])})]);
 test('Overlay/Stack preserve frozen source; automatic/manual offsets and both directions',()=>{
@@ -54,7 +54,13 @@ test('fit-result summary width follows the widest rendered row without a fixed f
  assert.equal(fitResultSummaryWidth([],500),70);
 });
 
-test('fit-result lower-right anchor uses available subplot width beyond the plot inset',()=>{
- assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120,700),{left:444,top:324});
+test('fit-result lower-right anchor never exceeds the plot right edge',()=>{
+ assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120,700),{left:344,top:324});
+ assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120,550),{left:294,top:324});
  assert.deepEqual(fitResultLowerRight(100,50,500,400,250,120),{left:344,top:324});
+});
+
+test('fit-result positions are clamped inside the plot for every placement mode',()=>{
+ assert.deepEqual(clampFitResultPosition(100,50,500,400,250,120,608,-70),{left:344,top:54});
+ assert.deepEqual(clampFitResultPosition(100,50,500,400,250,120,-50,500),{left:106,top:326});
 });
