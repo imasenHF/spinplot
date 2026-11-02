@@ -728,11 +728,11 @@ export function controls(card, sp, d, onChange) {
       &&String(scanCoordinateAxis.unit||'').trim().toLowerCase()==='mw';
     const canFitPower=powerMode||calibratedNativePower;
     powerReferenceControls.hidden=!powerMode||!isAttenuationAxis(scanCoordinateAxis);
-    powerXScaleControl.hidden=!powerMode;
+    powerXScaleControl.hidden=!canFitPower;
     const powerUnit=s.scanPowerXScale==='sqrt'?'√mW':'mW';
     for(const key of ['xMin','xMax','xStep']){
       const field=card.querySelector('[data-field='+key+']');
-      if(field)field.title=powerMode?'Displayed X-axis coordinate in '+powerUnit+'.':'';
+      if(field)field.title=canFitPower?'Displayed X-axis coordinate in '+powerUnit+'.':'';
     }
     const signalAxis=orient(d,s.component,s.swap).x.values;
     const signalMin=Math.min(...signalAxis),signalMax=Math.max(...signalAxis);

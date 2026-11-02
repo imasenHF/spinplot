@@ -16,7 +16,7 @@
 
 ## Power fit 结果显示
 
-- 扫描子图拟合结果默认隐藏；Power fit 的 `Show results on plot` 一次性显示公式及全部拟合参数。位置支持九宫格或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组；幅度显示 I₀、b、P½，线宽显示 Psat、A、C，拟合点数显示为 No. of points。拟合结果注释采用九宫格或自定义坐标、可开关边框、背景不透明度 0–1，默认图内右下角、无背景、无边框。公式在绘图区使用矢量数学排版，分式、上下标和根号以绘图路径及文本对象绘制，屏幕、SVG 与 PDF 保持一致；数值和诊断行仍按所选字体排版。背景透明度滑块采用与颜色按钮一致的凸起边框、明暗阴影和主题色进度轨道，并显示百分比。Variable scan 选择微波功率横坐标时，可切换 P (mW) 与 √P (√mW)；拟合计算始终使用原始 P，轴范围随显示坐标转换，非线性模式下手动 X tick step 清空。Variable scan 的普通曲线 legend 默认保留在绘图区内，导出与屏幕沿用同一绘图路径。
+- 扫描子图拟合结果默认隐藏；Power fit 的 `Show results on plot` 一次性显示公式及全部拟合参数。位置支持九宫格或自定义 X/Y 百分比，默认右下角；字体可以继承绘图字体或选择 Arial、Times New Roman、Georgia、Consolas、Courier New，字号 8–24 px，默认 12 px。结果按 Amplitude 与 Linewidth 分组；幅度显示 I₀、b、P½，线宽显示 Psat、A、C，拟合点数显示为 No. of points。拟合结果注释采用九宫格或自定义坐标、可开关边框、背景不透明度 0–1，默认图内右下角、无背景、无边框。公式在绘图区使用矢量数学排版，分式、上下标和根号以绘图路径及文本对象绘制，屏幕、SVG 与 PDF 保持一致；数值和诊断行仍按所选字体排版。背景透明度滑块采用与颜色按钮一致的凸起边框、明暗阴影和主题色进度轨道，并显示百分比。Variable scan 使用微波功率横坐标时（包括 dB 衰减换算和原生校准 mW 坐标），可切换 P (mW) 与 √P (√mW)；拟合计算始终使用原始 P，切换显示坐标时将当前范围转为局部坐标、解除全局/联动 X 轴并清空非线性模式下的手动 X tick step。Variable scan 的普通曲线 legend 默认保留在绘图区内，导出与屏幕沿用同一绘图路径。
 
 ## 1. 产品视觉定位
 

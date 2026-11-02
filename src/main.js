@@ -342,7 +342,8 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
   data=TwoD.scanCorrelationData(d,t);
   xAxis=data.xAxis||(t.swap?d.y:d.x);
   yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
-  const powerXScale=t.scanAxisMode==='power'?(t.scanPowerXScale||'power'):'power';
+  const powerAxis=t.scanAxisMode==='power'||String(xAxis?.unit||'').trim().toLowerCase()==='mw';
+  const powerXScale=powerAxis?(t.scanPowerXScale||'power'):'power';
   const displayPowerX=value=>scanPowerXCoordinate(value,powerXScale);
   if(data.valid&&powerXScale==='sqrt')xAxis=scanPowerXAxis(xAxis,powerXScale);
   if(data.valid){
