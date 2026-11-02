@@ -650,10 +650,10 @@ try {
     assert.match(svg,/1\/2/);
     assert.ok(!svg.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'),
       'The plot annotation must render the equation typographically rather than as a plain formula string');
-    const horizontalSvgLabels=[...svg.matchAll(/<text\\b([^>]*)>([\\s\\S]*?)<\\/text>/g)]
+    const horizontalSvgLabels=[...svg.matchAll(/<text\b([^>]*)>([\s\S]*?)<\/text>/g)]
       .filter(([,attributes])=>{
-        const matrix=attributes.match(/\\btransform="matrix\\(([^)]+)\\)"/)?.[1]
-          ?.trim().split(/\\s+/).map(Number);
+        const matrix=attributes.match(/\btransform="matrix\(([^)]+)\)"/)?.[1]
+          ?.trim().split(/\s+/).map(Number);
         return matrix?.length===6&&Math.abs(matrix[1])<1e-9&&Math.abs(matrix[2])<1e-9;
       })
       .map(([, ,text])=>text.replace(/&amp;/g,'&').replace(/&lt;/g,'<')
