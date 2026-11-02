@@ -1,3 +1,13 @@
+## 2026-11-02 Variable scan 拟合结果与 Y 轴标题排版（PR #17，基于 v0.11.4）
+
+- 幅度拟合结果固定按 P½、I₀/b、R²/RMSE、No. of points 排列；I₀/b 与 R²/RMSE 以制表符分列，绘制时根据当前字体测量第一列最大宽度，两组第二列共用制表位。
+- Variable scan 的 Y 轴标题水平显示在主绘图区上方，使用 Style → Typography 的 Projection titles 字号；局部 Show Y title 仍控制其可见性。未启用残差面板时增加主图上边距；启用残差面板时在残差面板与主图之间预留标题空间，混排布局中残差面板仍与二维上投影对齐。
+- Canvas、SVG、PDF 共用绘图实现；项目格式 11、配置格式 10 不变，应用版本维持 0.11.4。
+- 单元测试覆盖结果行顺序、制表符输出与残差标题间距；Chromium 回归检查标题方向/位置/字体、P½ 顺序及 b/RMSE 的 X 坐标一致。
+- **验收状态：** 修正与测试已提交开发分支，待 PR quality、Chromium、矢量 PDF、Pages 与生产 HTTP 验收。
+
+---
+
 ## 2026-11-02 Variable scan 拟合结果注释限制在绘图区内（PR #16，基于 v0.11.4）
 
 - Lower right 的右边界取绘图区右边缘与子图单元右边缘中的较小值，避免混合布局中的 cellRight 将注释框推到绘图区外。
