@@ -499,9 +499,9 @@ try {
       &&fitSummaryFrame.y+fitSummaryFrame.h<=residualLayoutBefore.rightMain.y+residualLayoutBefore.rightMain.h+0.5,
       'Fit summary frame must stay within the Variable scan plot vertical bounds');
     const fitTextCalls=residualLayoutBefore.fitSummaryTextCalls;
-    const fitText=prefix=>fitTextCalls.find(item=>item.text.startsWith(prefix));
-    const i0Call=fitText('I₀ ='),halfCall=fitText('P½ ='),bCall=fitText('b =');
-    const rmseCall=fitText('RMSE ='),r2Call=fitText('R² =');
+    const findFitTextCall=prefix=>fitTextCalls.find(item=>item.text.startsWith(prefix));
+    const i0Call=findFitTextCall('I₀ ='),halfCall=findFitTextCall('P½ ='),bCall=findFitTextCall('b =');
+    const rmseCall=findFitTextCall('RMSE ='),r2Call=findFitTextCall('R² =');
     assert.ok(i0Call&&halfCall&&bCall&&rmseCall&&r2Call,
       'Amplitude fit summary must expose I0, P-half, b, RMSE and R-squared text positions: '+JSON.stringify(fitTextCalls));
     assert.ok(i0Call.y<halfCall.y&&halfCall.y<bCall.y&&bCall.y<r2Call.y,
