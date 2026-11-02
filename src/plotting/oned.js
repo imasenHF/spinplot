@@ -144,7 +144,7 @@ export function fitResultTabbedTextLayout(text, measureText, tabWidth) {
   const measure = typeof measureText === "function" ? measureText : () => 0;
   const step = Number.isFinite(tabWidth) && tabWidth > 0 ? tabWidth : 1;
   let cursor = 0;
-  const cells = String(text).split("\\t").map((value, index) => {
+  const cells = String(text).split("\t").map((value, index) => {
     if (index) cursor = (Math.floor(cursor / step) + 1) * step;
     const width = Math.max(0, Number(measure(value)) || 0);
     const cell = { text: value, offset: cursor, width };
@@ -418,7 +418,7 @@ export function renderFigure(
         const metrics = measureScanFitFormula(ctx, formula, formulaSize, chosenFont);
         return { text: line, formula, formulaSize, width: metrics.width, height: metrics.height };
       }
-      if (line.includes("\\t")) {
+      if (line.includes("\t")) {
         const layout = fitResultTabbedTextLayout(
           line,
           (value) => ctx.measureText(value).width,
