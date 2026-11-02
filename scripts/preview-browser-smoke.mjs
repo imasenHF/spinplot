@@ -797,7 +797,7 @@ try {
     assert.ok(refitPlacement.sameRow&&refitPlacement.after,'Refit belongs beside the Fit results heading');
     const readAmplitudeResults=()=>scanPanel.locator('.scan-fit-results .scan-fit-model').first()
       .locator('label').evaluateAll(labels=>Object.fromEntries(labels.map(label=>[
-        label.firstChild.textContent.trim(),label.querySelector('input')?.value])));
+        label.firstChild.textContent.trim().replace(' · fixed',''),label.querySelector('input')?.value])));
     const refitExclude=scanPanel.locator('.scan-exclude-panel');
     await refitExclude.evaluate(element=>{element.open=true;});
     await refitExclude.locator('[data-trace-index="0"]').uncheck();
