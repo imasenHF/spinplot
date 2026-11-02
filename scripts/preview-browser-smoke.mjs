@@ -650,12 +650,19 @@ try {
     assert.match(svg,/1\/2/);
     assert.ok(!svg.includes('Spp(P) = I₀·sqrt(P)/(1 + P/P½)^(b/2)'),
       'The plot annotation must render the equation typographically rather than as a plain formula string');
-    const amplitudeFitSvgIndex=svg.indexOf('Amplitude fit');
-    const peakAmplitudeSvgIndex=svg.indexOf('Peak-to-peak amplitude');
-    assert.ok(amplitudeFitSvgIndex<peakAmplitudeSvgIndex,
-      'SVG legend and drawing must use the dragged derived-curve order: indexes='+
-      amplitudeFitSvgIndex+'/'+peakAmplitudeSvgIndex+'; fit='+svg.slice(Math.max(0,amplitudeFitSvgIndex-120),amplitudeFitSvgIndex+180)+
-      '; peak='+svg.slice(Math.max(0,peakAmplitudeSvgIndex-120),peakAmplitudeSvgIndex+180));
+    const horizontalSvgLabels=[...svg.matchAll(/<text\\b([^>]*)>([\\s\\S]*?)<\\/text>/g)]
+      .filter(([,attributes])=>{
+        const matrix=attributes.match(/\\btransform="matrix\\(([^)]+)\\)"/)?.[1]
+          ?.trim().split(/\\s+/).map(Number);
+        return matrix?.length===6&&Math.abs(matrix[1])<1e-9&&Math.abs(matrix[2])<1e-9;
+      })
+      .map(([, ,text])=>text.replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+        .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'"));
+    const amplitudeFitSvgIndex=horizontalSvgLabels.indexOf('Amplitude fit');
+    const peakAmplitudeSvgIndex=horizontalSvgLabels.indexOf('Peak-to-peak amplitude');
+    assert.ok(amplitudeFitSvgIndex>=0&&peakAmplitudeSvgIndex>=0&&amplitudeFitSvgIndex<peakAmplitudeSvgIndex,
+      'Horizontal SVG legend labels must retain the dragged derived-curve order: indexes='+
+      amplitudeFitSvgIndex+'/'+peakAmplitudeSvgIndex+'; labels='+horizontalSvgLabels.join(' | '));
     assert.match(svg,/Amplitude residual/,'SVG identifies the amplitude residual lane');
     assert.match(svg,/Linewidth residual/,'SVG identifies the linewidth residual lane');
     assert.match(svg,/RMSE [^<]*G/,'Linewidth residual RMSE retains the magnetic-field unit');
