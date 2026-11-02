@@ -337,14 +337,14 @@ function addVariableScanSubplot(source,sourceIndex){
 }
 function derivedTwoDPlotModel(sp,i,matrixOverride){
  const manual=!!sp.twoD.derivedFromCurves,sourceIndex=sp.twoD.index,ids=manual?sp.twoD.curveIndices:[sourceIndex],d=matrixOverride||subplotMatrix(sp),t=sp.twoD.settings;
- let data,xAxis,yAxis,curves=[],notice='',displayPowerX=value=>value;const frequency=subplotGFrequency(sp,ids);
+ let data,xAxis,yAxis,curves=[],notice='',displayPowerX=value=>value,sqrtPowerLabel=false;const frequency=subplotGFrequency(sp,ids);
  if(sp.mode==='scan'){
   data=TwoD.scanCorrelationData(d,t);
   xAxis=data.xAxis||(t.swap?d.y:d.x);
   yAxis=data.yAxis||{name:'Signal ('+(t.scanStatistic||'rms')+')',unit:''};
   const powerAxis=t.scanAxisMode==='power'||String(xAxis?.unit||'').trim().toLowerCase()==='mw';
   const powerXScale=powerAxis?(t.scanPowerXScale||'power'):'power';
-  const sqrtPowerLabel=data.valid&&powerAxis&&powerXScale==='sqrt'&&!sp.xAxisLabel;
+  sqrtPowerLabel=data.valid&&powerAxis&&powerXScale==='sqrt'&&!sp.xAxisLabel;
   displayPowerX=value=>scanPowerXCoordinate(value,powerXScale);
   if(data.valid&&powerXScale==='sqrt')xAxis=scanPowerXAxis(xAxis,powerXScale);
   if(data.valid){
