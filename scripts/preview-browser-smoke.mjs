@@ -489,6 +489,8 @@ try {
     assert.equal(await scanPanel.locator('.scan-fitting-controls').evaluate(el=>el.open),true,
       'Returning to power reopens an enabled fit');
     assert.equal(await powerScale.isVisible(),true,'The power-coordinate selector returns with the calibrated power axis');
+    assert.equal(await powerScale.inputValue(),'sqrt','The selected power coordinate is retained while the scan axis is temporarily changed');
+    await powerScale.selectOption('power');
     for(const [key,value] of [['xMin','4'],['xMax','100'],['xStep','2']]){
       await scanPanel.locator('[data-field="'+key+'"]').evaluate((el,v)=>{
         el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));
