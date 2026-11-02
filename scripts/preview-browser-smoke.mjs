@@ -443,6 +443,8 @@ try {
         return {leftTop:top(left),leftMain:main(left),rightTop:top(right),rightMain:main(right),xs,frames};
       });
     };
+    await page.locator('.menu-item[data-menu="tools"]').click();
+    await page.locator('button[data-menu-action="recalculate"]').click();
     const residualLayoutBefore=await captureResidualLayout();
     assert.ok(residualLayoutBefore.leftTop&&residualLayoutBefore.leftMain&&residualLayoutBefore.rightMain,
       'Mixed 2D/Variable scan layout must expose both projection and main plot frames: '+JSON.stringify(residualLayoutBefore));
