@@ -16,7 +16,7 @@ function drawSequence(ctx, tokens, x, baseline, size, family, color, draw) {
   for (const token of tokens) {
     if (token.script) {
       const scriptSize = size * 0.62;
-      const scriptBaseline = baseline + (token.script === 'sub' ? size * 0.22 : -size * 0.43);
+      const scriptBaseline = baseline + (token.script === 'sub' ? size * 0.26 : -size * 0.55);
       setFont(ctx, scriptSize, family, token.italic === true);
       const width = ctx.measureText(token.text).width;
       if (draw) {
@@ -116,7 +116,7 @@ function layout(ctx, type, size, family) {
       type, lhs, numeratorPrefix, numerator, denominator, lhsWidth, numeratorWidth,
       numeratorPrefixWidth, numeratorGap, numeratorTextWidth, numeratorRadicalWidth,
       denominatorWidth, gap, fractionWidth,
-      width: lhsWidth + gap + fractionWidth, height: size * 2.42,
+      width: lhsWidth + gap + fractionWidth, height: size * 2.9,
     };
   } else if (type === 'linewidth') {
     const radicand = [
@@ -130,7 +130,7 @@ function layout(ctx, type, size, family) {
     result = {
       type, lhs, radicand, lhsWidth, radicandWidth, radicalWidth, suffixWidth, gap,
       width: lhsWidth + gap + radicalWidth * 0.78 + radicandWidth + size * 0.25 + suffixWidth,
-      height: size * 2.02,
+      height: size * 2.35,
     };
   } else {
     result = { type: null, width: 0, height: 0 };
@@ -153,23 +153,23 @@ export function drawScanFitFormula(ctx, type, x, top, size, family, color) {
   ctx.strokeStyle = color;
   ctx.lineWidth = Math.max(0.7, size * 0.055);
   if (type === 'amplitude') {
-    const lhsBaseline = top + size * 1.3;
+    const lhsBaseline = top + size * 1.55;
     const fractionX = x + measured.lhsWidth + measured.gap;
     const numeratorX = fractionX + (measured.fractionWidth - measured.numeratorWidth) / 2;
     const denominatorX = fractionX + (measured.fractionWidth - measured.denominatorWidth) / 2;
     drawSequence(ctx, measured.lhs, x, lhsBaseline, size, family, color, true);
-    const numeratorBaseline = top + size * 0.92;
+    const numeratorBaseline = top + size * 0.95;
     drawSequence(ctx, measured.numeratorPrefix, numeratorX, numeratorBaseline, size, family, color, true);
     const numeratorRootX = numeratorX + measured.numeratorPrefixWidth + measured.numeratorGap;
     const numeratorRoot = drawRadical(ctx, numeratorRootX, numeratorBaseline, measured.numeratorTextWidth, size);
     drawSequence(ctx, measured.numerator, numeratorRoot.radicandX, numeratorBaseline, size, family, color, true);
     ctx.beginPath();
-    ctx.moveTo(fractionX, top + size * 1.08);
-    ctx.lineTo(fractionX + measured.fractionWidth, top + size * 1.08);
+    ctx.moveTo(fractionX, top + size * 1.2);
+    ctx.lineTo(fractionX + measured.fractionWidth, top + size * 1.2);
     ctx.stroke();
-    drawSequence(ctx, measured.denominator, denominatorX, top + size * 1.84, size, family, color, true);
+    drawSequence(ctx, measured.denominator, denominatorX, top + size * 2.3, size, family, color, true);
   } else {
-    const baseline = top + size * 1.34;
+    const baseline = top + size * 1.45;
     const rootX = x + measured.lhsWidth + measured.gap;
     const radicandX = rootX + measured.radicalWidth * 0.78;
     drawSequence(ctx, measured.lhs, x, baseline, size, family, color, true);
