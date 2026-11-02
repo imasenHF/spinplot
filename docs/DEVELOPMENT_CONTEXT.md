@@ -1,13 +1,13 @@
 ## 2026-11-02 Variable scan 公式、透明度、√P 坐标与拟合残差面板（PR #12）
 
-- 开发分支 `feat/scan-math-annotation-sqrt-power-20261102`，基于正式 `main` 的 v0.11.0；本次候选版本为 v0.11.1。应用版本变更不影响项目格式 11、配置格式 10。
+- PR [#12](https://github.com/imasenHF/spinplot/pull/12) 合并前的最新提交 [cf038596](https://github.com/imasenHF/spinplot/commit/cf038596b3bc62a9c482dcd33193a01778fcdc68) 的 [质量检查](https://github.com/imasenHF/spinplot/actions/runs/41397812867)、[Legend 浏览器回归](https://github.com/imasenHF/spinplot/actions/runs/41397812866) 和 [矢量 PDF 回归](https://github.com/imasenHF/spinplot/actions/runs/41397812852) 全部通过。综合浏览器回归明确覆盖残差默认关闭、开启后幅度/线宽两条残差 lane、SVG 输出、PDF 输出、关闭后空白面板及项目保存/恢复。正式 Pages 部署 [41397984916](https://github.com/imasenHF/spinplot/actions/runs/41397984916)、生产 HTTP 检查 [41398160428](https://github.com/imasenHF/spinplot/actions/runs/41398160428) 与发布工作流 [41398180006](https://github.com/imasenHF/spinplot/actions/runs/41398180006) 均成功；线上版本由 HTTP 检查确认。浏览器残差回归使用合成扫描数据，未将其描述为真实实验数据验证。
 - 作图区拟合注释将幅度和线宽公式绘制为矢量数学排版，分式线、根号上横线、上下标使用 Canvas 路径和文本对象。屏幕、SVG 与 PDF 共用绘图路径；参数、R²、RMSE 和点数仍为普通数值文本。
 - 背景透明度滑块采用与逐曲线颜色按钮一致的立体边框和明暗阴影，增加主题色进度轨道及百分比读数；保存字段仍为 `scanFitLabelOpacity`。
 - Variable scan 在 `Scan X axis = Microwave power` 或原生校准 mW 坐标时增加 `P (mW)` / `√P (√mW)` 显示选择。原始功率、幅度/线宽提取、拟合计算及 CSV 仍使用 mW；仅衍生曲线的绘图 X 坐标和轴标题变换。切换显示模式时解除全局/联动 X 轴，将有效 X min/max 转为局部范围并在 P 与 √P 间换算，手动 X step 清空；切换 acquired scan variable 与 microwave power 时重置局部 X 范围。新增 `scanPowerXScale` 设置，旧项目缺省为 `power`，项目/配置格式不变。
 - PR [#12](https://github.com/imasenHF/spinplot/pull/12) 已扩展为包含公式标注、透明度控件、P/√P 坐标和拟合残差面板的 v0.11.1 候选。残差功能与版本变更加入后，需以当前最新提交重新完成 lint、格式、单元测试、生产构建、Chromium、SVG/PDF、Pages 和生产 HTTP 检查；此前提交 c6212473 的 CI 通过记录仅代表该提交，不代替本次验收。PR 尚未合并，正式发布状态以 main、Pages、生产 HTTP 与 Release 实际结果为准。
 - 新增可选拟合残差面板，位于主拟合图上方；当幅度或线宽拟合启用时保留上方面板位置，`Show fit residuals` 默认关闭，关闭时面板保持空白。启用后，Amplitude 与 Linewidth 残差分别绘制，使用独立的对称纵坐标范围、散点、零参考线和 RMSE 标注；与主拟合图共用 P / √P 横坐标及当前 X 范围。残差直接取拟合结果中的有效观测点，排除点与无效点不绘制。拟合模型、功率搜索范围、排除点和显示坐标变化后由当前拟合结果重新生成残差。
 - 残差开关保存在现有 `twoD.settings.scanFitResidualShow`，旧项目缺省为关闭；不改变项目格式 11、配置格式 10。
-- CI 验收覆盖 lint、格式、单元测试、生产构建、Chromium 交互回归、SVG 公式/残差输出、PDF 矢量导出和项目保存/恢复；正式 Pages、生产 HTTP 检查与 v0.11.1 Release 分别核对。未完成的部署或科学数值验证不得记为已通过。
+- 发布验收完成：PR quality 包含 lint、Prettier、单元测试、TypeScript 检查、Vite 生产构建和 Chromium 综合回归；单独的矢量 PDF 回归通过。正式 Pages、生产 HTTP 检查和 v0.11.1 Release 均成功。残差图的自动化验收基于合成扫描数据，真实 EPR 文件的残差分布仍需结合用户实验数据做科学审阅。
 - 科学拟合模型和参数定义不变；残差定义为 `rᵢ = yᵢ − ŷᵢ`（observed − fitted）。
 
 ## 2026-11-02 Bruker 三参数幅度饱和模型与真实数据验证（PR #11 已合并并发布）

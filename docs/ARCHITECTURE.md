@@ -20,7 +20,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 .github/workflows/            构建、Pages、预览和发布检查
 ```
 
-- 正式 `main` 的发布基线为 **0.11.0**；PR #12 将应用版本更新至 0.11.1，正式发布状态以 Pages 与生产 HTTP 检查为准。，发布标签 [`v0.10.0`](https://github.com/imasenHF/spinplot/releases/tag/v0.10.0)。
+- 正式 `main` 当前版本为 **0.11.1**，发布标签 [`v0.11.1`](https://github.com/imasenHF/spinplot/releases/tag/v0.11.1) 已创建；项目格式 11、配置格式 10 保持不变。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。

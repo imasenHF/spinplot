@@ -21,7 +21,7 @@
 
 ## 正式版本与独立预览
 
-正式入口 `/spinplot/` 当前发布版本为 **0.11.0**；PR #12 的候选版本为 **0.11.1**，待合并、Pages 部署与生产 HTTP 检查通过后创建 Release。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
+正式入口 `/spinplot/` 当前发布版本为 **0.11.1**，已发布 [GitHub Release v0.11.1](https://github.com/imasenHF/spinplot/releases/tag/v0.11.1)。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
 - **Linear**：线性连续坐标；**Scientific**：仍是线性坐标，只把刻度标签改成科学计数法；**Log10 / SymLog**：全正值采用 Log10，含零或负信号使用保留零点与正负号的对称对数。三者不修改原始数组。
 - 选择一种模式时，应用按对应子图的实际数据自动拟合坐标范围，将数值写入子图 Y/Z、投影 min/max。**Auto Z** 按当前可见 X/Y 区域计算 Z min/max 并填写数值，双击色标同样处理；双击热图主体复原 X/Y 时不覆盖 Z。
@@ -79,7 +79,7 @@ node src/data/curve-matrix.test.js
 
 ## 版本、保存与兼容
 
-- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.0**，PR #12 的候选版本为 **0.11.1**，发布标签将在 Pages 部署与生产 HTTP 检查通过后创建；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
+- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.1**，发布标签为 `v0.11.1`；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
 - **项目格式**：`type: "SpinPlotProject"`，当前 `version: 11`；包含数据数组、二维矩阵与配置。载入逻辑支持经校验的旧项目版本 9/10/11，无法读取时应提示错误。
 - **配置格式**：当前 `version: 10`；单独保存布局、选项和参数，不包含原始谱图数组。项目文件内部也含有此配置。
 - **迁移要求**：文件格式的版本号独立于应用版本；字段变化需检查历史项目读取、兼容性和失败提示，版本标签应在构建与发布检查后创建。
