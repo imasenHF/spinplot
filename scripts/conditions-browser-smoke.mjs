@@ -21,8 +21,8 @@ try {
   ],config:{version:10,controls:{canvasPreset:'custom',canvasWidth:'1500',canvasHeight:'800',baselineMode:'none',globalFreqMode:'local_mean',showGAxis:false},
     layout:{rows:1,cols:3,spans:'1,1,1',gapX:12,gapY:20},subplots:[
       {...base,title:'CW comparison',curves:[0,1],gridCol:1},
-      {...base,title:'Heatmap',mode:'heatmap',gridCol:2,twoD:{index:2,settings:{swap:false,showScanCorrelation:false,showXProjection:true,showYProjection:false}}},
-      {...base,title:'Variable scan',mode:'scan',gridCol:3,twoD:{index:2,settings:{swap:false,scanAxisMode:'power',scanPowerReferenceMW:100,scanFeatureMode:'amplitude',scanStatisticMin:3340,scanStatisticMax:3364,scanFitAmplitude:true}}},
+      {...base,title:'Heatmap',mode:'heatmap',gridCol:2,twoD:{index:2,settings:{sharedControls:true,swap:false,showScanCorrelation:false,showXProjection:true,showYProjection:false}}},
+      {...base,title:'Variable scan',mode:'scan',gridCol:3,twoD:{index:2,settings:{sharedControls:true,swap:false,scanAxisMode:'power',scanPowerReferenceMW:100,scanFeatureMode:'amplitude',scanStatisticMin:3340,scanStatisticMax:3364,scanFitAmplitude:true}}},
     ]}};
   const load=async data=>{
     await page.locator('#projectFile').setInputFiles({name:'conditions.spinplot.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
