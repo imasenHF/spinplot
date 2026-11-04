@@ -98,6 +98,7 @@ try {
 
   await runNode('scripts/preview-browser-smoke.mjs', browserEnv);
   await runNode('scripts/toolbar-browser-smoke.mjs', browserEnv);
+  await runNode('scripts/conditions-browser-smoke.mjs', browserEnv);
   console.log('SpinPlot browser regression passed.');
 } finally {
   await stopServer();

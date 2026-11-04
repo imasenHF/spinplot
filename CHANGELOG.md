@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add optional Experimental conditions per subplot: twelve selectable fields in four fixed groups (sample, microwave, modulation, acquisition), one figure row per nonempty group. Keep sample details manual; read explicit-unit metadata and acquired scan ranges, allow display-only overrides/reset, distinguish acquisition and alignment frequencies, and retain original metadata. Share bounded placement across 1D, 2D, scan, PNG/SVG/PDF, project and config output; older files keep the block hidden.
+- Preserve 1D BES3T descriptor metadata during import.
+
 - Add Absolute / Relative (%) residual display, with fitted-value normalization, scale-relative zero protection, an undefined-point count and percentage RMSE in relative panels. Persist the mode with old-file defaults; retain absolute fit objectives and result RMSE.
 - Add Refit beside Fit results to recompute the enabled models using current parameter constraints, feature interval, power bounds and excluded points. Retain existing automatic updates.
 
