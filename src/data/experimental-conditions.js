@@ -1,3 +1,4 @@
+import { acquisitionMetadata } from './acquisition-metadata.js';
 // Acquisition descriptions are display metadata; they never alter numerical processing.
 export const CONDITION_GROUPS = [
   { key: 'sample', label: 'Sample', fields: ['sampleName', 'sampleId', 'description'] },
@@ -9,15 +10,15 @@ export const CONDITION_FIELDS = {
   sampleName: { label: 'Sample name', plot: 'Sample', unit: '', text: true, aliases: ['sampleName'] },
   sampleId: { label: 'Sample ID', plot: 'ID', unit: '', text: true, aliases: ['sampleId', 'sampleNumber'] },
   description: { label: 'Description', plot: '', unit: '', text: true, aliases: ['sampleDescription'] },
-  frequency: { label: 'MW frequency', plot: 'νacq', unit: 'GHz', selected: true, units: { GHz: 1, MHz: 0.001, Hz: 1e-9 }, aliases: ['microwaveFrequency', 'mwFrequency'] },
+  frequency: { label: 'mwFreq', plot: 'mwFreq', unit: 'GHz', selected: true, units: { GHz: 1, MHz: 0.001, Hz: 1e-9 }, aliases: ['microwaveFrequency', 'mwFrequency'] },
   power: { label: 'MW power', plot: 'P', unit: 'mW', selected: true, units: { mW: 1, W: 1000, uW: 0.001 }, aliases: ['microwavePower', 'mwPower'] },
   attenuation: { label: 'Attenuation', plot: 'Atten.', unit: 'dB', units: { dB: 1 }, aliases: ['microwaveAttenuation', 'attenuation'] },
   modAmplitude: { label: 'Mod. amplitude', plot: 'Mod. amp.', unit: 'mT', selected: true, units: { mT: 1, G: 0.1, T: 1000 }, aliases: ['modulationAmplitude', 'modAmp', 'modulamp', 'B0MA'] },
   modFrequency: { label: 'Mod. frequency', plot: 'Mod. freq.', unit: 'kHz', selected: true, units: { kHz: 1, Hz: 0.001, MHz: 1000 }, aliases: ['modulationFrequency', 'modFrequency', 'B0MF'] },
-  timeConstant: { label: 'Time constant', plot: 'TC', unit: 'ms', units: { ms: 1, s: 1000, us: 0.001 }, aliases: ['timeConstant'] },
-  pointTime: { label: 'Point time', plot: 'Point time', unit: 'ms', units: { ms: 1, s: 1000, us: 0.001 }, aliases: ['conversionTime', 'dwellTime', 'pointTime'] },
+  timeConstant: { label: 'Time constant', plot: 'Time constant', unit: 'ms', units: { ms: 1, s: 1000, us: 0.001 }, aliases: ['timeConstant'] },
+  pointTime: { label: 'Convert time', plot: 'Convert time', unit: 'ms', units: { ms: 1, s: 1000, us: 0.001 }, aliases: ['conversionTime', 'convertTime', 'dwellTime', 'pointTime'] },
   sweepTime: { label: 'Sweep time', plot: 'Sweep time', unit: 's', units: { s: 1, ms: 0.001, min: 60 }, aliases: ['sweepTime', 'scanTime'] },
-  scans: { label: 'Accumulations', plot: 'Scans', unit: '', aliases: ['accumulations', 'scanCount', 'averages'] },
+  scans: { label: 'No. of sweeps', plot: 'No. of sweeps', unit: '', aliases: ['accumulations', 'scanCount', 'averages', 'noOfSweeps'] },
 };
 export const CONDITION_POSITIONS = ['upper_left', 'upper_center', 'upper_right', 'center_left', 'center', 'center_right', 'lower_left', 'lower_center', 'lower_right', 'custom'];
 const clean = value => typeof value === 'string' || typeof value === 'number' ? String(value).replace(/\s+/g, ' ').trim() : '';
@@ -37,12 +38,12 @@ export function normalizeConditions(input) {
     })),
   };
 }
-function readMetadata(metadata, spec) {
-  for (const source of [metadata?.setting, metadata]) {
+function readMetadata(metadata, spec, key) {
+  for (const source of [acquisitionMetadata(metadata), metadata?.setting, metadata]) {
     if (!source || typeof source !== 'object') continue;
     const entries = Object.fromEntries(Object.entries(source).map(([key, value]) => [key.toLowerCase().replace(/[_\s]/g, ''), value]));
-    for (const alias of spec.aliases) {
-      const key = alias.toLowerCase();
+    for (const alias of [key, ...spec.aliases]) {
+      const key = alias.toLowerCase().replace(/[_\s]/g, '');
       const raw = entries[key];
       if (spec.text && clean(raw)) return clean(raw);
       if (!spec.text && !spec.units && clean(raw) && Number.isInteger(Number(raw)) && Number(raw) > 0) return Number(raw);
@@ -71,7 +72,7 @@ function summarize(values, spec) {
 }
 export function extractConditions({ curves = [], matrix = null, settings = null, referenceFrequency = null } = {}) {
   const records = matrix ? [matrix.metadata || {}] : curves.map(curve => curve.metadata || {});
-  const values = Object.fromEntries(Object.entries(CONDITION_FIELDS).map(([key, spec]) => [key, spec.text ? null : summarize(records.map(record => readMetadata(record, spec)), spec)]));
+  const values = Object.fromEntries(Object.entries(CONDITION_FIELDS).map(([key, spec]) => [key, summarize(records.map(record => readMetadata(record, spec, key)), spec)]));
   const frequencies = matrix?.metadata?.frequencies?.length ? matrix.metadata.frequencies : curves.map(curve => curve.freq);
   const validFrequencies = frequencies.map(value => value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : null);
   const frequency = summarize(validFrequencies, CONDITION_FIELDS.frequency);
@@ -110,7 +111,7 @@ export function conditionRows(input, context) {
       const ref = context?.referenceFrequency;
       // Reference frequency is shown separately from the acquired frequency.
       return key === 'frequency' && ref != null && (Number(value.value) !== ref || value.unit !== 'GHz')
-        ? [text, 'νref = ' + format(ref) + ' GHz'] : [text];
+        ? [text, 'refFreq = ' + format(ref) + ' GHz'] : [text];
     });
     return entries.length ? [{ group: group.key, text: entries.join('   ·   ') }] : [];
   });

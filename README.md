@@ -21,7 +21,7 @@
 
 ## 正式版本与独立预览
 
-正式入口 `/spinplot/` 当前发布版本为 **0.11.4**，已完成 Pages 部署和生产 HTTP 检查，并发布 [GitHub Release v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4)。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
+正式入口 `/spinplot/` 当前发布版本为 **0.11.5**，已完成 Pages 部署和生产 HTTP 检查，并发布 [GitHub Release v0.11.5](https://github.com/imasenHF/spinplot/releases/tag/v0.11.5)。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
 - **Linear**：线性连续坐标；**Scientific**：仍是线性坐标，只把刻度标签改成科学计数法；**Log10 / SymLog**：全正值采用 Log10，含零或负信号使用保留零点与正负号的对称对数。三者不修改原始数组。
 - 选择一种模式时，应用按对应子图的实际数据自动拟合坐标范围，将数值写入子图 Y/Z、投影 min/max。**Auto Z** 按当前可见 X/Y 区域计算 Z min/max 并填写数值，双击色标同样处理；双击热图主体复原 X/Y 时不覆盖 Z。
@@ -32,7 +32,7 @@
 
 Variable scan 的 Power fit 可选显示幅度与线宽残差，并通过 Residual type 切换 Absolute / Relative (%)，默认 Absolute。相对残差按拟合值绝对值归一化，零值附近的未定义点不显示；具体定义与数值保护见 [项目记录](PROJECT_CONTEXT.md)。Fit results 标题旁的 Refit 按当前模型、参数约束、范围和排除点重新拟合。残差面板优先占用同行二维图的上投影位置，使用相同的横向范围和高度；没有上投影时单独预留顶部区域。残差作为独立的辅助绘图区绘制，不再切分主拟合图内部区域。关闭显示时仍保留空白位置。拟合公式注释增加排版宽度、公式字号和上下行距，屏幕、SVG 与 PDF 使用同一绘图布局。
 
-实验图片可在 Subplots → Annotations → Experimental conditions 中选择显示四组实验参数，默认关闭：样品、微波、调制、采集。每组独立一行，空组不占行；支持文件值、手动补充/恢复、位置、字号、背景和边框。扫描条件显示范围，采集频率与对齐参考频率分别标注。设置随项目/配置保存，PNG、SVG、PDF 使用同一布局，具体字段与限制见 [项目记录](PROJECT_CONTEXT.md)。
+实验图片可在 Subplots → Annotations → Experimental conditions 中选择显示四组实验参数，默认关闭：样品、微波、调制、采集。每组独立一行，空组不占行；支持 CIQTEK / BES3T 参数自动读取、单位换算、手动补充/恢复、位置、字号、背景和边框。扫描条件显示范围，采集频率与对齐参考频率分别标注。设置随项目/配置保存，PNG、SVG、PDF 使用同一布局，频率标为 mwFreq；采集组使用 Time constant、Convert time、Sweep time、No. of sweeps。字段与单位见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。
 
 ## 使用与科研限制
 
@@ -81,7 +81,7 @@ node src/data/curve-matrix.test.js
 
 ## 版本、保存与兼容
 
-- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.4**，发布标签为 [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4)；`appVersion` 会写入保存文件。应用版本依 MAJOR.MINOR.PATCH 管理，历史详见 [CHANGELOG.md](CHANGELOG.md)。
+- **应用版本**：以 `package.json` 的 `version` 为准；正式 `main` 当前为 **0.11.5**，发布标签为 [v0.11.5](https://github.com/imasenHF/spinplot/releases/tag/v0.11.5)；`appVersion` 会写入保存文件。后续每次应用代码更新均递增 MAJOR.MINOR.PATCH 版本，同时更新 package/lockfile、带日期的 Changelog，并在生产检查成功后创建匹配的不可移动 tag/Release；文档修订可保持版本。PR quality 自动检查版本要求。历史详见 [CHANGELOG.md](CHANGELOG.md)。
 - **项目格式**：`type: "SpinPlotProject"`，当前 `version: 11`；包含数据数组、二维矩阵与配置。载入逻辑支持经校验的旧项目版本 9/10/11，无法读取时应提示错误。
 - **配置格式**：当前 `version: 10`；单独保存布局、选项和参数，不包含原始谱图数组。项目文件内部也含有此配置。
 - **迁移要求**：文件格式的版本号独立于应用版本；字段变化需检查历史项目读取、兼容性和失败提示，版本标签应在构建与发布检查后创建。

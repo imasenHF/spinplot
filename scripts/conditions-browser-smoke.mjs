@@ -11,7 +11,7 @@ try {
   const B=Array.from({length:121},(_,i)=>3340+i*0.2);
   const attenuation=Array.from({length:13},(_,i)=>i*3);
   const real=attenuation.map(a=>B.map(field=>{const x=(field-3352)/2;return x*Math.exp(-x*x/2)*Math.sqrt(100*10**(-a/10));}));
-  const metadata={setting:{microwavePower:'2 mW',modulationAmplitude:'1 G',modulationFrequency:'100 kHz',timeConstant:'20 ms',conversionTime:'10 ms',sweepTime:'60 s',accumulations:4}};
+  const metadata={format:'CIQTEK',type:'CW EPR/1D Field Sweep',setting:{lineEdit_MB_Power:'2',lineEdit_SC_ModulAmp:'1',comboBox_SC_ModulFreq:'100',lineEdit_SC_TimeConstant:'20',lineEdit_SC_ConvertTime:'10',lineEdit_1DFieldSweep_NoOfSweeps:'4',sweepTime:'60 s'}};
   const matrix={name:'Field-power',x:{name:'Field',unit:'G',values:B},y:{name:'Microwave attenuation',unit:'dB',values:attenuation},real,imag:real.map(row=>row.map(()=>0)),metadata:{...metadata,frequencies:attenuation.map(()=>9.85)}};
   const base={collapsed:false,curves:[],mode:'overlay',gridRow:1,rowSpan:1,colSpan:1,gUseGlobal:false,gShow:false,xUseGlobal:false,yUseGlobal:false};
   const fixture={type:'SpinPlotProject',version:11,appVersion:'0.11.4',rawCurves:[
@@ -43,7 +43,7 @@ try {
     window.__conditionCalls=[];
     proto.clearRect=function(...args){if(this.canvas.id==='plotCanvas')window.__conditionCalls=[];return clear.apply(this,args);};
     proto.fillText=function(text,x,y,...rest){
-      if(this.canvas.id==='plotCanvas'&&/^(Sample =|νacq =|Mod\. amp\. =|TC =)/.test(String(text))){const t=this.getTransform();window.__conditionCalls.push({text:String(text),x:t.a*x+t.c*y+t.e,y:t.b*x+t.d*y+t.f});}
+      if(this.canvas.id==='plotCanvas'&&/^(Sample =|mwFreq =|Mod\. amp\. =|Time constant =)/.test(String(text))){const t=this.getTransform();window.__conditionCalls.push({text:String(text),x:t.a*x+t.c*y+t.e,y:t.b*x+t.d*y+t.f});}
       return fill.call(this,text,x,y,...rest);
     };
   });
@@ -63,9 +63,9 @@ try {
   assert.equal(calls.length,4,'Four approved groups produce exactly four figure rows');
   assert.ok(calls.every((call,i)=>!i||call.y>calls[i-1].y));
   assert.match(calls[0].text,/Specimen A.*S-01.*Grouped <demo>/);
-  assert.match(calls[1].text,/9.84–9.86 GHz.*νref = 9.85 GHz.*P = 2 mW/);
+  assert.match(calls[1].text,/9.84–9.86 GHz.*refFreq = 9.85 GHz.*P = 2 mW/);
   assert.match(calls[2].text,/Mod\. amp\. = 0.1 mT.*Mod\. freq\. = 100 kHz/);
-  assert.match(calls[3].text,/TC = 20 ms.*Point time = 10 ms.*Sweep time = 60 s.*Scans = 4/);
+  assert.match(calls[3].text,/Time constant = 20 ms.*Convert time = 10 ms.*Sweep time = 60 s.*No\. of sweeps = 4/);
   for(const key of ['timeConstant','pointTime','sweepTime','scans'])await box.locator('[data-condition-show="'+key+'"]').uncheck();
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(()=>window.__conditionCalls.length),3,'An empty acquisition group leaves no blank row');
@@ -106,6 +106,38 @@ try {
   await page.waitForTimeout(220);await page.locator('[data-tab="subplots"]').click();
   assert.equal(await box.locator('[data-condition-value="sampleName"]').inputValue(),'Specimen A');
   await box.scrollIntoViewIfNeeded();await page.screenshot({path:'browser-preview/experimental-conditions.png',fullPage:true});
+  // Import vendor files through Open Data, rather than relying only on saved-project fixtures.
+  const ciqRaw={type:'CW EPR/1D Field Sweep',sampleName:'Imported sample',sampleId:'IMPORT-1',sampleDescription:'File metadata',
+    setting:{frequency:'9.85',lineEdit_MB_Power:'2.5',lineEdit_MB_Attenuation:'20',lineEdit_SC_ModulAmp:'1',comboBox_SC_ModulFreq:'100',
+      lineEdit_SC_TimeConstant:'40',lineEdit_SC_ConvertTime:'10',lineEdit_1DFieldSweep_NoOfSweeps:'4'},
+    dataStore:{lineDataList:[{ReData:B.map((field,i)=>[field,real[0][i]]),ImData:[]}]}};
+  const dsc='XPTS 121\nXMIN 3340\nXWID 24\nXUNI G\nXNAM Field\nIRFMT D\nIKKF REAL\nMWFQ 9.85e9\nMWPW 0.002\nB0MA 0.0001\nB0MF 100000\nRCTC 0.02048\nSPTP 0.04096\nSweepTime 4.95616 s\nAVGS 8\nPowerAtten 20 dB\nSAMP \'Imported sample\'\n';
+  const binary=Buffer.alloc(B.length*8);real[0].forEach((value,i)=>binary.writeDoubleBE(value,i*8));
+  for(const [format,files,expected] of [
+    ['epr',[{name:'import.epr',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(ciqRaw))}],{sampleName:'Imported sample',frequency:'9.85',power:'2.5',attenuation:'20',modAmplitude:'0.1',modFrequency:'100',timeConstant:'40',pointTime:'10',scans:'4'}],
+    ['dsc',[{name:'import.DSC',mimeType:'text/plain',buffer:Buffer.from(dsc)},{name:'import.DTA',mimeType:'application/octet-stream',buffer:binary}],{sampleName:'Imported sample',frequency:'9.85',power:'2',attenuation:'20',modAmplitude:'0.1',modFrequency:'100',timeConstant:'20.48',pointTime:'40.96',sweepTime:'4.95616',scans:'8'}],
+  ]){
+    await page.reload({waitUntil:'networkidle'});
+    await page.locator('#dataFiles').setInputFiles(files);
+    await page.waitForFunction(()=>document.querySelector('#dataCount')?.textContent?.trim()==='1');
+    await page.locator('[data-tab="subplots"]').click();
+    const imported=page.locator('.subplot').first().locator('.experimental-conditions');
+    for(const [key,value] of Object.entries(expected)){
+      assert.equal(await imported.locator('[data-condition-value="'+key+'"]').inputValue(),value,format+' automatic '+key);
+      assert.equal(await imported.locator('[data-condition-value="'+key+'"]').getAttribute('data-source'),'file');
+    }
+    await imported.locator('xpath=..').evaluate(el=>{el.open=true;});await imported.evaluate(el=>{el.open=true;});
+    await imported.locator('[data-condition="enabled"]').check();
+    for(const checkbox of await imported.locator('[data-condition-show]').all())await checkbox.check();
+    const labels=await imported.locator('.condition-field').allTextContents();
+    for(const label of ['mwFreq','Time constant','Convert time','Sweep time','No. of sweeps'])assert.ok(labels.some(text=>text.includes(label)));
+    await page.locator('[data-tab="export"]').click();
+    const output=(await exportImage('svg')).toString();
+    assert.match(output,/mwFreq = 9.85 GHz/);assert.match(output,/Convert time =/);assert.match(output,/No. of sweeps =/);
+    assert.doesNotMatch(output,/νacq|Point time|NaN|Infinity/);
+    fs.writeFileSync('browser-preview/import-'+format+'-conditions.svg',output);
+    await page.screenshot({path:'browser-preview/import-'+format+'-conditions.png',fullPage:true});
+  }
   assert.deepEqual(errors,[]);
   console.log('BROWSER PASS: four grouped condition rows, metadata/overrides, local settings, scan ranges, project/config persistence and SVG/PDF');
 } finally { await browser.close(); }
