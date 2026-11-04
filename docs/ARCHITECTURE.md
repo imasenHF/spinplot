@@ -133,4 +133,4 @@ node src/twod/ticks.test.js
 - `src/interface/experimental-conditions.js` 挂载子图 Annotations 下的折叠面板。`src/plotting/experimental-conditions.js` 计算图内边界与统一缩放，并由 1D/2D/Variable scan 的共用 Canvas/矢量绘图路径调用。
 - 子图 `experimentalConditions` 由现有项目/配置序列化保存；旧文件默认隐藏，格式版本维持 11/10。专用浏览器脚本覆盖局部开关、四组行序、来源与覆盖、扫描范围、项目/配置重载及 PNG/SVG/PDF 输出。
 
-本轮应用版本为 0.11.5。每次应用更新须递增版本并更新 Changelog；`scripts/check-release-version.mjs` 在 PR quality 中检查源代码改动、package/lockfile 与版本记录。文档修订可保持应用版本；正式部署与生产 HTTP 检查成功后发布对应 tag/Release，既有标签不移动。
+正式应用版本为 0.11.5，PR #22、生产 Pages、HTTP 与 Release 均已完成，检查记录见 [开发上下文](DEVELOPMENT_CONTEXT.md)。每次应用更新须递增版本并更新 Changelog；`scripts/check-release-version.mjs` 在 PR quality 中检查源代码改动、package/lockfile 与版本记录。文档修订可保持应用版本；正式部署与生产 HTTP 检查成功后发布对应 tag/Release，既有标签不移动。

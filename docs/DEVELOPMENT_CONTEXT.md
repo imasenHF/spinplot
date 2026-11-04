@@ -3,14 +3,10 @@
 - 本轮版本 0.11.5。采集频率标为 mwFreq，对齐参考频率另标 refFreq；采集组保留 Time constant、Convert time、Sweep time、No. of sweeps。原 pointTime 存储键保留兼容。
 - 自动映射、格式单位及缺失值规则统一见 [实验参数规则](EXPERIMENTAL_CONDITIONS.md)。CIQTEK 按实际数值字段、BES3T 按 SPL SI 单位及 DSL 带单位字段读取；原元数据不修改。
 - 后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog、部署后的 tag/Release；文档修订可保持版本。PR quality 中版本检查拒绝应用更新复用旧版本。已发布标签不移动；项目/配置格式独立保持 11/10。
-- 验收状态：本地 npm run check 已通过；新增实际格式导入及单位换算测试。PR、浏览器和部署结果待本轮工作流完成后填写。
+- PR [#22](https://github.com/imasenHF/spinplot/pull/22) 已合并，功能提交 `dada8cf58e3f870552fec3b13bdd9173c4840a57`，合并提交 `ee6ac208dfe2643c526447e6554e6dbc7346d5ee`。[v0.11.5](https://github.com/imasenHF/spinplot/releases/tag/v0.11.5) 已发布。quality [41791861341](https://github.com/imasenHF/spinplot/actions/runs/41791861341)、Legend [41791861274](https://github.com/imasenHF/spinplot/actions/runs/41791861274)、Vector PDF [41791861301](https://github.com/imasenHF/spinplot/actions/runs/41791861301)、正式 Pages [41794575488](https://github.com/imasenHF/spinplot/actions/runs/41794575488)、生产 HTTP [41794841049](https://github.com/imasenHF/spinplot/actions/runs/41794841049)、Release [41794865158](https://github.com/imasenHF/spinplot/actions/runs/41794865158) 均成功。
+- 本地 npm run check 和 29 组单元测试通过。两份真实 CIQTEK 1D / Field-Power 文件参数已核对；合成 .epr、.DSC/.DTA 经 Open Data 导入后自动值、来源标记、新名称和四组行序正确，截图及 SVG 已复核。Chromium 同时检查手动覆盖/恢复、项目/配置重载与 PNG/SVG/PDF。版本检查已验证拒绝复用版本和缺少 Changelog，并接受新版本与纯文档修订。线上 HTML 已显示 SpinPlot 0.11.5。
 
-## 2026-11-04 四组实验参数显示
-
-- Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；Time constant/Convert time/Sweep time/No. of sweeps。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。文件中的明确样品信息和已识别的厂商参数自动读取，支持手动覆盖并恢复文件值；缺失值不补猜。
-- 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 mwFreq / refFreq；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
-- 字段、手动覆盖及显示样式存于子图 experimentalConditions；原始 metadata 保留不变。单谱、热图和 Variable scan 共用绘图路径，配置与项目均保存设置，旧文件默认隐藏；项目/配置格式保持 11/10，应用版本保持 0.11.4。
-- CIQTEK 与 BES3T 已识别字段按格式固定单位自动换算；显式单位优先。字段表和核对来源见 [实验参数规则](EXPERIMENTAL_CONDITIONS.md)。旧项目保留的元数据可直接读取；没有明确样品字段时不取文件名。1D BES3T 导入保留描述元数据。PR [#21](https://github.com/imasenHF/spinplot/pull/21) 已合并，提交 `c531a413dfa7a37156210dc42e149dc093a59faf`。quality [41788614907](https://github.com/imasenHF/spinplot/actions/runs/41788614907)、Legend [41788614943](https://github.com/imasenHF/spinplot/actions/runs/41788614943)、Vector PDF [41788615002](https://github.com/imasenHF/spinplot/actions/runs/41788615002)、Pages [41788954956](https://github.com/imasenHF/spinplot/actions/runs/41788954956)、生产 HTTP [41789114726](https://github.com/imasenHF/spinplot/actions/runs/41789114726) 均成功。29 组单元测试通过；专用 Chromium 回归覆盖四组行序、空组、手动覆盖/恢复、局部开关、扫描范围、项目/配置重载及 PNG/SVG/PDF。已复核 CW、热图、变量扫描截图与 SVG。
+- 参数框默认关闭；启用后每个非空组独立一行。支持局部显示、图内九宫格/自定义位置、统一字号、背景与边框。单谱、热图、Variable scan 及 PNG/SVG/PDF 共用布局；项目/配置保存，旧文件默认隐藏。采集参数、显示覆盖与数据处理分开保存。
 
 ---
 
