@@ -22,6 +22,7 @@ export function mountConditions(card, sp, getContext, onChange) {
   box.append(enabledLabel);
   enabled.onchange = () => { config.enabled = enabled.checked; onChange(); };
   const fields = new Map();
+  let context = getContext();
   for (const group of CONDITION_GROUPS) {
     const section = document.createElement('fieldset');
     section.className = 'condition-group';
@@ -42,7 +43,7 @@ export function mountConditions(card, sp, getContext, onChange) {
       const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = '↺';
       reset.title = 'Restore file value'; reset.setAttribute('aria-label', 'Restore ' + spec.label + ' from file');
       const sync = () => {
-        const auto = getContext().values[key];
+        const auto = context.values[key];
         value.value = field.manual ? field.value : auto?.value || '';
         unit.value = field.manual ? field.unit : auto?.unit ?? spec.unit;
         badge.textContent = field.manual ? 'Manual' : auto ? 'File' : 'Missing';
@@ -58,7 +59,7 @@ export function mountConditions(card, sp, getContext, onChange) {
       };
       value.onchange = edit; unit.onchange = edit;
       show.onchange = () => { field.show = show.checked; onChange(); };
-      reset.onclick = () => { field.manual = false; field.value = ''; field.unit = spec.unit; sync(); onChange(); };
+      reset.onclick = () => { context = getContext(); field.manual = false; field.value = ''; field.unit = spec.unit; sync(); onChange(); };
       row.append(show, label, value, unit, reset); section.append(row); fields.set(key, sync); sync();
     }
     box.append(section);
@@ -86,5 +87,5 @@ export function mountConditions(card, sp, getContext, onChange) {
   position.onchange = () => { config.position = position.value; syncCustom(); onChange(); };
   syncCustom(); box.append(layout); parent.append(box);
   // Frequency and source selection may change while this card stays mounted.
-  card.addEventListener('change', event => { if (!box.contains(event.target)) for (const sync of fields.values()) sync(); });
+  card.addEventListener('change', event => { if (!box.contains(event.target)) { context = getContext(); for (const sync of fields.values()) sync(); } });
 }

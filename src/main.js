@@ -589,7 +589,7 @@ organizeGlobalUI();populateFonts();initEvents();initialConfig();updateFreqTable(
 // Capture UI state once; numerical processing completes before the renderer runs.
 function renderPlot(canvas,w,h,scale=1,isExport=false){
  const model=preparePlotModel().map(m=>({...m,matrix:m.sp.twoD?subplotMatrix(m.sp):null,gConfig:subplotGConfig(m.sp),frequency:displayFrequency(m.sp,m.curves),colors:m.curves.map((c,i)=>curveColor(i,m.curves.length,m.sp,c.index??i))}));
- for(const m of model){m.conditionRows=conditionRows(state.subplots[m.index]?.experimentalConditions,subplotConditionsContext(state.subplots[m.index]));m.sp={...m.sp,annotations:(m.sp.annotations||[]).map(a=>({...a,displayCoordinate:annotationB(a,(m.sp.twoD||(m.sp.derivedFromTwoD&&axisKind(m.sp.derivedXAxis)!=='field'))?null:m.frequency)}))};}
+ for(const m of model){m.conditionRows=state.subplots[m.index]?.experimentalConditions?.enabled?conditionRows(state.subplots[m.index].experimentalConditions,subplotConditionsContext(state.subplots[m.index])):[];m.sp={...m.sp,annotations:(m.sp.annotations||[]).map(a=>({...a,displayCoordinate:annotationB(a,(m.sp.twoD||(m.sp.derivedFromTwoD&&axisKind(m.sp.derivedXAxis)!=='field'))?null:m.frequency)}))};}
  const controls=Object.fromEntries([...document.querySelectorAll('[id]')].map(e=>[e.id,{value:e.value,checked:e.checked}]));
  const view={layout:state.layout,noiseDraft:state.noiseDraft,drag:state.drag,plotRegions:state.plotRegions};
  return renderFigure(canvas,w,h,scale,isExport,{model,cells:layoutCells(),controls,view,style:{theme:plotTheme(),font:getFont('plotFont','customPlotFont','Arial')}});
