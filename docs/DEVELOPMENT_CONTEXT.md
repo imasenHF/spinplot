@@ -3,7 +3,7 @@
 - Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；时间常数/单点采集时间/扫描时间/累加次数。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。样品信息手动填写，其他字段在单位明确时自动读取，也可手动覆盖并恢复文件值。缺失值不补猜。
 - 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 νacq / νref；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
 - 字段、手动覆盖及显示样式存于子图 experimentalConditions；原始 metadata 保留不变。单谱、热图和 Variable scan 共用绘图路径，配置与项目均保存设置，旧文件默认隐藏；项目/配置格式保持 11/10，应用版本保持 0.11.4。
-- 自动映射仅处理明确单位的设置、采集频率与坐标轴范围。尚未确认的厂商字段通过手动填写补充；不根据字段位置或文件名推定参数。1D BES3T 导入同步保留描述元数据。数值与绘图单元检查、专用 Chromium 操作、PNG/SVG/PDF 导出和保存重载由本次 PR / Actions 验收。
+- 自动映射仅处理明确单位的设置、采集频率与坐标轴范围。尚未确认的厂商字段通过手动填写补充；不根据字段位置或文件名推定参数。1D BES3T 导入同步保留描述元数据。PR [#21](https://github.com/imasenHF/spinplot/pull/21) 已合并，提交 `c531a413dfa7a37156210dc42e149dc093a59faf`。quality [41788614907](https://github.com/imasenHF/spinplot/actions/runs/41788614907)、Legend [41788614943](https://github.com/imasenHF/spinplot/actions/runs/41788614943)、Vector PDF [41788615002](https://github.com/imasenHF/spinplot/actions/runs/41788615002)、Pages [41788954956](https://github.com/imasenHF/spinplot/actions/runs/41788954956)、生产 HTTP [41789114726](https://github.com/imasenHF/spinplot/actions/runs/41789114726) 均成功。29 组单元测试通过；专用 Chromium 回归覆盖四组行序、空组、手动覆盖/恢复、局部开关、扫描范围、项目/配置重载及 PNG/SVG/PDF。已复核 CW、热图、变量扫描截图与 SVG。
 
 ---
 
