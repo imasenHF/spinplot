@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.11.5 — 2026-11-04
 
-- Add optional Experimental conditions per subplot: twelve selectable fields in four fixed groups (sample, microwave, modulation, acquisition), one figure row per nonempty group. Keep sample details manual; read explicit-unit metadata and acquired scan ranges, allow display-only overrides/reset, distinguish acquisition and alignment frequencies, and retain original metadata. Share bounded placement across 1D, 2D, scan, PNG/SVG/PDF, project and config output; older files keep the block hidden.
+- Automatically read CIQTEK numeric acquisition widget fields and BES3T standard SI/device-layer parameters. Convert B0MA from T, microwave frequency from Hz, power from W, and time fields from s correctly; retain explicit sample metadata without using filenames. Keep original metadata and support older saved projects.
+- Label frequency as mwFreq, and retain separate Time constant, Convert time, Sweep time and No. of sweeps fields. Keep the legacy pointTime configuration key for compatibility.
+- Require application changes to increment package/lockfile versions and include a dated Changelog entry. Document future version rules; publish immutable matching tags and Releases after successful production deployment checks.
+
+- Add optional Experimental conditions per subplot: twelve selectable fields in four fixed groups (sample, microwave, modulation, acquisition), one figure row per nonempty group. Read explicit sample metadata, acquisition metadata and acquired scan ranges, allow display-only overrides/reset, distinguish acquisition and alignment frequencies, and retain original metadata. Share bounded placement across 1D, 2D, scan, PNG/SVG/PDF, project and config output; older files keep the block hidden.
 - Preserve 1D BES3T descriptor metadata during import.
 
 - Add Absolute / Relative (%) residual display, with fitted-value normalization, scale-relative zero protection, an undefined-point count and percentage RMSE in relative panels. Persist the mode with old-file defaults; retain absolute fit objectives and result RMSE.

@@ -5,8 +5,11 @@
 
 ## 1. 定位与发布
 
-- Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；时间常数/单点采集时间/扫描时间/累加次数。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。样品信息手动填写，其他字段在单位明确时自动读取，也可手动覆盖并恢复文件值。缺失值不补猜。
-- 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 νacq / νref；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
+- 本轮版本 **0.11.5**；厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
+
+
+- Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；Time constant/Convert time/Sweep time/No. of sweeps。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。文件中的明确样品信息和已识别的厂商参数自动读取，支持手动覆盖并恢复文件值；缺失值不补猜。
+- 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 mwFreq / refFreq；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
 
 - Variable scan 的 Residual type 可选 Absolute（默认）与 Relative (%)。绝对残差为 rᵢ=yᵢ−ŷᵢ，保留原单位；相对残差为 100rᵢ/|ŷᵢ|，单位为 %。相对模式仅显示 |ŷᵢ| 大于该拟合最大 |ŷ| 的 10⁻¹² 倍的有效点，标题给出未定义点数量；残差标题的 RMSE 按当前显示值重新计算，拟合结果区 RMSE 和拟合目标仍采用原单位的绝对残差。该设置保存为 twoD.settings.scanFitResidualMode，旧项目缺省为 absolute。
 - Fit results 标题旁提供 Refit 按钮，按当前启用模型、固定/拟合参数、特征区间、功率搜索范围与排除点重新求解并更新结果和绘图；未启用模型或没有校准功率坐标时禁用。原有参数修改后的自动更新保留。
@@ -34,7 +37,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 - 应用：https://plastocyanin.org/spinplot/
 - 构建：Vite、JavaScript（含部分独立模块）、TypeScript 检查；`package.json` 中包含 React 依赖，但主体界面尚未改造成 React 应用。
 - 发布：`main` 触发 GitHub Actions，产物为 `dist/`，部署路径为 `/spinplot/`；不单独声明 `CNAME`。
-- 正式 `main` 当前版本为 **0.11.4**；PR [#15](https://github.com/imasenHF/spinplot/pull/15) 已于 2026-11-02 合并，合并提交 `190dcef98898ca0e75ebdf68f5b0edd75bba2d40`，GitHub Release [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4) 已发布。PR quality [41434866491](https://github.com/imasenHF/spinplot/actions/runs/41434866491)、Legend [41434866649](https://github.com/imasenHF/spinplot/actions/runs/41434866649)、Vector PDF [41434866620](https://github.com/imasenHF/spinplot/actions/runs/41434866620)、正式 Pages [41435140514](https://github.com/imasenHF/spinplot/actions/runs/41435140514)、生产 HTTP [41435505010](https://github.com/imasenHF/spinplot/actions/runs/41435505010) 与 Release [41435529016](https://github.com/imasenHF/spinplot/actions/runs/41435529016) 均成功。
+- 此前发布版本为 **0.11.4**；PR [#15](https://github.com/imasenHF/spinplot/pull/15) 已于 2026-11-02 合并，合并提交 `190dcef98898ca0e75ebdf68f5b0edd75bba2d40`，GitHub Release [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4) 已发布。PR quality [41434866491](https://github.com/imasenHF/spinplot/actions/runs/41434866491)、Legend [41434866649](https://github.com/imasenHF/spinplot/actions/runs/41434866649)、Vector PDF [41434866620](https://github.com/imasenHF/spinplot/actions/runs/41434866620)、正式 Pages [41435140514](https://github.com/imasenHF/spinplot/actions/runs/41435140514)、生产 HTTP [41435505010](https://github.com/imasenHF/spinplot/actions/runs/41435505010) 与 Release [41435529016](https://github.com/imasenHF/spinplot/actions/runs/41435529016) 均成功。
 - PR [#16](https://github.com/imasenHF/spinplot/pull/16) 在 v0.11.4 代码基线上修正拟合结果框越界，合并提交 `b5499a04ca450ee234942481282b5b1b57c140bf`。quality [41436853488](https://github.com/imasenHF/spinplot/actions/runs/41436853488)、Legend [41436853283](https://github.com/imasenHF/spinplot/actions/runs/41436853283)、Pages（含浏览器交互与矢量 PDF 回归）[41437058859](https://github.com/imasenHF/spinplot/actions/runs/41437058859) 和生产 HTTP [41437386963](https://github.com/imasenHF/spinplot/actions/runs/41437386963) 均成功。应用版本维持 0.11.4，未移动已发布的 v0.11.4 标签；项目格式 11、配置格式 10 不变。
 - PR [#17](https://github.com/imasenHF/spinplot/pull/17) 的后续排版修正按当前确认要求采用 P½、I₀/b、R²/RMSE、点数的顺序；b 与 RMSE 使用共同制表位左对齐；矢量场景同步支持 Canvas scale，保证 SVG/PDF 输出一致。合并提交 `82ffe646336166e6caa57dd918f892a207a351ad`，quality [41447737900](https://github.com/imasenHF/spinplot/actions/runs/41447737900)、Legend [41447737916](https://github.com/imasenHF/spinplot/actions/runs/41447737916)、Vector PDF [41447738085](https://github.com/imasenHF/spinplot/actions/runs/41447738085) 均成功。
 - 项目文件格式：**11**；配置文件格式：**10**；两者均与应用版本号相互独立。

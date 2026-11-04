@@ -20,7 +20,7 @@ src/export/                  绘图场景、CSV、SVG、PDF 和栅格导出
 .github/workflows/            构建、Pages、预览和发布检查
 ```
 
-- 正式 `main` 当前版本为 **0.11.4**；PR [#15](https://github.com/imasenHF/spinplot/pull/15) 已合并并发布 [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4)。Variable scan 拟合结果注释将 I₀/b、R²/RMSE 分别合并为单行，注释框宽度按最长公式/参数行动态计算，不再设置 250 px 固定最小宽度；PR [#16](https://github.com/imasenHF/spinplot/pull/16) 在 v0.11.4 代码基线上将所有注释位置限制在主绘图区边界内。 PR [#17](https://github.com/imasenHF/spinplot/pull/17) 之后的排版按 P½、I₀/b、R²/RMSE、点数排列，两参数行共用同一制表位，b 与 RMSE 起始位置左对齐；矢量场景同步支持 Canvas scale 变换。PR quality [41436853488](https://github.com/imasenHF/spinplot/actions/runs/41436853488)、Legend [41436853283](https://github.com/imasenHF/spinplot/actions/runs/41436853283)、Pages（含交互与矢量 PDF 回归）[41437058859](https://github.com/imasenHF/spinplot/actions/runs/41437058859)、生产 HTTP [41437386963](https://github.com/imasenHF/spinplot/actions/runs/41437386963) 均成功；应用版本仍为 0.11.4，项目格式 11、配置格式 10 不变。
+- 此前发布版本为 **0.11.4**；PR [#15](https://github.com/imasenHF/spinplot/pull/15) 已合并并发布 [v0.11.4](https://github.com/imasenHF/spinplot/releases/tag/v0.11.4)。Variable scan 拟合结果注释将 I₀/b、R²/RMSE 分别合并为单行，注释框宽度按最长公式/参数行动态计算，不再设置 250 px 固定最小宽度；PR [#16](https://github.com/imasenHF/spinplot/pull/16) 在 v0.11.4 代码基线上将所有注释位置限制在主绘图区边界内。 PR [#17](https://github.com/imasenHF/spinplot/pull/17) 之后的排版按 P½、I₀/b、R²/RMSE、点数排列，两参数行共用同一制表位，b 与 RMSE 起始位置左对齐；矢量场景同步支持 Canvas scale 变换。PR quality [41436853488](https://github.com/imasenHF/spinplot/actions/runs/41436853488)、Legend [41436853283](https://github.com/imasenHF/spinplot/actions/runs/41436853283)、Pages（含交互与矢量 PDF 回归）[41437058859](https://github.com/imasenHF/spinplot/actions/runs/41437058859)、生产 HTTP [41437386963](https://github.com/imasenHF/spinplot/actions/runs/41437386963) 均成功；应用版本仍为 0.11.4，项目格式 11、配置格式 10 不变。
 - Vite 以 `/spinplot/` 为 `base`，使用 `npm run build`（TypeScript 检查 + Vite），结果位于 `dist/`；GitHub Actions 在 `main` 上构建并部署。
 - 当前是 **原生 HTML/JavaScript 为主体、二维相关代码部分模块化** 的应用。虽然已安装 React 与 TypeScript 依赖，不能描述为已经全部迁移至 React。
 - 不设置额外 CNAME，不部署账户/后端服务，数据输入与文件导出默认发生在浏览器内。
@@ -129,6 +129,8 @@ node src/twod/ticks.test.js
 
 ## 实验参数显示（2026-11-04）
 
-- `src/data/experimental-conditions.js` 定义十二字段、四组、保守单位映射、扫描范围、手动覆盖与分组文本。数据和显示覆盖分别保存，不修改原始元数据。
+- `src/data/acquisition-metadata.js` 定义 CIQTEK/BES3T 的厂商字段与格式单位，见 [实验参数规则](EXPERIMENTAL_CONDITIONS.md)。`src/data/experimental-conditions.js` 定义十二字段、四组、统一换算、扫描范围、手动覆盖与分组文本。数据和显示覆盖分别保存，不修改原始元数据。
 - `src/interface/experimental-conditions.js` 挂载子图 Annotations 下的折叠面板。`src/plotting/experimental-conditions.js` 计算图内边界与统一缩放，并由 1D/2D/Variable scan 的共用 Canvas/矢量绘图路径调用。
 - 子图 `experimentalConditions` 由现有项目/配置序列化保存；旧文件默认隐藏，格式版本维持 11/10。专用浏览器脚本覆盖局部开关、四组行序、来源与覆盖、扫描范围、项目/配置重载及 PNG/SVG/PDF 输出。
+
+本轮应用版本为 0.11.5。每次应用更新须递增版本并更新 Changelog；`scripts/check-release-version.mjs` 在 PR quality 中检查源代码改动、package/lockfile 与版本记录。文档修订可保持应用版本；正式部署与生产 HTTP 检查成功后发布对应 tag/Release，既有标签不移动。
