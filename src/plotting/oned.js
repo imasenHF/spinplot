@@ -1,3 +1,4 @@
+import { drawConditions } from './experimental-conditions.js';
 import {
   axisEps,
   niceTicks,
@@ -875,6 +876,7 @@ export function renderFigure(
           font,
           theme,
         );
+        drawConditions(ctx, m.conditionRows, sp.experimentalConditions, r, font, theme);
         if (!isExport) {
           state.plotRegions.push(r);
           for (const pr of r.projectionRegions)
@@ -1298,6 +1300,7 @@ export function renderFigure(
           );
         });
       }
+      drawConditions(ctx, m.conditionRows, sp.experimentalConditions, geom, font, theme);
     });
     if (figTitle) {
       ctx.fillStyle = theme.text;

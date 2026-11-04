@@ -1,6 +1,6 @@
 # SpinPlot — STYLE_GUIDE
 
-更新日期：2026-11-03（Asia/Shanghai）
+更新日期：2026-11-04（Asia/Shanghai）
 适用范围：SpinPlot 独立软件界面、图表预览及导出。以下区分**现有实现**与**后续修改必须保留的规则**；实际值以 `index.html` CSS、`src/interface.js`、`src/twod/ui.js`、`src/twod/palettes.js` 和绘图/导出代码为准。本文件不要求将主站的页面布局直接覆盖本工具。
 
 ## 顶部工具栏（PR #7、#9 已合并）
@@ -13,6 +13,11 @@
 
 - Style → Legend 提供全局 Position、Opacity 与 Border，位置默认 Upper right，可选九宫格或图外顶部/右侧；子图 Subplots → Legend & labels 提供局部 Label mode 与 Legend position（Use global 或单独选择），默认位置继承全局。Variable scan 使用一维曲线图例体系，Labels 默认展开；普通 Heatmap、Contour 和 3D surface 使用各自色标，不显示曲线 legend。仅在确有曲线图例的模式下显示位置设置。
 - 位置继承适用于绘图区边距计算与实际绘制，导出与屏幕采用同一有效位置。旧配置默认 Upper right 的迁移不改变其初始视觉结果。
+
+## 实验参数显示
+
+- Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；时间常数/单点采集时间/扫描时间/累加次数。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。样品信息手动填写，其他字段在单位明确时自动读取，也可手动覆盖并恢复文件值。缺失值不补猜。
+- 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 νacq / νref；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
 
 ## Power fit 结果显示
 

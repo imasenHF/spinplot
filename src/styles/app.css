@@ -246,3 +246,16 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-results-heading{display:flex;align-items:center;gap:14px}
 .scan-refit-button{min-height:23px;padding:1px 10px;flex:0 0 auto;font-weight:normal}
 .scan-fit-display>.scan-residual-mode{grid-column:1/-1}
+
+/* Optional acquisition metadata: each group becomes one line on the figure. */
+.experimental-conditions{margin-top:9px}
+.condition-group{min-width:0;margin:8px 0;padding:6px;border:1px solid #c4c9cc}
+.condition-group legend{font-size:11px;font-weight:600;color:#273f4e;padding:0 3px}
+.condition-field{display:grid;grid-template-columns:14px minmax(63px,.9fr) minmax(55px,1fr) 39px 23px;gap:4px;align-items:center;margin:4px 0;min-width:0}
+.condition-field>input[type=text]{width:100%;min-width:0;font-size:11px;padding:2px 3px;height:24px;box-sizing:border-box}
+.condition-field>button{min-width:0;padding:1px;height:23px}
+.condition-name{font-size:11px;line-height:1.15;min-width:0}
+.condition-name small{display:block;font-size:9px;color:#596b77}
+.condition-field>[hidden]{visibility:hidden;display:block}
+.condition-layout{margin-top:7px}
+.condition-layout>[hidden]{display:none}

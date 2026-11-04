@@ -126,3 +126,9 @@ node src/twod/ticks.test.js
 4. **发布检查**：Actions 构建/部署状态、线上 URL、资源路径与实际页面交互。
 
 预览分支的本轮测试和发布状态单独记录；正式分支和真实仪器样本不能使用预览分支的合成数据结果替代。
+
+## 实验参数显示（2026-11-04）
+
+- `src/data/experimental-conditions.js` 定义十二字段、四组、保守单位映射、扫描范围、手动覆盖与分组文本。数据和显示覆盖分别保存，不修改原始元数据。
+- `src/interface/experimental-conditions.js` 挂载子图 Annotations 下的折叠面板。`src/plotting/experimental-conditions.js` 计算图内边界与统一缩放，并由 1D/2D/Variable scan 的共用 Canvas/矢量绘图路径调用。
+- 子图 `experimentalConditions` 由现有项目/配置序列化保存；旧文件默认隐藏，格式版本维持 11/10。专用浏览器脚本覆盖局部开关、四组行序、来源与覆盖、扫描范围、项目/配置重载及 PNG/SVG/PDF 输出。
