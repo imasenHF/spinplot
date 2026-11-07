@@ -5,7 +5,7 @@
 
 ## 1. 定位与发布
 
-- 本轮应用版本 **0.11.7**：幅度模型只保留下方公式与一套参数控件。P½ 独立整行、I₀/b 同行、R²/RMSE 同行、No. of points 独立整行；Fit 放在各自参数名旁，窄侧栏自动拆分 I₀/b。删除上方重复区与下方重复只读副本，模型处去除 Bruker 字样。公式、拟合算法、Refit 和保存字段保持兼容；项目/配置格式仍为 11/10。验收与发布状态见开发上下文。
+- 正式版本 **0.11.7** 已通过 [PR #24](https://github.com/imasenHF/spinplot/pull/24) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.7](https://github.com/imasenHF/spinplot/releases/tag/v0.11.7)：幅度模型只保留下方公式与一套参数控件。P½ 独立整行、I₀/b 同行、R²/RMSE 同行、No. of points 独立整行；Fit 放在各自参数名旁，窄侧栏自动拆分 I₀/b。删除上方重复区与下方重复只读副本，模型处去除 Bruker 字样。公式、拟合算法、Refit 和保存字段保持兼容；项目/配置格式仍为 11/10。验收记录见开发上下文。
 
 - 厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
 
@@ -116,7 +116,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
-手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前正式版本为 0.11.6，阶段 B 修正及后续 Variable scan 更新均已合并并发布；实现与后续科研验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前正式版本为 0.11.7，阶段 B 修正及后续 Variable scan 更新均已合并并发布；实现与后续科研验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。
