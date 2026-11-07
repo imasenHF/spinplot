@@ -3,7 +3,9 @@
 - 幅度参数只保留下方模型公式之后的一套控件，P½ 整行、I₀/b 同行、R²/RMSE 同行、点数整行；参数块不超过 220 px 时，I₀/b 拆行。
 - 每个拟合勾选框放在数值输入框右侧并垂直居中，移除可见 Fit 文字，保留无障碍名称与悬浮说明。勾选时只读显示拟合值，取消后编辑固定值。
 - 刷新时保持交互控件连接，保留数值编辑后的点击与焦点。无效固定值导致拟合失败后，仍可直接修正同一控件。Refit、公式、模型名称和保存字段保持不变，项目/配置格式仍为 11/10。
-- 本轮应用版本 0.11.8。验收与合并、部署、发布状态待实际检查后更新。
+- 应用版本 0.11.8，PR [#25](https://github.com/imasenHF/spinplot/pull/25) 已合并；功能提交 `d507f40349e5175d59a8ec81879e82ccb5939218`，合并提交 `c5a1097f60c0f20bd3eb8acb30478c4a36bdb4c5`。
+- 本地 npm run check 与 29 组单元测试通过。quality [42401537610](https://github.com/imasenHF/spinplot/actions/runs/42401537610)、Vector PDF [42401537582](https://github.com/imasenHF/spinplot/actions/runs/42401537582) 成功；Chromium 检查四组窗口/侧栏尺寸下的勾选框同行居中、长数值完整显示、P½ 整行、I₀/b 同行与窄栏拆行，以及无障碍名称、悬浮说明、固定值切换、焦点、无效值修正、Refit、旧项目/配置重载与导出。250/320 px 截图已复核。
+- [v0.11.8](https://github.com/imasenHF/spinplot/releases/tag/v0.11.8) 已发布，正式 Pages [42401762677](https://github.com/imasenHF/spinplot/actions/runs/42401762677)、生产 HTTP [42402229655](https://github.com/imasenHF/spinplot/actions/runs/42402229655)、Release [42402241806](https://github.com/imasenHF/spinplot/actions/runs/42402241806) 均成功。线上标题为 SpinPlot 0.11.8，构建脚本与样式中的同行布局和悬浮说明已核对。
 
 ## 2026-11-04 v0.11.5 自动参数读取与版本管理
 
