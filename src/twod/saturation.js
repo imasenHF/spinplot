@@ -198,7 +198,7 @@ function fitBrukerAmplitude(points, {
     );
     if (refined && refined.sse < best.sse) best = refined;
   }
-  if (!best) return { valid: false, reason: 'Unable to identify Bruker saturation-model parameters.' };
+  if (!best) return { valid: false, reason: 'Unable to identify saturation-model parameters.' };
 
   const average = points.reduce((sum, point) => sum + point.signal, 0) / points.length;
   const tss = points.reduce((sum, point) => sum + (point.signal - average) ** 2, 0);
@@ -220,7 +220,7 @@ function fitBrukerAmplitude(points, {
     })),
     sse: best.sse, rmse, r2, n: points.length, warning,
     atBoundary: Boolean(atPhalfBoundary || atExponentBoundary),
-    modelName: 'Bruker Xenon P-half amplitude saturation',
+    modelName: 'P-half amplitude saturation',
   };
 }
 function solveLinewidthAt(points, pSat, allowOffset) {
