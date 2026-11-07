@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.8 — 2026-11-08
+
+- Place each amplitude parameter Fit checkbox beside its numeric input, remove the visible Fit text, and retain accessible names and hover explanations. Preserve the full-width P½ row, paired I₀/b row, narrow-sidebar wrapping and fixed/fitted behavior.
+
 ## 0.11.7 — 2026-11-08
 
 - Consolidate amplitude model parameters beneath the existing equation: one full-width P½ row, a paired I₀/b row with Fit beside each name, a paired R²/RMSE row and a full-width point count. Remove duplicate upper/readout fields and wrap controls in narrow sidebars. Keep fixed/fitted controls available after invalid constraints.

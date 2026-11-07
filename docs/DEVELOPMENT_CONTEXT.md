@@ -1,11 +1,9 @@
-## 2026-11-08 v0.11.7 合并幅度参数区
+## 2026-11-08 v0.11.8 参数框同行勾选
 
-- 幅度参数只保留下方一套可操作控件，位于模型公式之后。顺序为 P½（mW）整行、I₀/b 同行、R²/RMSE 同行、No. of points 整行；窄侧栏拆分 I₀/b，每个参数的 Fit 位于名称旁。
-- 上方重复参数标题和三字段、下方重复的参数只读副本均删除。保留现有公式、Refit 位置、Fit/固定逻辑、统计量与图内结果注释。无效固定值造成拟合失败时，仍可直接修正同一组参数控件。
-- 模型显示名称改为 Amplitude · P-half saturation；标题、悬浮提示、无障碍标签、求解器帮助、可显示错误和模型描述去除 Bruker，数值模型与求解过程保留。
-- 应用版本 0.11.7，项目/配置格式保持 11/10。PR [#24](https://github.com/imasenHF/spinplot/pull/24) 已合并，功能提交 `a2e6ad400c09b346ae0102d735f8dad4902589d2`，合并提交 `4502cb5f1621de6b9f77bd0d84030aedc19f6938`。
-- 本地 npm run check、29 组单元测试通过；quality [42400354097](https://github.com/imasenHF/spinplot/actions/runs/42400354097)、Vector PDF [42400354180](https://github.com/imasenHF/spinplot/actions/runs/42400354180) 成功。Chromium 检查参数唯一性、模型区内位置、P½ 整行、I₀/b 常规同行与窄栏拆行、R²/RMSE 同行、点数整行，以及长小数、Fit 焦点、无效固定值修正、Refit、旧项目/配置重载和图内注释/导出。250/320 px 截图已复核。刷新时保持交互控件连接，避免数值编辑后切换 Fit 丢失点击。
-- [v0.11.7](https://github.com/imasenHF/spinplot/releases/tag/v0.11.7) 已发布，正式 Pages [42400588333](https://github.com/imasenHF/spinplot/actions/runs/42400588333)、生产 HTTP [42400753976](https://github.com/imasenHF/spinplot/actions/runs/42400753976)、Release [42400772435](https://github.com/imasenHF/spinplot/actions/runs/42400772435) 成功。线上标题与构建资源已核对。
+- 幅度参数只保留下方模型公式之后的一套控件，P½ 整行、I₀/b 同行、R²/RMSE 同行、点数整行；参数块不超过 220 px 时，I₀/b 拆行。
+- 每个拟合勾选框放在数值输入框右侧并垂直居中，移除可见 Fit 文字，保留无障碍名称与悬浮说明。勾选时只读显示拟合值，取消后编辑固定值。
+- 刷新时保持交互控件连接，保留数值编辑后的点击与焦点。无效固定值导致拟合失败后，仍可直接修正同一控件。Refit、公式、模型名称和保存字段保持不变，项目/配置格式仍为 11/10。
+- 本轮应用版本 0.11.8。验收与合并、部署、发布状态待实际检查后更新。
 
 ## 2026-11-04 v0.11.5 自动参数读取与版本管理
 

@@ -546,7 +546,7 @@ try {
         const textWidth=context.measureText(input.value).width;
         input.value=original;
         return {key:input.dataset.twod,left:box.left,right:box.right,top:box.top,bottom:box.bottom,
-          fitLeft:fit.left,fitRight:fit.right,fitTop:fit.top,fitBottom:fit.bottom,gridWidth:row.parentElement.getBoundingClientRect().width,
+          fitLeft:fit.left,fitRight:fit.right,fitTop:fit.top,fitBottom:fit.bottom,rowRight:row.getBoundingClientRect().right,gridWidth:row.parentElement.getBoundingClientRect().width,
           available:input.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-18,textWidth};
       }));
       assert.deepEqual(parameterRows.map(row=>row.key),['scanFitPhalfMW','scanFitI0','scanFitB']);
@@ -554,20 +554,27 @@ try {
       assert.ok(halfRow.bottom<i0Row.top,'P-half occupies its own row above I0 and b');
       if(i0Row.gridWidth>220){
         assert.ok(Math.abs(i0Row.top-bRow.top)<1,'I0 and b share one row in a normal sidebar');
-        assert.ok(Math.abs(halfRow.left-i0Row.left)<1&&halfRow.right>=bRow.right-1,'P-half spans the full parameter block');
+        assert.ok(Math.abs(halfRow.left-i0Row.left)<1&&halfRow.rowRight>=bRow.rowRight-1,'P-half spans the full parameter block');
       }else assert.ok(bRow.top>i0Row.bottom,'Narrow sidebars wrap I0 and b without clipping');
       for(const row of parameterRows){
         assert.ok(row.available>=row.textWidth,'Complete numeric value must fit at viewport '+viewportWidth+' / sidebar '+sidebarWidth+': '+JSON.stringify(row));
-        assert.ok(row.fitLeft>=row.left&&row.fitRight<=row.right+1,'Fit toggle stays inside its parameter column');
-        assert.ok(row.fitBottom<=row.top,'Fit toggle is beside the name above the value field');
+        assert.ok(row.fitLeft>=row.right+4&&row.fitRight<=row.rowRight+1,'Fit toggle is to the right of its value field inside the parameter column');
+        assert.ok(Math.abs((row.fitTop+row.fitBottom-row.top-row.bottom)/2)<1,'Fit toggle is vertically centered beside its value field');
       }
       if(sidebarWidth===250||sidebarWidth===320&&viewportWidth===1440){
         await scanPanel.locator('.scan-fit-parameter-grid').scrollIntoViewIfNeeded();
-        await page.screenshot({path:'browser-preview/scan-fit-unified-'+sidebarWidth+'.png',fullPage:true});
+        await page.screenshot({path:'browser-preview/scan-fit-inline-'+sidebarWidth+'.png',fullPage:true});
       }
     }
     await page.setViewportSize({width:1440,height:900});
     await page.evaluate(width=>document.documentElement.style.setProperty('--sidebar-width',width),originalSidebarWidth);
+    const parameterToggles=await scanPanel.locator('.scan-fit-parameter-row .switch').evaluateAll(labels=>labels.map(label=>({text:label.textContent.trim(),title:label.title,name:label.querySelector('input').getAttribute('aria-label')})));
+    assert.equal(parameterToggles.length,3);
+    for(const toggle of parameterToggles){
+      assert.equal(toggle.text,'','Parameter toggles do not display redundant Fit text');
+      assert.match(toggle.name,/^Fit /,'Parameter toggles retain accessible names');
+      assert.match(toggle.title,/uncheck to edit a fixed value/,'Parameter toggles explain their function on hover');
+    }
     assert.equal(await scanPanel.getByText('Amplitude model parameters',{exact:true}).count(),0,'The duplicate upper parameter section is removed');
     for(const key of ['scanFitI0','scanFitB','scanFitPhalfMW']){
       assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').count(),1,'Each parameter has exactly one control');

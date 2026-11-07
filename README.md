@@ -21,7 +21,7 @@
 
 ## 正式版本与独立预览
 
-幅度参数仅保留在下方模型公式之后：P½ 独立一行，I₀/b 同行，各自保留 Fit；随后为 R²/RMSE 与点数。窄侧栏自动拆行，模型名称使用 P-half saturation。
+幅度参数仅保留在下方模型公式之后：P½ 独立一行，I₀/b 同行，各自的拟合勾选框与数值输入框同行，省去可见 Fit 文字并保留悬浮说明；随后为 R²/RMSE 与点数。窄侧栏自动拆行，模型名称使用 P-half saturation。
 
 正式入口 `/spinplot/` 当前发布版本为 **0.11.7**，已完成 Pages 部署和生产 HTTP 检查，并发布 [GitHub Release v0.11.7](https://github.com/imasenHF/spinplot/releases/tag/v0.11.7)。独立预览地址保留为后续试验入口；当前快照也为 0.10.0。主图 Y、二维图 Z 与 Top/Right 投影强度轴支持三个并列显示选项：**Linear、Log10 / SymLog、Scientific**。
 
