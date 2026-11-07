@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.7 — 2026-11-08
+
+- Consolidate amplitude model parameters beneath the existing equation: one full-width P½ row, a paired I₀/b row with Fit beside each name, a paired R²/RMSE row and a full-width point count. Remove duplicate upper/readout fields and wrap controls in narrow sidebars. Keep fixed/fitted controls available after invalid constraints.
+- Remove Bruker wording from model titles, tooltips, accessible labels, solver help and exposed model descriptions, retaining the formula and numerical solver.
+
 ## 0.11.6 — 2026-11-08
 
 - Place I₀, b and P½ amplitude model controls on three independent rows, each with an aligned label, full-width value field and Fit checkbox. Keep numeric values readable in narrow sidebars without changing fit constraints, calculation or saved settings.

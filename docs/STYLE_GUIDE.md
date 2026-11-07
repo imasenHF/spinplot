@@ -21,7 +21,7 @@
 
 ## Power fit 结果显示
 
-- Amplitude model parameters 的 I₀、b、P½ 固定为三个独立行；每行名称上置，下方加宽数值框与右侧 Fit 复选框对齐。侧栏变宽时仍保持三行，避免横向三列压缩数值。Fit 勾选后的只读状态与取消后的固定值编辑保留。
+- 仅保留下方 Amplitude · P-half saturation 模型区与现有公式，删除上方重复参数区和下方重复读数。公式后依次为 P½ 独立整行、I₀/b 同行、R²/RMSE 同行、No. of points 独立整行。每个参数的 Fit 放在名称旁，数值框占满列宽；参数块宽度不超过 220 px 时，I₀/b 自动拆行。Fit 勾选时只读显示拟合值，取消后编辑固定值；无效固定值导致拟合失败后仍可在同一处修正。模型显示、提示与帮助不含 Bruker 字样，公式保持可见。
 
 - Plot annotation 区增加 Residual type：Absolute / Relative (%)，模式与 Show fit residuals 开关独立保存；相对模式标题标明 %，未定义点数量在标题显示。Fit results 标题同行紧邻 Refit 按钮，采用原有凸起按钮样式；无启用模型或没有校准功率坐标时禁用。
 

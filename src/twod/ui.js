@@ -557,23 +557,18 @@ export function controls(card, sp, d, onChange) {
   });
   check(fitBody,'scanFitLinewidth','Fit peak-to-peak linewidth');
   const linewidthOffsetToggle=check(fitBody,'scanFitOffset','Fit linewidth offset (C)');
-  const amplitudeParameterHeading=document.createElement('div');
-  amplitudeParameterHeading.className='scan-fit-section-heading';
-  amplitudeParameterHeading.style.gridColumn='1 / -1';
-  amplitudeParameterHeading.textContent='Amplitude model parameters';
-  fitBody.append(amplitudeParameterHeading);
   const amplitudeParameterGrid=document.createElement('div');
   amplitudeParameterGrid.className='scan-fit-parameter-grid';
   amplitudeParameterGrid.style.gridColumn='1 / -1';
-  fitBody.append(amplitudeParameterGrid);
   const amplitudeParameterFields=new Map();
   for(const [key,fitKey,label] of [
+    ['scanFitPhalfMW','scanFitFitPhalf','P½ (mW)'],
     ['scanFitI0','scanFitFitI0','I₀'],
-    ['scanFitB','scanFitFitB','b'],
-    ['scanFitPhalfMW','scanFitFitPhalf','P½ (mW)']
+    ['scanFitB','scanFitFitB','b']
   ]){
     const row=document.createElement('div');
     row.className='scan-fit-parameter-row';
+    row.dataset.parameter=key;
     const field=input(row,key,label,'number');
     field.min=key==='scanFitB'?'0.01':'0';
     field.title='Fit enabled: calculated value. Fit disabled: fixed value.';
@@ -739,15 +734,13 @@ export function controls(card, sp, d, onChange) {
     field.type='text';
     field.readOnly=true;
     field.value=value;
-    field.title=label.includes('P½')?'P½ is the characteristic power parameter in the Bruker amplitude model.':label==='I₀'?'Low-power amplitude coefficient in the Bruker model.':label==='b'?'Dimensionless power-saturation exponent.':label==='Psat'?'Characteristic power in the linewidth broadening model.':'Calculated result; not editable';
+    field.title=label.includes('P½')?'P½ is the characteristic power parameter in the amplitude model.':label==='I₀'?'Low-power amplitude coefficient in the amplitude saturation model.':label==='b'?'Dimensionless power-saturation exponent.':label==='Psat'?'Characteristic power in the linewidth broadening model.':'Calculated result; not editable';
     holder.append(field);
     parent.append(holder);
   }
   function refreshFitResults(){
     if(sp.mode!=='scan')return;
     fitControls.hidden=s.scanFeatureMode==='statistic'&&s.scanStatistic!=='ptp';
-    amplitudeParameterHeading.hidden=!s.scanFitAmplitude;
-    amplitudeParameterGrid.hidden=!s.scanFitAmplitude;
     linewidthOffsetToggle.parentElement.hidden=!s.scanFitLinewidth;
     const scanCoordinateAxis=orient(d,s.component,s.swap).y;
     const powerMode=s.scanAxisMode==='power';
@@ -767,7 +760,13 @@ export function controls(card, sp, d, onChange) {
       const field=scanRangeRow.querySelector('[data-twod='+key+']');
       if(field&&!Number.isFinite(Number(s[key])))field.placeholder=formatNumber(fallback);
     }
-    results.replaceChildren();
+    // Keep interactive amplitude controls connected while updating readouts.
+    // Detaching a focused field on blur can swallow the next checkbox click.
+    const currentAmplitudeSection=amplitudeParameterGrid.closest('.scan-fit-model');
+    const keepAmplitudeSection=s.scanFitAmplitude&&currentAmplitudeSection?.parentElement===results;
+    if(keepAmplitudeSection){
+      for(const child of [...results.childNodes])if(child!==currentAmplitudeSection)child.remove();
+    }else results.replaceChildren();
     refitButton.disabled=true;
     if(s.scanFeatureMode==='statistic')return;
     let data;
@@ -825,20 +824,22 @@ export function controls(card, sp, d, onChange) {
       ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth]
     ]){
       if(!enabled)continue;
-      const section=document.createElement('div');
+      const section=key==='amplitude'&&keepAmplitudeSection?currentAmplitudeSection:document.createElement('div');
+      for(const child of [...section.children])if(child!==amplitudeParameterGrid)child.remove();
       section.className='scan-fit-model';
       section.style.gridColumn='1 / -1';
       const head=document.createElement('div');
       head.style.fontWeight='600';
-      head.textContent=title+' · '+(key==='amplitude'?'Bruker P-half saturation':'Power-dependent linewidth');
+      head.textContent=title+' · '+(key==='amplitude'?'P-half saturation':'Power-dependent linewidth');
       const eq=document.createElement('div');
       eq.className='scan-fit-equation';
       // Static MathML is parsed as native mathematical markup in Chromium.
       // No user-provided strings are interpolated into these expressions.
       eq.innerHTML=key==='amplitude'
-        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Bruker P-half amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>I</mi><mn>0</mn></msub><msqrt><mi>P</mi></msqrt></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac><mo stretchy="false">)</mo></mrow><mfrac><mi>b</mi><mn>2</mn></mfrac></msup></mrow></mfrac></mrow></math>'
+        ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="P-half amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>I</mi><mn>0</mn></msub><msqrt><mi>P</mi></msqrt></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac><mo stretchy="false">)</mo></mrow><mfrac><mi>b</mi><mn>2</mn></mfrac></msup></mrow></mfrac></mrow></math>'
         :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
-      section.append(head,eq);
+      section.prepend(head,eq);
+      if(key==='amplitude'&&amplitudeParameterGrid.parentElement!==section)section.append(amplitudeParameterGrid);
       if(!fit?.valid){
         const notice=document.createElement('div');
         notice.textContent=fit?.reason||'Select the corresponding feature to fit.';
@@ -847,10 +848,7 @@ export function controls(card, sp, d, onChange) {
         const grid=document.createElement('div');
         grid.className='grid2 scan-fit-parameters';
         if(key==='amplitude'){
-          const flags=fit.parameterFit||{};
-          outputField(grid,flags.I0===false?'I₀ · fixed':'I₀',formatNumber(fit.parameters.I0));
-          outputField(grid,flags.b===false?'b · fixed':'b',formatNumber(fit.parameters.b));
-          outputField(grid,flags.Phalf===false?'P½ · fixed':'P½',formatNumber(fit.parameters.Phalf),'mW');
+          grid.classList.add('scan-fit-quality');
           for(const [stateKey,paramKey] of [['scanFitI0','I0'],['scanFitB','b'],['scanFitPhalfMW','Phalf']]){
             const value=fit.parameters[paramKey];
             if(Number.isFinite(value)){
@@ -864,9 +862,10 @@ export function controls(card, sp, d, onChange) {
           outputField(grid,'A',formatNumber(fit.parameters.A));
           outputField(grid,s.scanFitOffset?'C':'C · fixed',formatNumber(fit.parameters.C));
         }
-        outputField(grid,'RMSE',formatNumber(fit.rmse));
         outputField(grid,'R²',fit.r2==null?'—':formatNumber(fit.r2));
+        outputField(grid,'RMSE',formatNumber(fit.rmse));
         outputField(grid,'No. of points',String(fit.n));
+        if(key==='amplitude')grid.lastElementChild.style.gridColumn='1 / -1';
         section.append(grid);
         if(fit.warning){
           const warning=document.createElement('div');
@@ -875,7 +874,7 @@ export function controls(card, sp, d, onChange) {
           section.append(warning);
         }
       }
-      results.append(section);
+      if(section.parentElement!==results)results.append(section);
     }
     if(!s.scanFitAmplitude&&!s.scanFitLinewidth){
       results.textContent='Choose amplitude or linewidth to fit.';
@@ -885,7 +884,7 @@ export function controls(card, sp, d, onChange) {
   solverHelp.type='button';
   solverHelp.className='help-tip';
   solverHelp.textContent='?';
-  solverHelp.dataset.help='Amplitude uses the Bruker model Spp(P) = I₀ times the square root of P divided by (1 + P/P½)^(b/2). I₀, b and P½ can each be fitted or held fixed independently. The fitted b search range is 0.1–8; blank characteristic-power limits use included measured powers. The linewidth model is fitted separately and can include an offset C.';
+  solverHelp.dataset.help='Amplitude uses the amplitude saturation model Spp(P) = I₀ times the square root of P divided by (1 + P/P½)^(b/2). I₀, b and P½ can each be fitted or held fixed independently. The fitted b search range is 0.1–8; blank characteristic-power limits use included measured powers. The linewidth model is fitted separately and can include an offset C.';
   solverHelp.setAttribute('aria-label','Power fitting solver and limits help');
   fitHeading.append(' ',solverHelp);
   const onScanAxisChange=scanAxisSelect.onchange;

@@ -5,7 +5,7 @@
 
 ## 1. 定位与发布
 
-- 正式版本 **0.11.6** 已通过 [PR #23](https://github.com/imasenHF/spinplot/pull/23) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.6](https://github.com/imasenHF/spinplot/releases/tag/v0.11.6)：幅度模型输入 I₀、b、P½ 改为三个独立行，每行对齐名称、加宽数值框和 Fit 开关。数值、拟合/固定开关和存储字段保持兼容；项目/配置格式仍为 11/10。验收与发布结果见开发上下文。
+- 本轮应用版本 **0.11.7**：幅度模型只保留下方公式与一套参数控件。P½ 独立整行、I₀/b 同行、R²/RMSE 同行、No. of points 独立整行；Fit 放在各自参数名旁，窄侧栏自动拆分 I₀/b。删除上方重复区与下方重复只读副本，模型处去除 Bruker 字样。公式、拟合算法、Refit 和保存字段保持兼容；项目/配置格式仍为 11/10。验收与发布状态见开发上下文。
 
 - 厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
 

@@ -538,33 +538,50 @@ try {
     for(const [viewportWidth,sidebarWidth] of [[1440,320],[1100,250],[760,320],[1440,420]]){
       await page.setViewportSize({width:viewportWidth,height:900});
       await page.evaluate(width=>document.documentElement.style.setProperty('--sidebar-width',width+'px'),sidebarWidth);
-      const parameterRows=await scanPanel.locator('.scan-fit-parameter-row').evaluateAll(rows=>rows.map((row,index)=>{
+      const parameterRows=await scanPanel.locator('.scan-fit-parameter-row').evaluateAll(rows=>rows.map(row=>{
         const input=row.querySelector('input[type=number]'),toggle=row.querySelector('.switch');
-        const original=input.value;input.value=['16.12345678','0.712345678','5.512345678'][index];
+        const original=input.value;input.value={scanFitI0:'157618.3123',scanFitB:'0.9937986',scanFitPhalfMW:'5.512345678'}[input.dataset.twod];
         const style=getComputedStyle(input),box=input.getBoundingClientRect(),fit=toggle.getBoundingClientRect();
         const context=document.createElement('canvas').getContext('2d');context.font=style.font;
         const textWidth=context.measureText(input.value).width;
         input.value=original;
         return {key:input.dataset.twod,left:box.left,right:box.right,top:box.top,bottom:box.bottom,
-          fitLeft:fit.left,fitTop:fit.top,fitBottom:fit.bottom,
+          fitLeft:fit.left,fitRight:fit.right,fitTop:fit.top,fitBottom:fit.bottom,gridWidth:row.parentElement.getBoundingClientRect().width,
           available:input.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-18,textWidth};
       }));
-      assert.deepEqual(parameterRows.map(row=>row.key),['scanFitI0','scanFitB','scanFitPhalfMW']);
-      for(const [index,row] of parameterRows.entries()){
-        assert.ok(!index||row.top>=parameterRows[index-1].bottom+4,'Each amplitude parameter needs its own distinct row');
+      assert.deepEqual(parameterRows.map(row=>row.key),['scanFitPhalfMW','scanFitI0','scanFitB']);
+      const [halfRow,i0Row,bRow]=parameterRows;
+      assert.ok(halfRow.bottom<i0Row.top,'P-half occupies its own row above I0 and b');
+      if(i0Row.gridWidth>220){
+        assert.ok(Math.abs(i0Row.top-bRow.top)<1,'I0 and b share one row in a normal sidebar');
+        assert.ok(Math.abs(halfRow.left-i0Row.left)<1&&halfRow.right>=bRow.right-1,'P-half spans the full parameter block');
+      }else assert.ok(bRow.top>i0Row.bottom,'Narrow sidebars wrap I0 and b without clipping');
+      for(const row of parameterRows){
         assert.ok(row.available>=row.textWidth,'Complete numeric value must fit at viewport '+viewportWidth+' / sidebar '+sidebarWidth+': '+JSON.stringify(row));
-        assert.ok(row.fitLeft>=row.right,'Fit toggle must remain beside its parameter input');
-        assert.ok(row.fitTop<row.bottom&&row.fitBottom>row.top,'Fit toggle must stay on the same row');
+        assert.ok(row.fitLeft>=row.left&&row.fitRight<=row.right+1,'Fit toggle stays inside its parameter column');
+        assert.ok(row.fitBottom<=row.top,'Fit toggle is beside the name above the value field');
       }
-      if(sidebarWidth===250){
+      if(sidebarWidth===250||sidebarWidth===320&&viewportWidth===1440){
         await scanPanel.locator('.scan-fit-parameter-grid').scrollIntoViewIfNeeded();
-        await page.screenshot({path:'browser-preview/scan-fit-parameter-rows-narrow.png',fullPage:true});
+        await page.screenshot({path:'browser-preview/scan-fit-unified-'+sidebarWidth+'.png',fullPage:true});
       }
     }
     await page.setViewportSize({width:1440,height:900});
     await page.evaluate(width=>document.documentElement.style.setProperty('--sidebar-width',width),originalSidebarWidth);
+    assert.equal(await scanPanel.getByText('Amplitude model parameters',{exact:true}).count(),0,'The duplicate upper parameter section is removed');
+    for(const key of ['scanFitI0','scanFitB','scanFitPhalfMW']){
+      assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').count(),1,'Each parameter has exactly one control');
+      assert.equal(await scanPanel.locator('.scan-fit-results [data-twod="'+key+'"]').count(),1,'Parameter controls belong to the lower model section');
+    }
+    const qualityLabels=await scanPanel.locator('.scan-fit-quality>.control-label').evaluateAll(labels=>labels.map(label=>label.firstChild.textContent));
+    assert.deepEqual(qualityLabels,['R²','RMSE','No. of points'],'Quality fields are ordered like the figure output, without duplicate parameters');
+    const qualityLayout=await scanPanel.locator('.scan-fit-quality>.control-label').evaluateAll(labels=>labels.map(label=>{const r=label.getBoundingClientRect();return{top:r.top,left:r.left,right:r.right};}));
+    assert.ok(Math.abs(qualityLayout[0].top-qualityLayout[1].top)<1,'R-squared and RMSE share a row');
+    assert.ok(qualityLayout[2].top>qualityLayout[0].top,'Point count occupies its own row');
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
-    assert.match(fitText,/Amplitude · Bruker P-half saturation/);
+    assert.match(fitText,/Amplitude · P-half saturation/);
+    assert.doesNotMatch(fitText,/Bruker/i);
+    assert.equal(await scanPanel.locator('[title*=Bruker], [aria-label*=Bruker], [data-help*=Bruker]').count(),0,'Model names and help do not contain the removed brand');
     assert.match(fitText,/Linewidth · Power-dependent linewidth/);
     assert.match(fitText,/I₀/);
     assert.match(fitText,/P½/);
@@ -803,7 +820,7 @@ try {
     assert.equal(await page.locator('[data-twod="scanFitResidualShow"]').first().isChecked(),true,
       'Project reload restores the residual subplot visibility');
     assert.equal(await page.locator('.scan-fit-opacity-value').first().textContent(),'35%');
-    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · Bruker P-half saturation/);
+    assert.match(await page.locator('.scan-fit-results').first().textContent(),/Amplitude · P-half saturation/);
     assert.equal(await page.locator('.scan-derived-style [data-curve-style="-101"]').inputValue(),'filled-circle');
     assert.deepEqual(await derivedOrder(),[-103,-101,-102,-104],
       'Reloading the saved project must restore the derived-curve drawing order');
@@ -826,8 +843,21 @@ try {
     });
     assert.ok(refitPlacement.sameRow&&refitPlacement.after,'Refit belongs beside the Fit results heading');
     const readAmplitudeResults=()=>scanPanel.locator('.scan-fit-results .scan-fit-model').first()
-      .locator('label').evaluateAll(labels=>Object.fromEntries(labels.map(label=>[
+      .locator('label.control-label').evaluateAll(labels=>Object.fromEntries(labels.map(label=>[
         label.firstChild.textContent.trim().replace(' · fixed',''),label.querySelector('input')?.value])));
+    // A failed fixed constraint must leave the sole parameter controls editable.
+    const halfFit=scanPanel.locator('[data-twod="scanFitFitPhalf"]');
+    await halfFit.uncheck();
+    assert.equal(await halfFit.evaluate(element=>document.activeElement===element),true,'Fit toggles retain focus while readouts refresh');
+    await scanPanel.locator('[data-twod="scanFitPhalfMW"]').fill('0');
+    await refitButton.click();
+    assert.match(await scanPanel.locator('.scan-fit-model').first().textContent(),/Fixed P½ must be a positive finite value/);
+    assert.equal(await scanPanel.locator('[data-twod="scanFitPhalfMW"]').isEditable(),true);
+    await scanPanel.locator('[data-twod="scanFitPhalfMW"]').fill('12');
+    await halfFit.check();
+    await refitButton.click();
+    assert.equal(await scanPanel.locator('[data-twod="scanFitPhalfMW"]').evaluate(element=>element.readOnly),true);
+    assert.ok(Number((await readAmplitudeResults())['P½ (mW)'])>0,'Corrected constraints recover the fit');
     const refitExclude=scanPanel.locator('.scan-exclude-panel');
     await refitExclude.evaluate(element=>{element.open=true;});
     await refitExclude.locator('[data-trace-index="0"]').uncheck();

@@ -235,12 +235,16 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-opacity-control input[type=range]:focus-visible{outline:2px solid #2f6f9f;outline-offset:1px}
 .scan-fit-opacity-value{min-width:31px;text-align:right;font:10px "Courier New",monospace;color:#4c5559}
 
-/* Bruker-style independently constrained saturation parameters. */
-.scan-fit-parameter-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;grid-column:1/-1;min-width:0}
-.scan-fit-parameter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:6px;min-width:0}
-.scan-fit-parameter-row .control-label{min-width:0}
+/* One amplitude parameter block under its model equation. */
+.scan-fit-parameter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;grid-column:1/-1;min-width:0;container-type:inline-size;margin-top:8px}
+.scan-fit-parameter-row{position:relative;min-width:0}
+.scan-fit-parameter-row[data-parameter=scanFitPhalfMW]{grid-column:1/-1}
+.scan-fit-parameter-row .control-label{grid-template-rows:20px auto;gap:4px;min-width:0;margin:0}
 .scan-fit-parameter-row input[type=number]{width:100%;min-width:0}
-.scan-fit-parameter-row .switch{white-space:nowrap}
+.scan-fit-parameter-row input[readonly]{background:#f2f5f7;color:#182d39;font-variant-numeric:tabular-nums}
+.scan-fit-parameter-row .switch{position:absolute;right:0;top:0;margin:0;white-space:nowrap;font-size:11px}
+.scan-fit-quality{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container(max-width:220px){.scan-fit-parameter-row{grid-column:1/-1}}
 
 
 .scan-fit-results-heading{display:flex;align-items:center;gap:14px}
