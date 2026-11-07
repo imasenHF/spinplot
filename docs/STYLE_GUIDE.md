@@ -21,7 +21,7 @@
 
 ## Power fit 结果显示
 
-- Amplitude model parameters 的 I₀、b、P½ 固定为三个独立行；每行按参数名称、加宽数值框、Fit 复选框排列。侧栏变宽时仍保持三行，避免横向三列压缩数值。Fit 勾选后的只读状态与取消后的固定值编辑保留。
+- Amplitude model parameters 的 I₀、b、P½ 固定为三个独立行；每行名称上置，下方加宽数值框与右侧 Fit 复选框对齐。侧栏变宽时仍保持三行，避免横向三列压缩数值。Fit 勾选后的只读状态与取消后的固定值编辑保留。
 
 - Plot annotation 区增加 Residual type：Absolute / Relative (%)，模式与 Show fit residuals 开关独立保存；相对模式标题标明 %，未定义点数量在标题显示。Fit results 标题同行紧邻 Refit 按钮，采用原有凸起按钮样式；无启用模型或没有校准功率坐标时禁用。
 

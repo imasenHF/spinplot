@@ -552,7 +552,7 @@ try {
       assert.deepEqual(parameterRows.map(row=>row.key),['scanFitI0','scanFitB','scanFitPhalfMW']);
       for(const [index,row] of parameterRows.entries()){
         assert.ok(!index||row.top>=parameterRows[index-1].bottom+4,'Each amplitude parameter needs its own distinct row');
-        assert.ok(row.available>=row.textWidth,'Complete numeric value must fit at viewport '+viewportWidth+' / sidebar '+sidebarWidth);
+        assert.ok(row.available>=row.textWidth,'Complete numeric value must fit at viewport '+viewportWidth+' / sidebar '+sidebarWidth+': '+JSON.stringify(row));
         assert.ok(row.fitLeft>=row.right,'Fit toggle must remain beside its parameter input');
         assert.ok(row.fitTop<row.bottom&&row.fitBottom>row.top,'Fit toggle must stay on the same row');
       }
