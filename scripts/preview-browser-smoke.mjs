@@ -533,6 +533,36 @@ try {
       assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').isChecked(),true,key+' should default to fitting');
     for(const key of ['scanFitI0','scanFitB','scanFitPhalfMW'])
       assert.equal(await scanPanel.locator('[data-twod="'+key+'"]').evaluate(element=>element.readOnly),true,key+' should display a read-only fitted value');
+    // Full numeric values must remain readable in the narrow desktop sidebar.
+    const originalSidebarWidth=await page.evaluate(()=>document.documentElement.style.getPropertyValue('--sidebar-width'));
+    for(const [viewportWidth,sidebarWidth] of [[1440,320],[1100,250],[760,320],[1440,420]]){
+      await page.setViewportSize({width:viewportWidth,height:900});
+      await page.evaluate(width=>document.documentElement.style.setProperty('--sidebar-width',width+'px'),sidebarWidth);
+      const parameterRows=await scanPanel.locator('.scan-fit-parameter-row').evaluateAll(rows=>rows.map((row,index)=>{
+        const input=row.querySelector('input[type=number]'),toggle=row.querySelector('.switch');
+        const original=input.value;input.value=['16.12345678','0.712345678','5.512345678'][index];
+        const style=getComputedStyle(input),box=input.getBoundingClientRect(),fit=toggle.getBoundingClientRect();
+        const context=document.createElement('canvas').getContext('2d');context.font=style.font;
+        const textWidth=context.measureText(input.value).width;
+        input.value=original;
+        return {key:input.dataset.twod,left:box.left,right:box.right,top:box.top,bottom:box.bottom,
+          fitLeft:fit.left,fitTop:fit.top,fitBottom:fit.bottom,
+          available:input.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-18,textWidth};
+      }));
+      assert.deepEqual(parameterRows.map(row=>row.key),['scanFitI0','scanFitB','scanFitPhalfMW']);
+      for(const [index,row] of parameterRows.entries()){
+        assert.ok(!index||row.top>=parameterRows[index-1].bottom+4,'Each amplitude parameter needs its own distinct row');
+        assert.ok(row.available>=row.textWidth,'Complete numeric value must fit at viewport '+viewportWidth+' / sidebar '+sidebarWidth+': '+JSON.stringify(row));
+        assert.ok(row.fitLeft>=row.right,'Fit toggle must remain beside its parameter input');
+        assert.ok(row.fitTop<row.bottom&&row.fitBottom>row.top,'Fit toggle must stay on the same row');
+      }
+      if(sidebarWidth===250){
+        await scanPanel.locator('.scan-fit-parameter-grid').scrollIntoViewIfNeeded();
+        await page.screenshot({path:'browser-preview/scan-fit-parameter-rows-narrow.png',fullPage:true});
+      }
+    }
+    await page.setViewportSize({width:1440,height:900});
+    await page.evaluate(width=>document.documentElement.style.setProperty('--sidebar-width',width),originalSidebarWidth);
     const fitText=await scanPanel.locator('.scan-fit-results').textContent();
     assert.match(fitText,/Amplitude · Bruker P-half saturation/);
     assert.match(fitText,/Linewidth · Power-dependent linewidth/);

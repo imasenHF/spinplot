@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.6 — 2026-11-08
+
+- Place I₀, b and P½ amplitude model controls on three independent rows, each with an aligned label, full-width value field and Fit checkbox. Keep numeric values readable in narrow sidebars without changing fit constraints, calculation or saved settings.
+
 ## 0.11.5 — 2026-11-04
 
 - Automatically read CIQTEK numeric acquisition widget fields and BES3T standard SI/device-layer parameters. Convert B0MA from T, microwave frequency from Hz, power from W, and time fields from s correctly; retain explicit sample metadata without using filenames. Keep original metadata and support older saved projects.

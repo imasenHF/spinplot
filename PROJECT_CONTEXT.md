@@ -1,9 +1,11 @@
 # SpinPlot — PROJECT_CONTEXT
 
-更新日期：2026-11-04（Asia/Shanghai）
+更新日期：2026-11-08（Asia/Shanghai）
 状态来源：`main` 分支用于正式功能基线；预览分支的当前状态、活动任务及每次开发前的检查要求见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。架构维护现状、分阶段优化顺序和验收要求见 [架构优化规划](docs/ARCHITECTURE_IMPROVEMENT_PLAN.md)。实现状态以每次重新核查的远程代码、测试与 CI 结果为准。
 
 ## 1. 定位与发布
+
+- 本轮版本 **0.11.6**：幅度模型输入 I₀、b、P½ 改为三个独立行，每行对齐名称、加宽数值框和 Fit 开关。数值、拟合/固定开关和存储字段保持兼容；项目/配置格式仍为 11/10。验收与发布结果见开发上下文。
 
 - 正式版本 **0.11.5** 已通过 [PR #22](https://github.com/imasenHF/spinplot/pull/22) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.5](https://github.com/imasenHF/spinplot/releases/tag/v0.11.5)；厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
 
