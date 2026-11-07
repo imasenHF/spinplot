@@ -848,6 +848,7 @@ try {
     // A failed fixed constraint must leave the sole parameter controls editable.
     const halfFit=scanPanel.locator('[data-twod="scanFitFitPhalf"]');
     await halfFit.uncheck();
+    assert.equal(await halfFit.evaluate(element=>document.activeElement===element),true,'Fit toggles retain focus while readouts refresh');
     await scanPanel.locator('[data-twod="scanFitPhalfMW"]').fill('0');
     await refitButton.click();
     assert.match(await scanPanel.locator('.scan-fit-model').first().textContent(),/Fixed P½ must be a positive finite value/);

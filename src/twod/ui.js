@@ -760,7 +760,13 @@ export function controls(card, sp, d, onChange) {
       const field=scanRangeRow.querySelector('[data-twod='+key+']');
       if(field&&!Number.isFinite(Number(s[key])))field.placeholder=formatNumber(fallback);
     }
-    results.replaceChildren();
+    // Keep interactive amplitude controls connected while updating readouts.
+    // Detaching a focused field on blur can swallow the next checkbox click.
+    const currentAmplitudeSection=amplitudeParameterGrid.closest('.scan-fit-model');
+    const keepAmplitudeSection=s.scanFitAmplitude&&currentAmplitudeSection?.parentElement===results;
+    if(keepAmplitudeSection){
+      for(const child of [...results.childNodes])if(child!==currentAmplitudeSection)child.remove();
+    }else results.replaceChildren();
     refitButton.disabled=true;
     if(s.scanFeatureMode==='statistic')return;
     let data;
@@ -818,7 +824,8 @@ export function controls(card, sp, d, onChange) {
       ['linewidth','Linewidth',data.linewidthFit,s.scanFitLinewidth]
     ]){
       if(!enabled)continue;
-      const section=document.createElement('div');
+      const section=key==='amplitude'&&keepAmplitudeSection?currentAmplitudeSection:document.createElement('div');
+      for(const child of [...section.children])if(child!==amplitudeParameterGrid)child.remove();
       section.className='scan-fit-model';
       section.style.gridColumn='1 / -1';
       const head=document.createElement('div');
@@ -831,8 +838,8 @@ export function controls(card, sp, d, onChange) {
       eq.innerHTML=key==='amplitude'
         ?'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="P-half amplitude saturation model"><mrow><msub><mi>S</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>I</mi><mn>0</mn></msub><msqrt><mi>P</mi></msqrt></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub></mfrac><mo stretchy="false">)</mo></mrow><mfrac><mi>b</mi><mn>2</mn></mfrac></msup></mrow></mfrac></mrow></math>'
         :'<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Peak to peak homogeneous power broadening model"><mrow><msub><mi>&#x394;B</mi><mi>pp</mi></msub><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><mi>P</mi><msub><mi>P</mi><mi>sat</mi></msub></mfrac></mrow></msqrt><mo>+</mo><mi>C</mi></mrow></math>';
-      section.append(head,eq);
-      if(key==='amplitude')section.append(amplitudeParameterGrid);
+      section.prepend(head,eq);
+      if(key==='amplitude'&&amplitudeParameterGrid.parentElement!==section)section.append(amplitudeParameterGrid);
       if(!fit?.valid){
         const notice=document.createElement('div');
         notice.textContent=fit?.reason||'Select the corresponding feature to fit.';
@@ -867,7 +874,7 @@ export function controls(card, sp, d, onChange) {
           section.append(warning);
         }
       }
-      results.append(section);
+      if(section.parentElement!==results)results.append(section);
     }
     if(!s.scanFitAmplitude&&!s.scanFitLinewidth){
       results.textContent='Choose amplitude or linewidth to fit.';
