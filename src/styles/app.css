@@ -236,11 +236,11 @@ button,input,select,textarea,.layout-expression{font-family:var(--ui-font)}
 .scan-fit-opacity-value{min-width:31px;text-align:right;font:10px "Courier New",monospace;color:#4c5559}
 
 /* Bruker-style independently constrained saturation parameters. */
-.scan-fit-parameter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;grid-column:1/-1;min-width:0}
-.scan-fit-parameter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:6px;min-width:0}
-.scan-fit-parameter-row .control-label{min-width:0}
+.scan-fit-parameter-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;grid-column:1/-1;min-width:0}
+.scan-fit-parameter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0}
+.scan-fit-parameter-row .control-label{display:grid;grid-template-columns:4.5em minmax(0,1fr);align-items:center;gap:8px;min-width:0;margin:0;white-space:nowrap}
 .scan-fit-parameter-row input[type=number]{width:100%;min-width:0}
-@media(max-width:520px){.scan-fit-parameter-grid{grid-template-columns:1fr}}
+.scan-fit-parameter-row .switch{margin:0;white-space:nowrap}
 
 
 .scan-fit-results-heading{display:flex;align-items:center;gap:14px}
