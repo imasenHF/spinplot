@@ -2,7 +2,9 @@
 
 - Amplitude model parameters 的 I₀、b、P½ 控件固定为三个独立行，每行名称上置，下方加宽数值框与右侧 Fit 复选框对齐。取消横向三列布局；最窄 250 px 侧栏检查完整数值与开关位置。
 - 仅调整控件 CSS，模型、数值求解、Fit/固定逻辑、Refit 与保存字段不变。应用版本 0.11.6；项目/配置格式保持 11/10。
-- 验收状态：本轮代码检查、浏览器检查及发布结果待填写。
+- PR [#23](https://github.com/imasenHF/spinplot/pull/23) 已合并，功能提交 `30d5f7a627ceae9339ff743a49097cf223d3688a`，合并提交 `30a311e6cb1f30249dd0acdb681da13b3f7734dc`。quality [42397518104](https://github.com/imasenHF/spinplot/actions/runs/42397518104)、Vector PDF [42397518107](https://github.com/imasenHF/spinplot/actions/runs/42397518107) 成功。
+- 本地 npm run check、29 组单元测试通过。Chromium 检查 1440/1100/760 px 视口、250/320/420 px 侧栏的独立行位置、长小数完整显示、Fit 同行及既有 Refit/固定参数/保存重载/导出路径；250 px 侧栏截图已复核。
+- [v0.11.6](https://github.com/imasenHF/spinplot/releases/tag/v0.11.6) 已发布；正式 Pages [42397697407](https://github.com/imasenHF/spinplot/actions/runs/42397697407)、生产 HTTP [42397849174](https://github.com/imasenHF/spinplot/actions/runs/42397849174) 与 Release [42397866468](https://github.com/imasenHF/spinplot/actions/runs/42397866468) 均成功。线上标题和 CSS 已核对为 0.11.6 与单列参数布局。
 
 ## 2026-11-04 v0.11.5 自动参数读取与版本管理
 

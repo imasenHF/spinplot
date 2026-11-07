@@ -5,9 +5,9 @@
 
 ## 1. 定位与发布
 
-- 本轮版本 **0.11.6**：幅度模型输入 I₀、b、P½ 改为三个独立行，每行对齐名称、加宽数值框和 Fit 开关。数值、拟合/固定开关和存储字段保持兼容；项目/配置格式仍为 11/10。验收与发布结果见开发上下文。
+- 正式版本 **0.11.6** 已通过 [PR #23](https://github.com/imasenHF/spinplot/pull/23) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.6](https://github.com/imasenHF/spinplot/releases/tag/v0.11.6)：幅度模型输入 I₀、b、P½ 改为三个独立行，每行对齐名称、加宽数值框和 Fit 开关。数值、拟合/固定开关和存储字段保持兼容；项目/配置格式仍为 11/10。验收与发布结果见开发上下文。
 
-- 正式版本 **0.11.5** 已通过 [PR #22](https://github.com/imasenHF/spinplot/pull/22) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.5](https://github.com/imasenHF/spinplot/releases/tag/v0.11.5)；厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
+- 厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
 
 - Subplots → Annotations → Experimental conditions 提供默认关闭的实验参数框。仅四组、十二项：样品名称/编号/简短说明；采集频率/微波功率/衰减；调制幅度/调制频率；Time constant/Convert time/Sweep time/No. of sweeps。图内各组独立一行，同组仅显示勾选且有值的参数；空组不占行。文件中的明确样品信息和已识别的厂商参数自动读取，支持手动覆盖并恢复文件值；缺失值不补猜。
 - 实验参数框默认图内左上角，透明、无边框，字体继承绘图字体、默认 10 px；九宫格和自定义位置均限制在主绘图区内。长行或小图统一缩放整个参数框，保持分组行序。采集频率与一维磁场对齐参考频率分别标为 mwFreq / refFreq；多曲线不同参数显示范围，部分缺失标记 incomplete。功率/衰减及调制幅度扫描显示扫描范围，衰减换算功率附 P₀；没有校准时不显示单个固定功率。
@@ -116,7 +116,7 @@ SpinPlot 是浏览器内运行的电子顺磁共振（EPR）谱图读取、处�
 
 预览分支已完成本轮一维绘图、轴与导出模块接入，项目/配置格式保持 11/10。手动一维曲线可生成 Heatmap 或显式创建独立 Variable scan 子图，扫描变量按源曲线 ID 保存；Variable scan 标题默认隐藏，右侧投影标题支持换行，连续色带只有一条曲线时取起始颜色。Typography 面板具有独立 `Projection titles` 字号设置（默认 11 px，范围 7–40 px）。
 
-手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前正式版本为 0.11.5，阶段 B 修正及后续 Variable scan 更新均已合并并发布；实现与后续科研验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
+手动曲线默认 Plot mode 为 Stack、Overlap、Heatmap 和 Variable scan；二维已增加 Contour 与 3D surface。扫描变量编辑器默认折叠，手动曲线 Heatmap 默认显示 Y 轴标题；数值、项目兼容与浏览器回归最新状态见本节前述已验收结果。上述为 PR #1 合并前的预览分支历史记录；PR #1 已于 2026-10-30 合并。当前正式版本为 0.11.6，阶段 B 修正及后续 Variable scan 更新均已合并并发布；实现与后续科研验收状态见 [持续开发上下文](docs/DEVELOPMENT_CONTEXT.md)。模块职责、自动检查和浏览器验收记录分别见 ARCHITECTURE 与 MODULARIZATION_PREVIEW。每次开始或恢复开发、修复、提交及发布任务前，必须先读取 [docs/DEVELOPMENT_CONTEXT.md](docs/DEVELOPMENT_CONTEXT.md)，再重新核对目标分支 HEAD、PR、Actions 和目标源码；不得仅凭旧对话记录判断当前状态。该文件维护活动任务、实现位置、验收标准及发布边界。
 
 
 1. **先做兼容性回归**：检查 CSV、CIQTEK、BES3T 的真实样本、项目版本 9/10/11 读取和配置 10 的保存/加载，记录正常路径与明确报错。
