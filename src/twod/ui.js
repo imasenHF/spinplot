@@ -572,8 +572,9 @@ export function controls(card, sp, d, onChange) {
     const field=input(row,key,label,'number');
     field.min=key==='scanFitB'?'0.01':'0';
     field.title='Fit enabled: calculated value. Fit disabled: fixed value.';
-    const toggle=check(row,fitKey,'Fit');
+    const toggle=check(row,fitKey,'');
     toggle.setAttribute('aria-label','Fit '+label);
+    toggle.parentElement.title='Fit '+label+': uncheck to edit a fixed value.';
     field.readOnly=toggle.checked;
     toggle.addEventListener('change',()=>{field.readOnly=toggle.checked;});
     amplitudeParameterGrid.append(row);
