@@ -1,3 +1,9 @@
+## 2026-11-11 v0.11.10 热图 XYZ CSV
+
+- Export 按热图子图提供三列 XYZ CSV。X/Y 按显示窗口选择实际采集点并沿用交换后的轴方向，Z 为当前所选信号分量，保留数值本身，缺失信号留空。列标题包含物理量和单位；热图和变量扫描同时存在时只列热图子图。
+- [PR #27](https://github.com/imasenHF/spinplot/pull/27) 已合并，合并提交 `e0998131171984e986f8da28d27693d47e8df8fd`。本地 npm run check 与 29 组单元测试通过。单元测试核对裁剪、轴交换和模值；Chromium 经实际按钮下载三列表并逐点比对源信号。quality [42976072621](https://github.com/imasenHF/spinplot/actions/runs/42976072621)、Legend [42976072497](https://github.com/imasenHF/spinplot/actions/runs/42976072497) 与 Vector PDF [42976072593](https://github.com/imasenHF/spinplot/actions/runs/42976072593) 成功。
+- [v0.11.10](https://github.com/imasenHF/spinplot/releases/tag/v0.11.10) 已发布。正式 Pages [42976276100](https://github.com/imasenHF/spinplot/actions/runs/42976276100)、生产 HTTP [42976552877](https://github.com/imasenHF/spinplot/actions/runs/42976552877) 与 Release [42976576741](https://github.com/imasenHF/spinplot/actions/runs/42976576741) 均成功。项目/配置格式为 11/10。
+
 ## 2026-11-11 v0.11.9 完整二维数据 CSV
 
 - 全局 CSV 导出直接读取原生二维源矩阵。按扫描谱与采集点逐行写入两轴名称、单位、坐标及实部、虚部；显示范围、轴交换、投影与拟合设置不参与导出。
