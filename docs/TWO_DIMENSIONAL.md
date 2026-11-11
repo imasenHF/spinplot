@@ -32,6 +32,10 @@ BES3T now shares one 1D/2D reader, including irregular XGF/YGF coordinates, REAL
 
 Checks: node src/twod/bes3t.test.js additionally covers independent projection intervals, both endian sequences, descending/irregular axes, complex data, 1D irregular field axes and every continuous palette.
 
+## Heatmap XYZ CSV
+
+In Export, choose a heatmap under Heatmap data: subplot and click Export heatmap XYZ CSV. The file contains three columns for X, Y, and signal. Headers identify the physical axes and their units, and the signal component (real, imaginary, or magnitude). Each row represents a sampled point within the displayed X/Y ranges. Axis swaps follow the plot; signal values keep their numerical scale regardless of the color palette, color limits, or Z-axis display scale. Missing signals are empty cells.
+
 ## Full 2D data CSV
 
 Export → Export global-corrected CSV writes one row per acquired matrix point, with 1-based dataset, trace and point indices, X/Y names, units and coordinates, and real/imaginary signal columns. The full acquisition grid is exported once per loaded dataset, independent of subplot axis ranges, axis swaps, projections and fit exclusions. Native matrix coordinates and signals are written directly. Projects with both 1D and 2D data include the frequency-aligned 1D points in the same table with empty Y-axis fields. 1D-only projects keep their established CSV format. Use Export projection CSV or Export scan features CSV for the corresponding derived quantities.

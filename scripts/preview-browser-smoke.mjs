@@ -431,6 +431,22 @@ try {
         ]);
       }
     }
+    const heatmapSelect=page.locator('#heatmapXYZSubplot');
+    assert.deepEqual(await heatmapSelect.locator('option').allTextContents(),['S2 · Synthetic field map']);
+    const [xyzDownload]=await Promise.all([
+      page.waitForEvent('download',{timeout:15000}),
+      page.getByRole('button',{name:'Export heatmap XYZ CSV',exact:true}).click(),
+    ]);
+    assert.match(xyzDownload.suggestedFilename(),/_S2_heatmap_xyz\.csv$/);
+    await xyzDownload.saveAs('browser-preview/heatmap-xyz.csv');
+    const [xyzHeader,...xyzRows]=fs.readFileSync('browser-preview/heatmap-xyz.csv','utf8').trimEnd().split('\n');
+    assert.equal(xyzHeader,'Field (G),Microwave attenuation (dB),Signal (real)');
+    assert.equal(xyzRows.length,fields.length*attenuation.length);
+    for(const [j,dB] of attenuation.entries()){
+      for(const [i,field] of fields.entries()){
+        assert.equal(xyzRows[j*fields.length+i],`${field},${dB},${syntheticRows[j][i]}`);
+      }
+    }
     await page.evaluate(()=>{
       const frame=document.querySelector('#frameMode');
       if(frame){frame.value='box';frame.dispatchEvent(new Event('change',{bubbles:true}));}

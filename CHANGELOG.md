@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.10 — 2026-11-11
+
+- Add a three-column Heatmap XYZ CSV export for the selected subplot. Export measured points within its displayed X/Y ranges using the current axis orientation and signal component. Include physical axis names and units in the header.
+
 ## 0.11.9 — 2026-11-11
 
 - Export every acquired 2D matrix point from Export global-corrected CSV, with dataset, trace and point indices, both acquisition axes and real/imaginary signals. Export each loaded matrix once even when several subplots use it. Preserve the existing 1D-only export format.
