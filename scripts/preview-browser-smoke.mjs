@@ -412,6 +412,25 @@ try {
       config:{...mixed.config,layout:{...mixed.config.layout,rows:1,cols:2,spans:'1,1'},
         subplots:[saturationSubplot,projectionSubplot]}};
     await load(saturationProject,'synthetic-saturation.spinplot.json');
+    await page.locator('button.tab-btn[data-tab="export"]').click();
+    const [matrixDownload] = await Promise.all([
+      page.waitForEvent('download',{timeout:15000}),
+      page.locator('#exportCsvBtn').click(),
+    ]);
+    await matrixDownload.saveAs('browser-preview/2d-global.csv');
+    const [matrixHeader,...matrixRows]=fs.readFileSync('browser-preview/2d-global.csv','utf8').trimEnd().split('\n');
+    assert.match(matrixHeader,/x_axis,x_unit,x,y_axis,y_unit,y,signal_real,signal_imag$/);
+    assert.equal(matrixRows.length,fields.length*attenuation.length,'Export the matrix once even when displayed in two subplots');
+    for(const [trace,dB] of attenuation.entries()){
+      for(const [point,field] of fields.entries()){
+        const row=matrixRows[trace*fields.length+point].split(',');
+        assert.deepEqual(row,[
+          '1','Synthetic saturation',String(trace+1),String(point+1),
+          'Field','G',String(field),'Microwave attenuation','dB',String(dB),
+          String(syntheticRows[trace][point]),'0',
+        ]);
+      }
+    }
     await page.evaluate(()=>{
       const frame=document.querySelector('#frameMode');
       if(frame){frame.value='box';frame.dispatchEvent(new Event('change',{bubbles:true}));}

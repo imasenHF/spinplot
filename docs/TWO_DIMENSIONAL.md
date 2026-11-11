@@ -32,6 +32,10 @@ BES3T now shares one 1D/2D reader, including irregular XGF/YGF coordinates, REAL
 
 Checks: node src/twod/bes3t.test.js additionally covers independent projection intervals, both endian sequences, descending/irregular axes, complex data, 1D irregular field axes and every continuous palette.
 
+## Full 2D data CSV
+
+Export → Export global-corrected CSV writes one row per acquired matrix point, with 1-based dataset, trace and point indices, X/Y names, units and coordinates, and real/imaginary signal columns. The full acquisition grid is exported once per loaded dataset, independent of subplot axis ranges, axis swaps, projections and fit exclusions. Native matrix coordinates and signals are written directly. Projects with both 1D and 2D data include the frequency-aligned 1D points in the same table with empty Y-axis fields. 1D-only projects keep their established CSV format. Use Export projection CSV or Export scan features CSV for the corresponding derived quantities.
+
 ## Shared workflow
 
 Open appends new files to new subplots when data are already loaded. Existing subplot settings and annotations remain. Clear all data empties the session; Clear config retains imported data. Titles are centered over the main map and never fall back to the source filename. Projection lines use the first color of their selected categorical/continuous palette; heatmap and stack gradients are set separately. The file axis labels and units identify field, time, power/attenuation, angle, temperature and modulation amplitude. Modulation amplitude is not treated as a field axis for g conversion.

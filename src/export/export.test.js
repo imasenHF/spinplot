@@ -31,6 +31,35 @@ test("legacy and multi-curve CSV roundtrip; quote names and missing values", () 
     "intensity",
   ]);
 });
+test("global CSV exports every matrix cell and preserves 1D datasets in mixed projects", () => {
+  const matrix = {
+    x: { name: "Field", unit: "G", values: [3401, 3398, 3390] },
+    y: { name: "Microwave attenuation", unit: "dB", values: [6, 15] },
+    real: [[-2, 0, 3], [4, 5, -6]],
+    imag: [[1, 2, 3], [0, -1, -2]],
+  };
+  const [header, ...rows] = parseCSV(globalCurvesCSV([
+    { name: 'Map, "quoted"', B: [1], y: [99], matrix },
+    { name: "Single", B: [3395], y: [-7] },
+  ]));
+  assert.deepEqual(header, [
+    "dataset_index", "dataset", "trace_index", "point_index",
+    "x_axis", "x_unit", "x", "y_axis", "y_unit", "y",
+    "signal_real", "signal_imag",
+  ]);
+  assert.equal(rows.length, 7);
+  assert.deepEqual(rows[0], [
+    "1", 'Map, "quoted"', "1", "1", "Field", "G", "3401",
+    "Microwave attenuation", "dB", "6", "-2", "1",
+  ]);
+  assert.deepEqual(rows[5], [
+    "1", 'Map, "quoted"', "2", "3", "Field", "G", "3390",
+    "Microwave attenuation", "dB", "15", "-6", "-2",
+  ]);
+  assert.deepEqual(rows[6], [
+    "2", "Single", "", "1", "Field", "G", "3395", "", "", "", "-7", "",
+  ]);
+});
 test("display export uses yd and records offset, raw global export uses y", () => {
   const c = {
     index: 0,
