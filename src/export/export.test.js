@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { globalCurvesCSV, displayCurvesCSV } from "./csv.js";
+import { globalCurvesCSV, displayCurvesCSV, heatmapXYZCSV } from "./csv.js";
+import { defaults, model } from "../twod/ui.js";
 import { parseCSV, parseMergedCSV } from "../data/csv.js";
 import { svgFromScene } from "./svg.js";
 import { vectorScene } from "./scene.js";
@@ -58,6 +59,27 @@ test("global CSV exports every matrix cell and preserves 1D datasets in mixed pr
   ]);
   assert.deepEqual(rows[6], [
     "2", "Single", "", "1", "Field", "G", "3395", "", "", "", "-7", "",
+  ]);
+});
+test("heatmap XYZ uses selected component and orientation within the display ranges", () => {
+  const matrix = {
+    x: { name: "Field", unit: "G", values: [3400, 3410, 3420] },
+    y: { name: "Microwave attenuation", unit: "dB", values: [6, 15] },
+    real: [[3, 8, 5], [0, 12, 7]],
+    imag: [[4, 15, 12], [2, 5, 24]],
+  };
+  const settings = {
+    ...defaults(matrix), component: "magnitude", swap: true,
+    xMin: 5, xMax: 16, yMin: 3405, yMax: 3420,
+    projectionXMin: 6, projectionXMax: 15,
+    projectionYMin: 3400, projectionYMax: 3420,
+  };
+  assert.deepEqual(parseCSV(heatmapXYZCSV(model(matrix, settings), settings.component)), [
+    ["Microwave attenuation (dB)", "Field (G)", "Signal (magnitude)"],
+    ["6", "3410", "17"],
+    ["15", "3410", "13"],
+    ["6", "3420", "13"],
+    ["15", "3420", "25"],
   ]);
 });
 test("display export uses yd and records offset, raw global export uses y", () => {

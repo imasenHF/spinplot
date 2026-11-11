@@ -10,7 +10,7 @@ import {pdfFromSvg} from './export/pdf.js';
 import {vectorScene} from './export/scene.js';
 import {canvasBlob,bmpBlob,tiffBlob,pngWithDpi,jpegWithDpi} from './export/image.js';
 import {exportProjectPayload,exportConfigPayload} from './export/project.js';
-import {globalCurvesCSV,displayCurvesCSV,frequencyMetadataCSV} from './export/csv.js';
+import {globalCurvesCSV,displayCurvesCSV,frequencyMetadataCSV,heatmapXYZCSV} from './export/csv.js';
 import {autoRangeX,rangeY,renderFigure,resolveYAxisTitleVisibility} from './plotting/oned.js';
 import {normalizeEmptyProjectionSpace} from './plotting/footprint.js';
 import {migrateLegacyLegendPosition} from './plotting/legend-position.js';
@@ -414,12 +414,16 @@ function derivedTwoDPlotModel(sp,i,matrixOverride){
     secondaryYAxis:data?.secondaryAxis||null,renderNotice:notice};
  const xc=axisConfig(sp,'x'),auto=autoRangeX(curves);let xmin=Number.isFinite(xc.min)?xc.min:auto[0],xmax=Number.isFinite(xc.max)?xc.max:auto[1];if(xmin>xmax)[xmin,xmax]=[xmax,xmin];if(!(xmax>xmin)){xmin=auto[0];xmax=auto[1]}const yc=axisConfig(sp,'y'),ay=rangeY(curves.filter(c=>!c.rightAxis),xmin,xmax);let ymin=Number.isFinite(yc.min)?yc.min:ay[0],ymax=Number.isFinite(yc.max)?yc.max:ay[1];if(ymin>ymax)[ymin,ymax]=[ymax,ymin];return{sp:renderSp,index:i,curves,xmin,xmax,xStep:xc.step,ymin,ymax,yStep:yc.step};
 }
+function twoDPlotMode(sp) {
+  return ['stack', 'overlap', 'scan', 'contour', 'surface3d'].includes(sp.mode)
+    ? sp.mode : 'heatmap';
+}
 function preparePlotModel(){
  const items=state.subplots.map((sp,i)=>{
   if(sp.twoD){
    let d;try{d=subplotMatrix(sp)}catch(e){const invalidSp={...sp,twoD:null,curves:[],renderNotice:e.message};return{sp:invalidSp,index:i,curves:[],xmin:0,xmax:1,xStep:NaN,ymin:-1,ymax:1,yStep:NaN,matrix:null};}
    if(!d){const invalidSp={...sp,twoD:null,curves:[],renderNotice:'2D data are unavailable.'};return{sp:invalidSp,index:i,curves:[],xmin:0,xmax:1,xStep:NaN,ymin:-1,ymax:1,yStep:NaN,matrix:null};}
-   const t=sp.twoD.settings;t.mode=['stack','overlap','scan','contour','surface3d'].includes(sp.mode)?sp.mode:'heatmap';t.yScale=sp.yScale&&sp.yScale!=='inherit'?sp.yScale:($('globalYScale')?.value||'linear');t.offset=Number.isFinite(Number(sp.offsetScale))?Number(sp.offsetScale):1;TwoD.migrate(d,t);
+   const t=sp.twoD.settings;t.mode=twoDPlotMode(sp);t.yScale=sp.yScale&&sp.yScale!=='inherit'?sp.yScale:($('globalYScale')?.value||'linear');t.offset=Number.isFinite(Number(sp.offsetScale))?Number(sp.offsetScale):1;TwoD.migrate(d,t);
    if(sp.mode==='scan'||sp.mode==='overlap')return derivedTwoDPlotModel(sp,i,d);
    for(const a of ['x','y']){const cfg=axisConfig(sp,a);const ax=orient2DForFit(sp)[a].values;t[a+'Min']=Number.isFinite(cfg.min)?cfg.min:Math.min(ax[0],ax.at(-1));t[a+'Max']=Number.isFinite(cfg.max)?cfg.max:Math.max(ax[0],ax.at(-1));t[a+'Step']=cfg.step;}
    t.zMin=t.zUseGlobal!==false?$('globalZMin').value:t.zMin;t.zMax=t.zUseGlobal!==false?$('globalZMax').value:t.zMax;const {xr,yr}=TwoD.model(d,t);return{sp,index:i,curves:[],xmin:xr[0],xmax:xr[1],ymin:yr[0],ymax:yr[1],matrix:d};
@@ -448,7 +452,42 @@ function globalCorrectedCurves(target) {
   return state.rawCurves.map((curve, index) =>
     curve.matrix ? curve : { ...curve, ...alignedCurve(curve, index, target) });
 }
-function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='projection-export-controls';$('exportMetaBtn').parentElement.after(box);}box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
+function renderHeatmapXYZExport(box, plots, previousSelection) {
+  const heatmaps = plots.filter(([sp]) => twoDPlotMode(sp) === 'heatmap');
+  if (!heatmaps.length) return;
+  const label = document.createElement('label');
+  label.textContent = 'Heatmap data: subplot';
+  const select = document.createElement('select');
+  select.id = 'heatmapXYZSubplot';
+  for (const [sp, i] of heatmaps) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = 'S' + (i + 1) + (sp.title ? ' · ' + sp.title : '');
+    select.append(option);
+  }
+  if (heatmaps.some(([, i]) => String(i) === previousSelection)) {
+    select.value = previousSelection;
+  }
+  label.append(select);
+  const button = document.createElement('button');
+  button.textContent = 'Export heatmap XYZ CSV';
+  button.title = 'Export X, Y and signal for measured points within the displayed heatmap ranges.';
+  button.onclick = () => {
+    const index = Number(select.value);
+    try {
+      const { matrix, sp } = preparePlotModel()[index];
+      if (!matrix) throw Error('Heatmap data are unavailable.');
+      const settings = sp.twoD.settings;
+      const csv = heatmapXYZCSV(TwoD.model(matrix, settings), settings.component);
+      downloadText(`${safeBaseName()}_S${index + 1}_heatmap_xyz.csv`, csv, 'text/csv;charset=utf-8');
+      logAction(`Subplot ${index + 1}: heatmap XYZ CSV exported`);
+    } catch (error) {
+      setStatus(error.message, 'bad');
+    }
+  };
+  box.append(label, button);
+}
+function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='projection-export-controls';$('exportMetaBtn').parentElement.after(box);}const previousHeatmap=$('heatmapXYZSubplot')?.value;box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;renderHeatmapXYZExport(box,plots,previousHeatmap);const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
 const scanPlots=plots.filter(([sp])=>sp.mode==='scan');
 if(scanPlots.length){
  const label=document.createElement('label');

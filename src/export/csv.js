@@ -5,6 +5,18 @@ function csvEscape(v) {
   const s = String(v ?? "");
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
+export function heatmapXYZCSV({ v, xi, yi }, component) {
+  const axisTitle = (axis) => axis.unit ? `${axis.name} (${axis.unit})` : axis.name;
+  const header = [axisTitle(v.x), axisTitle(v.y), `Signal (${component})`];
+  const lines = [header.map(csvEscape).join(",")];
+  for (const j of yi) {
+    for (const i of xi) {
+      const z = v.z[j][i];
+      lines.push([v.x.values[i], v.y.values[j], Number.isFinite(z) ? z : ""].join(","));
+    }
+  }
+  return lines.join("\n");
+}
 function datasetsCSV(datasets) {
   const header = [
     'dataset_index',
