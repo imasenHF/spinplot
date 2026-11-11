@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.9 — 2026-11-11
+
+- Export every acquired 2D matrix point from Export global-corrected CSV, with dataset, trace and point indices, both acquisition axes and real/imaginary signals. Export each loaded matrix once even when several subplots use it. Preserve the existing 1D-only export format.
+
 ## 0.11.8 — 2026-11-08
 
 - Place each amplitude parameter Fit checkbox beside its numeric input, remove the visible Fit text, and retain accessible names and hover explanations. Preserve the full-width P½ row, paired I₀/b row, narrow-sidebar wrapping and fixed/fitted behavior.

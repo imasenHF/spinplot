@@ -5,6 +5,8 @@
 
 ## 1. 定位与发布
 
+- 本轮 v0.11.9 修复原生二维数据 CSV 导出。Export global-corrected CSV 按采集点写入完整二维矩阵，含数据集、扫描谱和点序号、两轴物理坐标及实部、虚部；各源矩阵仅导出一次。纯一维项目沿用原格式。部署状态见开发上下文。
+
 - 正式版本 **0.11.8** 已通过 [PR #25](https://github.com/imasenHF/spinplot/pull/25) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.8](https://github.com/imasenHF/spinplot/releases/tag/v0.11.8)：幅度参数的拟合勾选框位于数值输入框右侧并垂直居中，省去可见 Fit 文字，保留悬浮说明与无障碍名称。P½ 独立整行、I₀/b 同行，窄侧栏自动拆行；固定/拟合切换、Refit、模型公式与项目/配置格式 11/10 保持兼容。验收记录见开发上下文。
 
 - 厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。

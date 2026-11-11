@@ -444,7 +444,10 @@ function saveProject(){if(!state.rawCurves.length)return alert('No data loaded')
 async function loadProjectFile(file){const o=JSON.parse(await file.text());const curves=parseProjectCurves(o);state.rawCurves=curves;state.dataVersion=(state.dataVersion||0)+1;state.sourceType=o.sourceType||'project';state.sourceName=o.sourceName||file.name;$('fileInfo').textContent=state.sourceName;state.subplots=[];if(o.config)applyConfig(o.config);else ensureSubplots();updateCurveTable();updateFreqTable();updateStatusBar();recordHistory('Open project');draw();logAction(`Project loaded: ${file.name}`,true);setStatus('Project loaded','good')}
 
 
-function globalCorrectedCurves(target=globalTargetFrequency()){return state.rawCurves.map((c,i)=>({...c,...alignedCurve(c,i,target)}))}
+function globalCorrectedCurves(target) {
+  return state.rawCurves.map((curve, index) =>
+    curve.matrix ? curve : { ...curve, ...alignedCurve(curve, index, target) });
+}
 function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='projection-export-controls';$('exportMetaBtn').parentElement.after(box);}box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
 const scanPlots=plots.filter(([sp])=>sp.mode==='scan');
 if(scanPlots.length){
@@ -596,6 +599,22 @@ function renderPlot(canvas,w,h,scale=1,isExport=false){
  return renderFigure(canvas,w,h,scale,isExport,{model,cells:layoutCells(),controls,view,style:{theme:plotTheme(),font:getFont('plotFont','customPlotFont','Arial')}});
 }
 
-function exportGlobalCsv(){if(!state.rawCurves.length)return;let target=globalTargetFrequency();if($('globalFreqMode').value==='local_mean'){const summaries=state.rawCurves.map((_,i)=>curveTargetSummary(i)),first=summaries[0]?.target??null;if(summaries.some(s=>s.varies)||summaries.some(s=>!sameFrequencyTarget(s.target,first))){setStatus('Local mean uses different targets across subplots; use Display CSV for per-subplot aligned data.','bad');return;}target=first;}downloadText(`${safeBaseName()}_global.csv`,globalCurvesCSV(globalCorrectedCurves(target)),'text/csv;charset=utf-8');logAction('Global corrected CSV exported');}
+function exportGlobalCsv() {
+  if (!state.rawCurves.length) return;
+  let target = globalTargetFrequency();
+  if ($('globalFreqMode').value === 'local_mean') {
+    const summaries = state.rawCurves.flatMap((curve, index) =>
+      curve.matrix ? [] : [curveTargetSummary(index)]);
+    const first = summaries[0]?.target ?? null;
+    if (summaries.some(summary => summary.varies || !sameFrequencyTarget(summary.target, first))) {
+      setStatus('Local mean uses different targets across subplots; use Display CSV for per-subplot aligned data.', 'bad');
+      return;
+    }
+    target = first;
+  }
+  const csv = globalCurvesCSV(globalCorrectedCurves(target));
+  downloadText(`${safeBaseName()}_global.csv`, csv, 'text/csv;charset=utf-8');
+  logAction('Global corrected CSV exported');
+}
 function exportDisplayCsv(){if(!state.rawCurves.length)return;downloadText(`${safeBaseName()}_display.csv`,displayCurvesCSV(state.subplots.map(sp=>({sp,curves:processedSubplot(sp)})),collectControls()),'text/csv;charset=utf-8');logAction('Subplot display CSV exported');}
 function exportMeta(){downloadText(`${safeBaseName()}_freqmeta.csv`,frequencyMetadataCSV(state.rawCurves,globalTargetFrequency(),collectControls()),'text/csv;charset=utf-8');logAction('Frequency metadata exported');}

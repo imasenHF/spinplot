@@ -3,9 +3,76 @@ import { axisKind } from "../processing/axis.js";
 import { autoRangeX } from "../plotting/oned.js";
 function csvEscape(v) {
   const s = String(v ?? "");
-  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function datasetsCSV(datasets) {
+  const header = [
+    'dataset_index',
+    'dataset',
+    'trace_index',
+    'point_index',
+    'x_axis',
+    'x_unit',
+    'x',
+    'y_axis',
+    'y_unit',
+    'y',
+    'signal_real',
+    'signal_imag',
+  ];
+  const lines = [header.join(',')];
+  datasets.forEach((dataset, index) => {
+    const { matrix } = dataset;
+    const prefix = [index + 1, dataset.name];
+    if (!matrix) {
+      const axis = dataset.xAxis || { name: 'Field', unit: 'G' };
+      dataset.B.forEach((x, point) => {
+        lines.push(
+          [
+            ...prefix,
+            '',
+            point + 1,
+            axis.name,
+            axis.unit,
+            x,
+            '',
+            '',
+            '',
+            dataset.y[point],
+            dataset.imag?.[point],
+          ]
+            .map(csvEscape)
+            .join(','),
+        );
+      });
+      return;
+    }
+    matrix.y.values.forEach((y, trace) => {
+      matrix.x.values.forEach((x, point) => {
+        lines.push(
+          [
+            ...prefix,
+            trace + 1,
+            point + 1,
+            matrix.x.name,
+            matrix.x.unit,
+            x,
+            matrix.y.name,
+            matrix.y.unit,
+            y,
+            matrix.real[trace][point],
+            matrix.imag?.[trace]?.[point],
+          ]
+            .map(csvEscape)
+            .join(','),
+        );
+      });
+    });
+  });
+  return lines.join('\n');
 }
 export function globalCurvesCSV(cs) {
+  if (cs.some((curve) => curve.matrix)) return datasetsCSV(cs);
   if (
     new Set(
       cs.map(
