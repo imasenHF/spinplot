@@ -2,7 +2,8 @@
 
 - 全局 CSV 导出直接读取原生二维源矩阵。按扫描谱与采集点逐行写入两轴名称、单位、坐标及实部、虚部；显示范围、轴交换、投影与拟合设置不参与导出。
 - 混合项目在同一表中包含频率校正后的一维点，扫描轴相关列留空。纯一维 CSV 格式沿用，项目/配置格式为 11/10。
-- 版本与部署验收待实际检查后更新。
+- [PR #26](https://github.com/imasenHF/spinplot/pull/26) 已合并，合并提交 `4cff1150f32e5aa3e1d9485d186f679d50a21129`。本地 npm run check 与 29 组单元测试通过。quality [42974655767](https://github.com/imasenHF/spinplot/actions/runs/42974655767)、Legend [42974655796](https://github.com/imasenHF/spinplot/actions/runs/42974655796) 与 Vector PDF [42974655774](https://github.com/imasenHF/spinplot/actions/runs/42974655774) 成功。Chromium 经现有按钮下载合成二维项目的 CSV，逐点核对坐标与信号，检查同一源矩阵用于两个子图时仅导出一次。纯一维导出及混合数据表均有单元回归。
+- [v0.11.9](https://github.com/imasenHF/spinplot/releases/tag/v0.11.9) 已发布。正式 Pages [42974866668](https://github.com/imasenHF/spinplot/actions/runs/42974866668)、生产 HTTP [42975047651](https://github.com/imasenHF/spinplot/actions/runs/42975047651) 与 Release [42975070676](https://github.com/imasenHF/spinplot/actions/runs/42975070676) 均成功。已核对线上版本标题及脚本中的二维 CSV 列名。
 
 ## 2026-11-08 v0.11.8 参数框同行勾选
 
