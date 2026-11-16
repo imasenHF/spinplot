@@ -1,12 +1,11 @@
-import { interp1 } from "../processing/interpolation.js";
-import { axisKind } from "../processing/axis.js";
 import { autoRangeX } from "../plotting/oned.js";
 function csvEscape(v) {
   const s = String(v ?? "");
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
+const axisTitle = (axis) => axis.unit ? `${axis.name} (${axis.unit})` : axis.name;
+
 export function heatmapXYZCSV({ v, xi, yi }, component) {
-  const axisTitle = (axis) => axis.unit ? `${axis.name} (${axis.unit})` : axis.name;
   const header = [axisTitle(v.x), axisTitle(v.y), `Signal (${component})`];
   const lines = [header.map(csvEscape).join(",")];
   for (const j of yi) {
@@ -17,7 +16,7 @@ export function heatmapXYZCSV({ v, xi, yi }, component) {
   }
   return lines.join("\n");
 }
-function datasetsCSV(datasets) {
+export function sourceMatrixCSV(datasets) {
   const header = [
     'dataset_index',
     'dataset',
@@ -36,29 +35,7 @@ function datasetsCSV(datasets) {
   datasets.forEach((dataset, index) => {
     const { matrix } = dataset;
     const prefix = [index + 1, dataset.name];
-    if (!matrix) {
-      const axis = dataset.xAxis || { name: 'Field', unit: 'G' };
-      dataset.B.forEach((x, point) => {
-        lines.push(
-          [
-            ...prefix,
-            '',
-            point + 1,
-            axis.name,
-            axis.unit,
-            x,
-            '',
-            '',
-            '',
-            dataset.y[point],
-            dataset.imag?.[point],
-          ]
-            .map(csvEscape)
-            .join(','),
-        );
-      });
-      return;
-    }
+    if (!matrix) return;
     matrix.y.values.forEach((y, trace) => {
       matrix.x.values.forEach((x, point) => {
         lines.push(
@@ -83,101 +60,80 @@ function datasetsCSV(datasets) {
   });
   return lines.join('\n');
 }
-export function globalCurvesCSV(cs) {
-  if (cs.some((curve) => curve.matrix)) return datasetsCSV(cs);
-  if (
-    new Set(
-      cs.map(
-        (c) =>
-          axisKind(c.xAxis || { name: "Field", unit: "G" }) +
-          ":" +
-          (c.xAxis?.unit || "G"),
-      ),
-    ).size > 1
-  ) {
-    const rows = [["curve", "axis", "unit", "coordinate", "intensity"]];
-    for (const c of cs)
-      for (let i = 0; i < c.B.length; i++)
-        rows.push([
-          c.name,
-          c.xAxis?.name || "Field",
-          c.xAxis?.unit || "G",
-          c.B[i],
-          c.y[i],
-        ]);
-    return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
+// Each column block has its own sample order and length. Only curves with
+// identical displayed grids in the same subplot share an X column.
+export function plotDataCSV(subplots) {
+  const columns = [];
+  for (const { sp, index, curves, xmin, xmax, matrixView } of subplots) {
+    const prefix = sp.title?.trim() || `S${index + 1}`;
+    if (matrixView) {
+      const { v, xi, yi } = matrixView;
+      const x = [], y = [], z = [];
+      for (const j of yi) {
+        for (const i of xi) {
+          x.push(v.x.values[i]);
+          y.push(v.y.values[j]);
+          z.push(v.z[j][i]);
+        }
+      }
+      if (x.length) {
+        columns.push(
+          { label: `${prefix} X · ${axisTitle(v.x)}`, values: x },
+          { label: `${prefix} Y · ${axisTitle(v.y)}`, values: y },
+          { label: `${prefix} Z · ${sp.twoD.settings.component}`, values: z },
+        );
+      }
+      continue;
+    }
+    const grids = [];
+    const names = new Set();
+    curves.forEach((curve, curveIndex) => {
+      const x = [], y = [];
+      for (let i = 0; i < Math.min(curve.B.length, curve.yd.length); i++) {
+        const coordinate = curve.B[i];
+        if (Number.isFinite(coordinate) && coordinate >= xmin && coordinate <= xmax) {
+          x.push(coordinate);
+          y.push(curve.yd[i]);
+        }
+      }
+      if (!x.length) return;
+      const axis = curve.xAxis || { name: 'Field', unit: 'G' };
+      const name = curve.name?.trim() || `Curve ${curveIndex + 1}`;
+      let label = `${prefix} · ${name}`;
+      for (let n = 2; names.has(label); n++) label = `${prefix} · ${name} (${n})`;
+      names.add(label);
+      const grid = grids.find((g) => g.axis.name === axis.name && g.axis.unit === axis.unit &&
+        g.x.length === x.length && g.x.every((value, i) => value === x[i]));
+      const yColumn = { label: `${label} Y`, values: y };
+      if (grid) {
+        grid.yColumns.push(yColumn);
+      } else {
+        grids.push({ axis, x, label, yColumns: [yColumn] });
+      }
+    });
+    for (const { axis, x, label, yColumns } of grids) {
+      const suffix = axis.unit ? ` (${axis.unit})` : '';
+      const xLabel = yColumns.length > 1 ? prefix : label;
+      columns.push({ label: `${xLabel} X${suffix}`, values: x }, ...yColumns);
+    }
   }
-  const Bref = cs[0].B.slice(),
-    rows = [
-      [
-        cs[0].xAxis && axisKind(cs[0].xAxis) !== "field"
-          ? cs[0].xAxis.name + " (" + cs[0].xAxis.unit + ")"
-          : "B",
-        ...cs.map((c) => c.name),
-      ],
-    ];
-  const ys = cs.map((c) => interp1(c.B, c.y, Bref));
-  for (let i = 0; i < Bref.length; i++)
-    rows.push([Bref[i], ...ys.map((y) => y[i])]);
-  return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
+  if (!columns.length) return '';
+  // User-defined plot and curve titles are text, even in spreadsheet readers.
+  const labels = new Set();
+  const header = columns.map(({ label }) => {
+    let unique = label;
+    for (let n = 2; labels.has(unique); n++) unique = `${label} (${n})`;
+    labels.add(unique);
+    return csvEscape(/^[=+@-]/.test(unique) ? "'" + unique : unique);
+  });
+  const lines = [header.join(',')];
+  const rowCount = columns.reduce((max, column) => Math.max(max, column.values.length), 0);
+  for (let i = 0; i < rowCount; i++) {
+    lines.push(columns.map(({ values }) => Number.isFinite(values[i]) ? values[i] : '').join(','));
+  }
+  return lines.join('\n');
 }
-export function displayCurvesCSV(subplots, controls) {
-  const $ = (id) => ({ value: controls[id] });
-  const rows = [
-    [
-      "subplot",
-      "subplot_title",
-      "curve_index",
-      "curve",
-      "source",
-      "freq_source_GHz",
-      "freq_target_GHz",
-      "freq_source_status",
-      "field_scale",
-      "baseline_mode",
-      "baseline_regions_G",
-      "baseline_reference_G",
-      "amplitude_mode",
-      "amplitude_scale",
-      "noise_regions_G",
-      "stack_mode",
-      "stack_offset",
-      "coordinate",
-      "Y_display",
-      "axis_name",
-      "axis_unit",
-    ],
-  ];
-  subplots.forEach(({ sp, curves }, si) =>
-    curves.forEach((c) => {
-      for (let i = 0; i < c.B.length; i++)
-        rows.push([
-          si + 1,
-          sp.title,
-          c.index,
-          c.name,
-          c.source,
-          c.freq ?? "",
-          c.targetFreq ?? "",
-          Number.isFinite(c.freq) ? "source" : "missing",
-          c.scale,
-          $("baselineMode").value,
-          $("baselineRegions").value,
-          $("baselineBref").value,
-          $("scaleMode").value,
-          c.ampScale ?? 1,
-          sp.noiseRegions,
-          sp.mode,
-          c.offset,
-          c.B[i],
-          c.yd[i],
-          c.xAxis?.name || "Field",
-          c.xAxis?.unit || "G",
-        ]);
-    }),
-  );
-  return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
-}
+
 export function frequencyMetadataCSV(rawCurves, target, controls) {
   const $ = (id) => ({ value: controls[id], checked: controls[id] });
   const rows = [

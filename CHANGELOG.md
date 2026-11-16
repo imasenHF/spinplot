@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.11 — 2026-11-16
+
+- Combine the two curve CSV actions into Export plot data CSV. Export displayed coordinates by subplot, sharing X only for identical grids within a subplot. Keep each subplot’s alignment, displayed Y values and X range. Use empty cells for missing values and shorter columns. Displayed 2D grids contribute XYZ; an explicit Export 2D source CSV retains the complete acquired matrices.
+
 ## 0.11.10 — 2026-11-11
 
 - Add a three-column Heatmap XYZ CSV export for the selected subplot. Export measured points within its displayed X/Y ranges using the current axis orientation and signal component. Include physical axis names and units in the header.

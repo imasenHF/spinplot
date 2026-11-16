@@ -23,7 +23,7 @@
 
 热图可在 Export → Heatmap data: subplot → Export heatmap XYZ CSV 导出三列采集点，沿用当前显示范围、轴方向和信号分量，表头含物理量及单位。
 
-二维项目可在 Export → Export global-corrected CSV 导出完整采集矩阵，逐点包含两轴坐标、实部和虚部。投影与扫描特征另有专用导出入口。
+Export → Export plot data CSV 将各主子图的绘图坐标并排列入一份 CSV。曲线只在同一子图内横坐标逐点相同时共用 X，保留实际显示强度、可见 X 范围和各自采样点，较短列的末尾留空。二维图按显示范围提供 XYZ，完整采集矩阵可用 Export 2D source CSV 导出。
 
 幅度参数仅保留在下方模型公式之后：P½ 独立一行，I₀/b 同行，各自的拟合勾选框与数值输入框同行，省去可见 Fit 文字并保留悬浮说明；随后为 R²/RMSE 与点数。窄侧栏自动拆行，模型名称使用 P-half saturation。
 

@@ -35,32 +35,33 @@ try {
   await page.locator('button.tab-btn[data-tab="scaling"]').click();
   assert.match(await page.locator('button.tab-btn[data-tab="scaling"]').getAttribute('class'),/active/);
   await page.locator('button.tab-btn[data-tab="export"]').click();
-  const [download] = await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#exportCsvBtn').click()]);
-  assert.match(download.suggestedFilename(),/\.csv$/i);
-  await download.saveAs('browser-preview/synthetic-global.csv');
   const exportDisplay=async (path)=>{
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [d] = await Promise.all([
       page.waitForEvent('download',{timeout:15000}),
-      page.locator('#exportDisplayCsvBtn').click()
+      page.getByRole('button',{name:'Export plot data CSV',exact:true}).click()
     ]);
+    assert.match(d.suggestedFilename(),/_plot_data\.csv$/);
     await d.saveAs(path);
     const [header,...rows]=fs.readFileSync(path,'utf8').trim().split(/\r?\n/).map(line=>line.split(','));
     return {header,rows};
   };
-  const coordinateFor=(data,curve)=>{
-    const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate');
-    assert.ok(i>=0&&j>=0,'Display CSV must contain curve index and coordinate');
-    const row=data.rows.find(r=>Number(r[i])===curve);
-    assert.ok(row,'Expected synthetic curve in display CSV');
-    return Number(row[j]);
+  const coordinates=await exportDisplay('browser-preview/synthetic-plot-data.csv');
+  assert.deepEqual(coordinates.header,['S1 X (G)','S1 · Trace A Y','S1 · Trace B Y']);
+  assert.equal(await page.locator('#exportMatrixCsvBtn').isHidden(),true,'Raw 2D export is hidden for 1D projects');
+  const curveColumns=(data,curve)=>{
+    const name=['Trace A','Trace B'][curve];
+    const y=data.header.findIndex(label=>label.endsWith(` · ${name} Y`));
+    const x=data.header.slice(0,y).findLastIndex(label=>label.endsWith(' X (G)'));
+    assert.ok(x>=0&&y>=0,'Plot CSV has a corresponding X and Y for '+name);
+    return {x,y};
   };
+  const coordinateFor=(data,curve)=>Number(data.rows[0][curveColumns(data,curve).x]);
   const valueFor=(data,curve,field)=>{
-    const i=data.header.indexOf('curve_index'),j=data.header.indexOf('coordinate'),k=data.header.indexOf('Y_display');
-    assert.ok(i>=0&&j>=0&&k>=0,'Display CSV must contain coordinate, curve index and intensity');
-    const row=data.rows.find(r=>Number(r[i])===curve&&Number(r[j])===field);
-    assert.ok(row,'Expected synthetic curve/sample point in display CSV');
-    return Number(row[k]);
+    const {x,y}=curveColumns(data,curve);
+    const row=data.rows.find(r=>Number(r[x])===field);
+    assert.ok(row,'Expected synthetic sample in plot CSV');
+    return Number(row[y]);
   };
 
   // The new frequency-alignment behavior is tested only against the current modularized build.
@@ -415,7 +416,7 @@ try {
     await page.locator('button.tab-btn[data-tab="export"]').click();
     const [matrixDownload] = await Promise.all([
       page.waitForEvent('download',{timeout:15000}),
-      page.locator('#exportCsvBtn').click(),
+      page.locator('#exportMatrixCsvBtn').click(),
     ]);
     await matrixDownload.saveAs('browser-preview/2d-global.csv');
     const [matrixHeader,...matrixRows]=fs.readFileSync('browser-preview/2d-global.csv','utf8').trimEnd().split('\n');
@@ -431,6 +432,16 @@ try {
         ]);
       }
     }
+    const canvasData=await exportDisplay('browser-preview/mixed-plot-data.csv');
+    assert.deepEqual(canvasData.header.slice(0,3),[
+      'Synthetic field map X · Field (G)',
+      'Synthetic field map Y · Microwave attenuation (dB)',
+      'Synthetic field map Z · real',
+    ]);
+    assert.ok(canvasData.header.includes('Saturation validation · Amplitude fit Y'));
+    assert.equal(canvasData.rows.length,fields.length*attenuation.length);
+    assert.deepEqual(canvasData.rows[0].slice(0,3).map(Number),[fields[0],attenuation[0],syntheticRows[0][0]]);
+    assert.ok(canvasData.rows.slice(attenuation.length).every(row=>row.slice(3).every(value=>value==='')));
     const heatmapSelect=page.locator('#heatmapXYZSubplot');
     assert.deepEqual(await heatmapSelect.locator('option').allTextContents(),['S2 · Synthetic field map']);
     const [xyzDownload]=await Promise.all([
