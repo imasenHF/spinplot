@@ -5,7 +5,7 @@
 
 ## 1. 定位与发布
 
-- 正式版本 **0.11.11** 已通过 [PR #28](https://github.com/imasenHF/spinplot/pull/28) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.11](https://github.com/imasenHF/spinplot/releases/tag/v0.11.11)。Export plot data CSV 按画布子图顺序导出当前范围内的绘图坐标。曲线采用子图的频率校准与显示强度，独立采样网格保留独立 X，完全相同的网格在同一子图共用 X，空值和列尾留空。二维显示网格导出 XYZ，完整二维采集数据使用 Export 2D source CSV。验收记录见开发上下文。
+- 正式版本 **0.11.12** 已通过 [PR #29](https://github.com/imasenHF/spinplot/pull/29) 合并、Pages 与生产 HTTP 检查，并发布 [v0.11.12](https://github.com/imasenHF/spinplot/releases/tag/v0.11.12)。Export plot data CSV 按画布子图顺序导出当前范围内的绘图坐标。曲线采用子图的频率校准与显示强度，独立采样网格保留独立 X，完全相同的网格在同一子图共用 X，空值和列尾留空。二维显示网格导出 XYZ，完整二维采集数据使用 Export 2D source CSV。绘图 CSV 下载使用带 BOM 的 UTF-8，便于 Excel 直接识别分隔符及 Unicode 名称。验收记录见开发上下文。
 
 - 厂商字段与单位映射见 [实验参数规则](docs/EXPERIMENTAL_CONDITIONS.md)。后续每次应用代码更新递增应用版本，并同步 package/lockfile、带日期的 Changelog 与部署后的 tag/Release；文档修订可保持版本，已发布标签不移动。项目/配置格式版本独立管理，当前保持 11/10。PR quality 已增加版本检查。
 

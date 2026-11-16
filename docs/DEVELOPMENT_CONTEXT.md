@@ -1,3 +1,9 @@
+## 2026-11-16 v0.11.12 绘图 CSV 编码
+
+- Export plot data CSV 下载添加 UTF-8 BOM。旧文件用 GBK 打开时，UTF-8 编码的中点分隔符可误显示为「路」。浏览器回归逐项检查编码标记、表头和绘图数值，下载字节已核对为 `EF BB BF` 开头。
+- [PR #29](https://github.com/imasenHF/spinplot/pull/29) 已合并，本地 npm run check 与 29 组单元测试通过。quality [43827575271](https://github.com/imasenHF/spinplot/actions/runs/43827575271)、Legend [43827575469](https://github.com/imasenHF/spinplot/actions/runs/43827575469) 和 Vector PDF [43827575388](https://github.com/imasenHF/spinplot/actions/runs/43827575388) 成功。
+- [v0.11.12](https://github.com/imasenHF/spinplot/releases/tag/v0.11.12) 已发布。正式 Pages [43827808170](https://github.com/imasenHF/spinplot/actions/runs/43827808170) 与生产 HTTP [43828086165](https://github.com/imasenHF/spinplot/actions/runs/43828086165) 成功，已核对正式页面版本和绘图 CSV 编码标记。项目/配置格式为 11/10。
+
 ## 2026-11-16 v0.11.11 绘图坐标 CSV
 
 - Export plot data CSV 合并旧有两个曲线导出按钮。按画布行列顺序将子图坐标并排输出，只导出当前 X 范围内的采样点，保留各子图校准后的 X 与显示 Y。仅同一子图内逐点相同的采样网格共用 X，不插值。缺失值与短列末尾留空，列头包括子图、曲线和已知坐标单位。
