@@ -43,7 +43,9 @@ try {
     ]);
     assert.match(d.suggestedFilename(),/_plot_data\.csv$/);
     await d.saveAs(path);
-    const [header,...rows]=fs.readFileSync(path,'utf8').trim().split(/\r?\n/).map(line=>line.split(','));
+    const downloadedCsv=fs.readFileSync(path,'utf8');
+    assert.equal(downloadedCsv[0],'\uFEFF','Plot CSV starts with a UTF-8 signature for Excel');
+    const [header,...rows]=downloadedCsv.trim().split(/\r?\n/).map(line=>line.split(','));
     return {header,rows};
   };
   const coordinates=await exportDisplay('browser-preview/synthetic-plot-data.csv');
