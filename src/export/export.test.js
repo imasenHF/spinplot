@@ -1,45 +1,30 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { globalCurvesCSV, displayCurvesCSV, heatmapXYZCSV } from "./csv.js";
+import { plotDataCSV, sourceMatrixCSV, heatmapXYZCSV } from "./csv.js";
 import { defaults, model } from "../twod/ui.js";
 import { parseCSV, parseMergedCSV } from "../data/csv.js";
 import { svgFromScene } from "./svg.js";
 import { vectorScene } from "./scene.js";
 import { exportProjectPayload, exportConfigPayload } from "./project.js";
 import { parseProjectCurves } from "../project/project.js";
-test("legacy and multi-curve CSV roundtrip; quote names and missing values", () => {
-  for (const input of [
-    "B,old\r\n3300,1\r\n3320,-1\r\n",
-    'B,"A,quoted",B\n3300,1,2\n3320,3,6\n',
-  ]) {
-    const c = parseMergedCSV(input, "sample.csv");
-    const output = globalCurvesCSV(c);
-    const loaded = parseMergedCSV(output, "roundtrip.csv");
-    assert.deepEqual(
-      loaded.map((c) => [c.B, c.y]),
-      c.map((c) => [c.B, c.y]),
-    );
-  }
-  const mixed = [
-    { name: "f", B: [1, 2], y: [3, 4] },
-    { name: "t", B: [1, 2], y: [5, 6], xAxis: { name: "Time", unit: "ms" } },
-  ];
-  assert.deepEqual(parseCSV(globalCurvesCSV(mixed))[0], [
-    "curve",
-    "axis",
-    "unit",
-    "coordinate",
-    "intensity",
-  ]);
+test("matching plot grids export a CSV readable by the existing 1D importer", () => {
+  const curves = parseMergedCSV('B,"A,quoted",B\n3300,1,2\n3320,3,6\n', "sample.csv");
+  const csv = plotDataCSV([{
+    index: 0, sp: {}, xmin: 3300, xmax: 3320,
+    curves: curves.map(curve => ({ ...curve, yd: curve.y })),
+  }]);
+  assert.deepEqual(parseCSV(csv)[0], ["S1 X (G)", "S1 · A,quoted Y", "S1 · B Y"]);
+  const loaded = parseMergedCSV(csv, "roundtrip.csv");
+  assert.deepEqual(loaded.map(c => [c.B, c.y]), curves.map(c => [c.B, c.y]));
 });
-test("global CSV exports every matrix cell and preserves 1D datasets in mixed projects", () => {
+test("2D source CSV exports every matrix cell in mixed projects", () => {
   const matrix = {
     x: { name: "Field", unit: "G", values: [3401, 3398, 3390] },
     y: { name: "Microwave attenuation", unit: "dB", values: [6, 15] },
     real: [[-2, 0, 3], [4, 5, -6]],
     imag: [[1, 2, 3], [0, -1, -2]],
   };
-  const [header, ...rows] = parseCSV(globalCurvesCSV([
+  const [header, ...rows] = parseCSV(sourceMatrixCSV([
     { name: 'Map, "quoted"', B: [1], y: [99], matrix },
     { name: "Single", B: [3395], y: [-7] },
   ]));
@@ -48,7 +33,7 @@ test("global CSV exports every matrix cell and preserves 1D datasets in mixed pr
     "x_axis", "x_unit", "x", "y_axis", "y_unit", "y",
     "signal_real", "signal_imag",
   ]);
-  assert.equal(rows.length, 7);
+  assert.equal(rows.length, 6);
   assert.deepEqual(rows[0], [
     "1", 'Map, "quoted"', "1", "1", "Field", "G", "3401",
     "Microwave attenuation", "dB", "6", "-2", "1",
@@ -57,9 +42,7 @@ test("global CSV exports every matrix cell and preserves 1D datasets in mixed pr
     "1", 'Map, "quoted"', "2", "3", "Field", "G", "3390",
     "Microwave attenuation", "dB", "15", "-6", "-2",
   ]);
-  assert.deepEqual(rows[6], [
-    "2", "Single", "", "1", "Field", "G", "3395", "", "", "", "-7", "",
-  ]);
+
 });
 test("heatmap XYZ uses selected component and orientation within the display ranges", () => {
   const matrix = {
@@ -82,23 +65,28 @@ test("heatmap XYZ uses selected component and orientation within the display ran
     ["15", "3420", "25"],
   ]);
 });
-test("display export uses yd and records offset, raw global export uses y", () => {
-  const c = {
-    index: 0,
-    name: "c",
-    source: "s",
-    B: [1, 2],
-    y: [3, 4],
-    yd: [8, 9],
-    offset: 5,
-    scale: 1,
-  };
-  const rows = parseCSV(
-    displayCurvesCSV([{ sp: { mode: "stack" }, curves: [c] }], {}),
-  );
-  assert.equal(rows[1][rows[0].indexOf("Y_display")], "8");
-  assert.equal(rows[1][rows[0].indexOf("stack_offset")], "5");
-  assert.match(globalCurvesCSV([c]), /1,3/);
+test("plot CSV keeps independently sampled grids and pads only short columns", () => {
+  const [header, ...rows] = parseCSV(plotDataCSV([
+    {
+      index: 0, sp: { title: "Crop" }, xmin: 2, xmax: 4,
+      curves: [
+        { name: "A", B: [1, 2, 3, 4, 5], y: [0, 0, 0, 0, 0], yd: [7, 8, 9, 10, 11] },
+        { name: "B", B: [2.1, 3.1], yd: [20, 21] },
+        { name: "C", B: [2, 3, 4], yd: [30, NaN, 32] },
+      ],
+    },
+    {
+      index: 1, sp: {}, xmin: 2, xmax: 4,
+      curves: [{ name: "D", B: [2, 3, 4], yd: [40, 41, 42] }],
+    },
+  ]));
+  assert.deepEqual(header, ["Crop X (G)", "Crop · A Y", "Crop · C Y",
+    "Crop · B X (G)", "Crop · B Y", "S2 · D X (G)", "S2 · D Y"]);
+  assert.deepEqual(rows, [
+    ["2", "8", "30", "2.1", "20", "2", "40"],
+    ["3", "9", "", "3.1", "21", "3", "41"],
+    ["4", "10", "32", "", "", "4", "42"],
+  ]);
 });
 test("vector scene applies Canvas scale transforms to text and paths", () => {
   const { scene } = vectorScene({ width: 100, height: 50 },

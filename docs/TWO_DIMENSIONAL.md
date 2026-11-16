@@ -38,7 +38,9 @@ In Export, choose a heatmap under Heatmap data: subplot and click Export heatmap
 
 ## Full 2D data CSV
 
-Export → Export global-corrected CSV writes one row per acquired matrix point, with 1-based dataset, trace and point indices, X/Y names, units and coordinates, and real/imaginary signal columns. The full acquisition grid is exported once per loaded dataset, independent of subplot axis ranges, axis swaps, projections and fit exclusions. Native matrix coordinates and signals are written directly. Projects with both 1D and 2D data include the frequency-aligned 1D points in the same table with empty Y-axis fields. 1D-only projects keep their established CSV format. Use Export projection CSV or Export scan features CSV for the corresponding derived quantities.
+Export → Export 2D source CSV writes one row per acquired matrix point, with 1-based dataset, trace and point indices, X/Y names, units and coordinates, and real/imaginary signal columns. The full acquisition grid is exported once per loaded dataset. Native matrix coordinates and signals are written directly.
+
+Export plot data CSV puts the main subplot data side by side in one table. Variable scan and 2D overlap export the displayed curves as XY. Heatmap, contour and 3D surface contribute XYZ samples in the displayed ranges. Native 2D stack contributes XYZ for the sampled traces selected for display, before the visual waterfall spacing is applied. Projection and scan-feature CSV actions provide the corresponding auxiliary data.
 
 ## Shared workflow
 

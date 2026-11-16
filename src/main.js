@@ -10,11 +10,11 @@ import {pdfFromSvg} from './export/pdf.js';
 import {vectorScene} from './export/scene.js';
 import {canvasBlob,bmpBlob,tiffBlob,pngWithDpi,jpegWithDpi} from './export/image.js';
 import {exportProjectPayload,exportConfigPayload} from './export/project.js';
-import {globalCurvesCSV,displayCurvesCSV,frequencyMetadataCSV,heatmapXYZCSV} from './export/csv.js';
+import {plotDataCSV,sourceMatrixCSV,frequencyMetadataCSV,heatmapXYZCSV} from './export/csv.js';
 import {autoRangeX,rangeY,renderFigure,resolveYAxisTitleVisibility} from './plotting/oned.js';
 import {normalizeEmptyProjectionSpace} from './plotting/footprint.js';
 import {migrateLegacyLegendPosition} from './plotting/legend-position.js';
-import {gFromB,BFromG,coordinateScale,axisKind,bes3tFieldToGauss,alignedCurve} from './processing/axis.js';
+import {gFromB,BFromG,coordinateScale,axisKind,bes3tFieldToGauss} from './processing/axis.js';
 import packageJson from "../package.json";
 import {processSubplot} from "./processing/oned.js";
 import {parseProjectCurves} from "./project/project.js";
@@ -448,10 +448,6 @@ function saveProject(){if(!state.rawCurves.length)return alert('No data loaded')
 async function loadProjectFile(file){const o=JSON.parse(await file.text());const curves=parseProjectCurves(o);state.rawCurves=curves;state.dataVersion=(state.dataVersion||0)+1;state.sourceType=o.sourceType||'project';state.sourceName=o.sourceName||file.name;$('fileInfo').textContent=state.sourceName;state.subplots=[];if(o.config)applyConfig(o.config);else ensureSubplots();updateCurveTable();updateFreqTable();updateStatusBar();recordHistory('Open project');draw();logAction(`Project loaded: ${file.name}`,true);setStatus('Project loaded','good')}
 
 
-function globalCorrectedCurves(target) {
-  return state.rawCurves.map((curve, index) =>
-    curve.matrix ? curve : { ...curve, ...alignedCurve(curve, index, target) });
-}
 function renderHeatmapXYZExport(box, plots, previousSelection) {
   const heatmaps = plots.filter(([sp]) => twoDPlotMode(sp) === 'heatmap');
   if (!heatmaps.length) return;
@@ -487,7 +483,7 @@ function renderHeatmapXYZExport(box, plots, previousSelection) {
   };
   box.append(label, button);
 }
-function renderProjectionExports(){let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='projection-export-controls';$('exportMetaBtn').parentElement.after(box);}const previousHeatmap=$('heatmapXYZSubplot')?.value;box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;renderHeatmapXYZExport(box,plots,previousHeatmap);const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
+function renderProjectionExports(){$('exportMatrixCsvBtn').hidden=!state.rawCurves.some(curve=>curve.matrix);let box=$('projectionExportControls');if(!box){box=document.createElement('div');box.id='projectionExportControls';box.className='projection-export-controls';$('exportMetaBtn').parentElement.after(box);}const previousHeatmap=$('heatmapXYZSubplot')?.value;box.innerHTML='';const plots=state.subplots.map((sp,i)=>[sp,i]).filter(([sp])=>sp.twoD);box.hidden=!plots.length;if(!plots.length)return;renderHeatmapXYZExport(box,plots,previousHeatmap);const l=document.createElement('label');l.textContent='Projection data: subplot';const sel=document.createElement('select');for(const [sp,i]of plots){const o=document.createElement('option');o.value=i;o.textContent='S'+(i+1)+(sp.title?' · '+sp.title:'');sel.append(o);}l.append(sel);const b=document.createElement('button');b.textContent='Export projection CSV';b.onclick=()=>{const i=Number(sel.value),sp=state.subplots[i];preparePlotModel();let matrix;try{matrix=subplotMatrix(sp)}catch(e){setStatus(e.message,'bad');return}downloadText(`${safeBaseName()}_S${i+1}_projections.csv`,TwoD.projectionCsv(matrix,sp.twoD.settings),'text/csv;charset=utf-8');logAction('Projection CSV exported');};box.append(l,b);
 const scanPlots=plots.filter(([sp])=>sp.mode==='scan');
 if(scanPlots.length){
  const label=document.createElement('label');
@@ -556,7 +552,7 @@ function initEvents(){
  document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=e=>{e.stopPropagation();const g=b.closest('.menu-group'),open=g.classList.contains('open');document.querySelectorAll('.menu-group.open').forEach(x=>x.classList.remove('open'));if(!open)g.classList.add('open')});document.addEventListener('click',()=>document.querySelectorAll('.menu-group.open').forEach(x=>x.classList.remove('open')));
  const menuActions={"open-data":()=>$('dataFiles').click(),"open-project":()=>$('projectFile').click(),"save-project":saveProject,"clear-data":()=>$('clearDataBtn').click(),"export":exportFigure,"fit-x":resetAllX,"reset-view":resetAllX,"toggle-sidebar":()=>{document.body.classList.toggle('sidebar-collapsed');scheduleDraw()},"reset-sidebar":()=>{state.sidebarWidth=320;document.documentElement.style.setProperty('--sidebar-width','320px');document.body.classList.remove('sidebar-collapsed');scheduleDraw()},"toggle-log":()=>toggleLog(),"recalculate":()=>draw(),"undo":undo,"redo":redo,"save-config":saveConfig,"load-config":()=>$('configFileSide').click(),"batch-plot":openBatchDialog,"help":()=>{setStatus('Wheel: zoom X · Shift+left drag: pan X · Ctrl+left drag: pan Y · double click: fit subplot X')},"interface-prefs":openInterfacePrefs,"about":()=>alert('SpinPlot '+APP_VERSION+'\nLocal EPR spectrum processing and multi-panel scientific plotting.')};document.querySelectorAll('[data-menu-action]').forEach(b=>b.onclick=()=>menuActions[b.dataset.menuAction]?.());$('uiFont').onchange=()=>{$('customUiFontWrap').classList.toggle('hidden',$('uiFont').value!=='Custom...')};$('interfacePrefsCancel').onclick=closeInterfacePrefs;$('interfacePrefsApply').onclick=()=>{applyUiFont();closeInterfacePrefs();recordHistory('Interface font');logAction(`Interface font = ${$('uiFont').value==='Custom...'?$('customUiFont').value:$('uiFont').value}`)};$('interfacePrefs').addEventListener('mousedown',e=>{if(e.target===$('interfacePrefs'))closeInterfacePrefs()});$('batchCancel').onclick=closeBatchDialog;$('batchRun').onclick=()=>runBatchPlot().catch(e=>batchLog('ERROR: '+e.message));$('batchFiles').onchange=e=>{state.batchFiles=[...e.target.files];state.batchPreviewSignature=null;$('batchFilesInfo').textContent=`${state.batchFiles.length} file(s) selected`};$('batchConfigFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{state.batchConfig=JSON.parse(await f.text());state.batchPreviewSignature=null;$('batchConfigInfo').textContent=f.name;batchLog(`Config loaded: ${f.name}`)}catch(err){state.batchConfig=null;$('batchConfigInfo').textContent='Invalid config';batchLog('ERROR: '+err.message)}};$('batchDialog').addEventListener('mousedown',e=>{if(e.target===$('batchDialog'))closeBatchDialog()});
  $('openDataBtn').onclick=()=>$('dataFiles').click();$('openProjectBtn').onclick=()=>$('projectFile').click();$('fitBtn').onclick=()=>fitAxis('x');$('fitYBtn').onclick=()=>fitAxis('y');$('measureBtn').onclick=toggleMeasure;$('clearMeasurementsBtn').onclick=clearMeasurements;$('undoBtn').onclick=undo;$('redoBtn').onclick=redo;
- $('clearDataBtn').onclick=$('clearDataBtnSide').onclick=clearAllData;$('saveConfigBtnSide').onclick=saveConfig;$('saveProjectBtn').onclick=$('saveProjectBtnSide').onclick=saveProject;$('exportImageBtn').onclick=$('exportImageBtnSide').onclick=exportFigure;$('exportCsvBtn').onclick=exportGlobalCsv;$('exportDisplayCsvBtn').onclick=exportDisplayCsv;$('exportMetaBtn').onclick=exportMeta;
+ $('clearDataBtn').onclick=$('clearDataBtnSide').onclick=clearAllData;$('saveConfigBtnSide').onclick=saveConfig;$('saveProjectBtn').onclick=$('saveProjectBtnSide').onclick=saveProject;$('exportImageBtn').onclick=$('exportImageBtnSide').onclick=exportFigure;$('exportPlotCsvBtn').onclick=exportPlotCsv;$('exportMatrixCsvBtn').onclick=exportMatrixCsv;$('exportMetaBtn').onclick=exportMeta;
  $('configFileSide').onchange=async e=>{if(e.target.files[0])try{await loadConfigFile(e.target.files[0])}catch(err){setStatus(err.message,'bad')}};$('projectFile').onchange=$('projectFileSide').onchange=async e=>{if(e.target.files[0])try{await loadProjectFile(e.target.files[0])}catch(err){setStatus(err.message,'bad')}};
  $('dataFiles').onchange=async e=>{try{const r=await parseMixedDataFiles(e.target.files);appendOpenedData(r.curves,'mixed',`${r.curves.length} spectra · ${r.types.join(' + ')}`);logAction(`Loaded ${r.curves.length} spectrum/spectra`,true);for(const w of r.warnings)logAction('Import warning: '+w);if(r.warnings.length)setStatus(`Loaded ${r.curves.length}; ${r.warnings.length} warning(s)`,'good')}catch(err){setStatus(err.message,'bad');logAction('ERROR: '+err.message)}finally{e.target.value=''}};
  $('applyLayoutSpansBtn').onclick=()=>{try{applyGridSpans($('layoutSpans').value);recordHistory('Grid spans');logAction(`Grid spans = ${$('layoutSpans').value}`)}catch(e){setStatus(e.message,'bad')}};$('applyLayoutPresetBtn').onclick=()=>{try{applyLayoutPreset($('layoutPreset').value);recordHistory('Layout preset')}catch(e){setStatus(e.message,'bad')}};$('applyLayoutSizeBtn').onclick=()=>{try{applyManualLayout();recordHistory('Manual layout')}catch(e){setStatus(e.message,'bad')}};['layoutRows','layoutCols'].forEach(id=>{$(id).oninput=()=>{$('layoutPreset').value='custom'};$(id).onkeydown=e=>{if(e.key==='Enter')$('applyLayoutSizeBtn').click()}});$('applyGroupsBtn').onclick=()=>{try{applyGroupExpression($('groupExpression').value)}catch(e){setStatus(e.message,'bad')}};$('addSubplotBtn').onclick=()=>{state.subplots.push(newSubplotConfig(true));extendLayoutForCount();renderSubplotUI();renderLayoutPreview();recordHistory('Add subplot');scheduleDraw();logAction('Subplot added')};
@@ -638,22 +634,30 @@ function renderPlot(canvas,w,h,scale=1,isExport=false){
  return renderFigure(canvas,w,h,scale,isExport,{model,cells:layoutCells(),controls,view,style:{theme:plotTheme(),font:getFont('plotFont','customPlotFont','Arial')}});
 }
 
-function exportGlobalCsv() {
-  if (!state.rawCurves.length) return;
-  let target = globalTargetFrequency();
-  if ($('globalFreqMode').value === 'local_mean') {
-    const summaries = state.rawCurves.flatMap((curve, index) =>
-      curve.matrix ? [] : [curveTargetSummary(index)]);
-    const first = summaries[0]?.target ?? null;
-    if (summaries.some(summary => summary.varies || !sameFrequencyTarget(summary.target, first))) {
-      setStatus('Local mean uses different targets across subplots; use Display CSV for per-subplot aligned data.', 'bad');
-      return;
+function exportPlotCsv() {
+  try {
+    const cells = layoutCells();
+    const plots = preparePlotModel().sort((a, b) =>
+      cells[a.index].row - cells[b.index].row || cells[a.index].col - cells[b.index].col);
+    for (const plot of plots) {
+      if (!plot.matrix) continue;
+      const settings = plot.sp.twoD.settings;
+      const view = TwoD.model(plot.matrix, settings);
+      plot.matrixView = settings.mode === 'stack'
+        ? { ...view, yi: TwoD.stackRows(view, settings) }
+        : view;
     }
-    target = first;
+    const csv = plotDataCSV(plots);
+    if (!csv) return setStatus('No plotted samples to export.', 'bad');
+    downloadText(`${safeBaseName()}_plot_data.csv`, csv, 'text/csv;charset=utf-8');
+    logAction('Plot data CSV exported');
+  } catch (error) {
+    setStatus(error.message, 'bad');
   }
-  const csv = globalCurvesCSV(globalCorrectedCurves(target));
-  downloadText(`${safeBaseName()}_global.csv`, csv, 'text/csv;charset=utf-8');
-  logAction('Global corrected CSV exported');
 }
-function exportDisplayCsv(){if(!state.rawCurves.length)return;downloadText(`${safeBaseName()}_display.csv`,displayCurvesCSV(state.subplots.map(sp=>({sp,curves:processedSubplot(sp)})),collectControls()),'text/csv;charset=utf-8');logAction('Subplot display CSV exported');}
+function exportMatrixCsv() {
+  if (!state.rawCurves.some(curve => curve.matrix)) return;
+  downloadText(`${safeBaseName()}_2d_source.csv`, sourceMatrixCSV(state.rawCurves), 'text/csv;charset=utf-8');
+  logAction('2D source data CSV exported');
+}
 function exportMeta(){downloadText(`${safeBaseName()}_freqmeta.csv`,frequencyMetadataCSV(state.rawCurves,globalTargetFrequency(),collectControls()),'text/csv;charset=utf-8');logAction('Frequency metadata exported');}
