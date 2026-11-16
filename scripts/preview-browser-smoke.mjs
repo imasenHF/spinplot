@@ -396,6 +396,7 @@ try {
     const baseSubplot=mixed.config.subplots[1];
     const saturationSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
       mode:'scan',title:'Saturation validation',gridRow:1,gridCol:2,curves:[],
+      xUseGlobal:false,xMin:'',xMax:'',linkX:false,
       emptyProjectionSpace:'top',
       twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
