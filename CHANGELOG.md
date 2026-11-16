@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.12 — 2026-11-16
+
+- Add a UTF-8 signature to plot data CSV downloads so Excel recognizes Unicode column labels when opening the file directly.
+
 ## 0.11.11 — 2026-11-16
 
 - Combine the two curve CSV actions into Export plot data CSV. Export displayed coordinates by subplot, sharing X only for identical grids within a subplot. Keep each subplot’s alignment, displayed Y values and X range. Use empty cells for missing values and shorter columns. Displayed 2D grids contribute XYZ; an explicit Export 2D source CSV retains the complete acquired matrices.

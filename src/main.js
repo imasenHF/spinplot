@@ -649,7 +649,8 @@ function exportPlotCsv() {
     }
     const csv = plotDataCSV(plots);
     if (!csv) return setStatus('No plotted samples to export.', 'bad');
-    downloadText(`${safeBaseName()}_plot_data.csv`, csv, 'text/csv;charset=utf-8');
+    // A UTF-8 BOM lets Excel detect Unicode column titles when opening the file directly.
+    downloadText(`${safeBaseName()}_plot_data.csv`, '\uFEFF' + csv, 'text/csv;charset=utf-8');
     logAction('Plot data CSV exported');
   } catch (error) {
     setStatus(error.message, 'bad');
