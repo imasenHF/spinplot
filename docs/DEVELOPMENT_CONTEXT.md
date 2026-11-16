@@ -1,3 +1,10 @@
+## 2026-11-16 v0.11.11 绘图坐标 CSV
+
+- Export plot data CSV 合并旧有两个曲线导出按钮。按画布行列顺序将子图坐标并排输出，只导出当前 X 范围内的采样点，保留各子图校准后的 X 与显示 Y。仅同一子图内逐点相同的采样网格共用 X，不插值。缺失值与短列末尾留空，列头包括子图、曲线和已知坐标单位。
+- 变量扫描、二维叠加和普通曲线导出 XY；二维热图、等高线、曲面和原生二维堆叠的显示采样点导出 XYZ。原生二维堆叠保留采集信号值和选中的扫描谱。完整原生矩阵通过 Export 2D source CSV 导出。项目和配置格式仍为 11/10。
+- [PR #28](https://github.com/imasenHF/spinplot/pull/28) 已合并，合并提交 `8504aebc9bb074b167b6dc5ee30d045282c559ac`。本地 npm run check 与 29 组单元测试通过。Chromium 下载验证 Local mean、多参考频率、强度校正和堆叠偏移，以及裁剪后的 Variable scan 和热图并排导出。quality [43824887179](https://github.com/imasenHF/spinplot/actions/runs/43824887179)、Legend [43824887124](https://github.com/imasenHF/spinplot/actions/runs/43824887124) 和 Vector PDF [43824887130](https://github.com/imasenHF/spinplot/actions/runs/43824887130) 成功。
+- [v0.11.11](https://github.com/imasenHF/spinplot/releases/tag/v0.11.11) 已发布。正式 Pages [43825038730](https://github.com/imasenHF/spinplot/actions/runs/43825038730) 与生产 HTTP [43825221193](https://github.com/imasenHF/spinplot/actions/runs/43825221193) 成功，已核对正式页面版本、按钮和构建脚本。
+
 ## 2026-11-11 v0.11.10 热图 XYZ CSV
 
 - Export 按热图子图提供三列 XYZ CSV。X/Y 按显示窗口选择实际采集点并沿用交换后的轴方向，Z 为当前所选信号分量，保留数值本身，缺失信号留空。列标题包含物理量和单位；热图和变量扫描同时存在时只列热图子图。
