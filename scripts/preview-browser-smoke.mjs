@@ -396,7 +396,6 @@ try {
     const baseSubplot=mixed.config.subplots[1];
     const saturationSubplot={...JSON.parse(JSON.stringify(baseSubplot)),
       mode:'scan',title:'Saturation validation',gridRow:1,gridCol:2,curves:[],
-      xUseGlobal:false,xMin:'',xMax:'',linkX:false,
       emptyProjectionSpace:'top',
       twoD:{index:0,settings:{swap:false,scanFeatureMode:'both',scanAxisMode:'power',
         scanPowerReferenceMW:100,scanStatisticMin:3340,scanStatisticMax:3364,
@@ -433,16 +432,6 @@ try {
         ]);
       }
     }
-    const canvasData=await exportDisplay('browser-preview/mixed-plot-data.csv');
-    assert.deepEqual(canvasData.header.slice(0,3),[
-      'Synthetic field map X · Field (G)',
-      'Synthetic field map Y · Microwave attenuation (dB)',
-      'Synthetic field map Z · real',
-    ]);
-    assert.ok(canvasData.header.includes('Saturation validation · Amplitude fit Y'));
-    assert.equal(canvasData.rows.length,fields.length*attenuation.length);
-    assert.deepEqual(canvasData.rows[0].slice(0,3).map(Number),[fields[0],attenuation[0],syntheticRows[0][0]]);
-    assert.ok(canvasData.rows.slice(attenuation.length).every(row=>row.slice(3).every(value=>value==='')));
     const heatmapSelect=page.locator('#heatmapXYZSubplot');
     assert.deepEqual(await heatmapSelect.locator('option').allTextContents(),['S2 · Synthetic field map']);
     const [xyzDownload]=await Promise.all([
@@ -676,6 +665,21 @@ try {
     await powerScale.selectOption('power');
     assert.equal(await scanPanel.locator('[data-field="xMin"]').inputValue(),'4');
     assert.equal(await scanPanel.locator('[data-field="xMax"]').inputValue(),'100');
+    const canvasData=await exportDisplay('browser-preview/mixed-plot-data.csv');
+    assert.deepEqual(canvasData.header.slice(0,3),[
+      'Synthetic field map X · Field (G)',
+      'Synthetic field map Y · Microwave attenuation (dB)',
+      'Synthetic field map Z · real',
+    ]);
+    assert.ok(canvasData.header.includes('Saturation validation · Amplitude fit Y'),JSON.stringify(canvasData.header));
+    const powerColumn=canvasData.header.indexOf('Saturation validation X (mW)');
+    assert.ok(powerColumn>=3,'Scan features and fits share the displayed power grid');
+    const visiblePowers=canvasData.rows.map(row=>row[powerColumn]).filter(Boolean).map(Number);
+    assert.deepEqual(visiblePowers,attenuation.map(dB=>100*10**(-dB/10)).filter(P=>P>=4&&P<=100));
+    assert.equal(canvasData.rows.length,fields.length*attenuation.length);
+    assert.deepEqual(canvasData.rows[0].slice(0,3).map(Number),[fields[0],attenuation[0],syntheticRows[0][0]]);
+    assert.ok(canvasData.rows.slice(attenuation.length).every(row=>row.slice(3).every(value=>value==='')));
+    await page.locator('button.tab-btn[data-tab="subplots"]').click();
     assert.match(await scanPanel.locator('.scan-measured-power').textContent(),/Measured:/);
     assert.equal(await scanPanel.locator('[data-twod="scanStatistic"]').count(),0,'Duplicate statistic selector is removed');
     assert.equal(await scanPanel.locator('.scan-range-row [data-twod="scanStatisticMin"]').count(),1,'Feature start belongs to its interval row');
